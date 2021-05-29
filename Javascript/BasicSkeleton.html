@@ -1,0 +1,93 @@
+<head>
+	<script>
+	let mouseX,mouseY;
+	let camX=0,camY=0;
+	
+	function trackMouse(e)
+		{
+		mouseX=e.clientX;
+		mouseY=e.clientY;
+		};
+    function w2screen(strr = "", px = 20, py = 30) 
+    	{
+	      ctx.font = "40px Haettenschweiler";
+	      ctx.fillStyle = "#FFFFFF";
+	      ctx.fillText(strr, px, py);
+    	}
+
+    //solider starts
+    function Soldier(posx,posy)
+    	{
+
+    	}
+    //soldier ends
+	</script>
+</head>
+
+
+<body>
+	<canvas style='border:3px solid black;' onmousemove="trackMouse(event)">  
+	</canvas>
+	<script>	 	
+	var canvas = document.querySelector('canvas');
+   	ctx = canvas.getContext('2d');
+   	canvas.width = window.innerWidth-35;
+  	canvas.height = window.innerHeight-100;
+    let xscale=canvas.width/1501,canvas.height/yscale=654;
+	var resize = function () 
+		{
+  		canvas.width = window.innerWidth-35;
+  		canvas.height = window.innerHeight-100;
+		};			
+	window.addEventListener('resize', resize);
+
+	document.onkeypress=function (e)
+					{			
+
+					if(e.keyCode==119) upPress=true;
+					if(e.keyCode==100) rightPress=true;
+					if(e.keyCode==115) downPress=true;
+					if(e.keyCode==97) leftPress=true;
+					if(e.keyCode==103) gPress=true;
+					if(e.keyCode==102) fPress=true;
+					if(e.keyCode==13)  enterPress=true;				
+					};
+	document.onkeyup=function (e)
+					{					
+					if(e.keyCode==87) upPress=false;
+					if(e.keyCode==68) rightPress=false;
+					if(e.keyCode==83) downPress=false;
+					if(e.keyCode==65) leftPress=false;
+					if(e.keyCode==71) gPress=false;
+					if(e.keyCode==70) fPress=false;
+					if(e.keyCode==13)  enterPress=false;
+					};
+
+	document.onmousedown=function(e)
+					{
+					mousePressed=true;													
+					};	
+	document.onmouseup=function(e)
+					{
+					mousePressed=false;												
+					};
+
+	window.addEventListener('load', 
+							function () 
+									{
+								 	resize();									
+							 		var loop = function () 
+													{										                    					
+													ctx.clearRect(0,0,canvas.width,canvas.height);	
+													ctx.fillStyle = '#000000';
+													ctx.fillRect(0,0,canvas.width, canvas.height);
+													w2screen(`${canvas.width},${canvas.height}`);				
+				                                 	};
+					  	     		setInterval(loop, 1000 / 60);					  		
+									}
+							);
+
+	</script>
+
+	
+</body>

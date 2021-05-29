@@ -1,0 +1,1152 @@
+<head>
+	<script>
+	let mouseX,mouseY;
+	let camX=0,camY=0;
+	let upPress,leftPress,downPress,rightPress,fPress,gPress,enterPress,mousePressed,mouseDoubleTap,spacePress;
+    let pauseGame=false;
+    let doubleTapTimer=0;
+	let backGroundColor="#16a1b3";
+    let deltaTime=1000 / 60;
+    let debugVar1;
+
+	function trackMouse(e)
+		{
+		mouseX=e.clientX;
+		mouseY=e.clientY;
+
+		};
+    function w2screen(strr = "", px = 20, py = 30) 
+    	{
+	      ctx.font = "40px Haettenschweiler";
+	      ctx.fillStyle = "#FFFFFF";
+	      ctx.fillText(strr, px, py);
+    	}
+
+    //hfns
+    function flushArray(arr) 
+        {
+        var lis = [];
+        for (var i in arr) 
+            {
+            if (!arr[i].onScreen) lis.push(i);
+            }
+      for (var i in lis) 
+            {
+            arr.splice(lis[i], 1);
+            for (var j in lis) lis[j] -= 1;
+            }
+        }
+    let DistBween=(x1,y1,x2,y2)=>
+                                {
+                                    return Math.sqrt((x1-x2)**2+(y1-y2)**2);
+                                };
+    let Lerp=(startValue,endValue,lerpFac=2)=>
+    								{
+    									return startValue+(endValue-startValue)/lerpFac;
+    								};
+	function collisioncheckz(elem1,elem2)
+				{
+			return (inter_ects(elem1.posx-elem1.width/2,elem1.posy-elem1.height/2,
+							   elem1.width,elem1.height,
+					   		   elem2.posx-elem2.width/2,elem2.posy-elem2.height/2,
+					   		   elem2.width,elem2.height
+					  		  )
+				   );
+				}
+	function inter_ects(q1,q2,ql1,ql2,w1,w2,wl1,wl2)
+				{
+				if(w1>=q1)
+					{
+					if((w1-q1)<ql1)
+						{
+						if(w2>=q2)
+							{
+							if((w2-q2)<ql2) return true;
+							return false;
+							}
+						else
+							{
+							if((q2-w2)<wl2) return true;
+							return false;
+							}
+						}
+					}
+				else
+					{
+					if((q1-w1)<wl1)
+						{
+						if(w2>=q2)
+							{
+							if((w2-q2)<ql2) return true;
+							return false;
+							}
+						else
+							{
+							if((q2-w2)<wl2) return true;
+							return false;
+							}
+						}
+					}
+				}
+
+    //hfns
+
+    //soldier feet starts //subcomponent no camera
+    function SoldierFeet(posx,posy)
+    	{
+    		this.posx=posx;
+    		this.posy=posy;
+    		this.onScreen=true;	
+    		this.width=60*xscale;
+    		this.height=40*yscale;
+    		this.animationCounter=0;
+    		//loading idleanimation images starts
+    		this.idle_images=[];    		
+    		for(i=0;i<1;i++)
+    			{
+    			let imgx=new Image();     			         
+    		    imgx.src=`./sprites/soldierFeet/idle/survivor-idle_${i}.png`;
+    			this.idle_images.push(imgx);
+    			}
+    		//loading idleanimation images ends
+    		//loading idleanimation images starts
+    		this.run_images=[];    		
+    		for(i=0;i<20;i++)
+    			{
+    			let imgx=new Image();     			         
+    		    imgx.src=`./sprites/soldierFeet/run/survivor-run_${i}.png`;
+    			this.run_images.push(imgx);
+    			}
+    		//loading runanimation images ends
+    		this.presentAnimationState=1;
+    		this.animationStates=[this.idle_images,this.run_images];
+            this.changeAnimation=(anim)=>
+                  {                    
+                    if ((anim=="run") && this.presentAnimationState!=1)
+                        {
+                        this.animationCounter=0;
+                        this.presentAnimationState=1;
+                        }
+                    else if ((anim=="idle") && this.presentAnimationState!=0)
+                        {
+                        this.animationCounter=0;
+                        this.presentAnimationState=0;
+                        }
+                  }
+
+            this.updateAnimationFrame=()=>
+                  {
+                    this.animationCounter+=1;                                           
+                    if(this.animationCounter >= this.animationStates[this.presentAnimationState].length)
+                        this.animationCounter=0;
+                  };
+
+            this.dr_w=()=>
+                  {
+                    if(!this.onScreen) return false;
+                    ctx.save();
+                    ctx.translate(this.posx, this.posy);
+                    // ctx.rotate(this.rotangle*Math.PI/180);                    
+                    ctx.drawImage(
+                                  this.animationStates[this.presentAnimationState][this.animationCounter],
+                                  -this.width / 2,
+                                  -this.height / 2,
+                                  this.width,
+                                  this.height
+                                 );                                                     
+                    ctx.restore();
+                    this.updateAnimationFrame();                    
+
+                  };
+
+    	}
+    //soldier feet ends
+    //bullet starts
+    function Bullet(posx,posy,ang)
+        {
+            this.posx=posx;
+            this.posy=posy;
+            this.onScreen=true;
+            this.width=10*xscale;
+            this.height=10*yscale;
+            this.speed=10;
+            this.ang=ang;            
+            this.velx=this.speed * Math.cos(this.ang/180*Math.PI);
+            this.vely=this.speed * Math.sin(this.ang/180*Math.PI);
+            this.imgx=new Image();
+            this.imgx.src='./sprites/redcube.png';
+            
+            this.move=()=>
+                          {
+                            if(!this.onScreen) return;                            
+                            this.posx+=this.velx;
+                            this.posy+=this.vely;
+                            this.checkBounds();
+                            this.inflictDamage();
+                          };
+            this.inflictDamage=()=>
+                {
+                    for(let z of zombiesList)
+                        {
+                            if(!z.onScreen) continue;
+                            if(collisioncheckz(this,z))
+                                {
+                                    z.takeDamage(10);
+                                    this.onScreen=false;
+                                }
+                        }
+                }
+            this.checkBounds=()=>
+                          {
+                            if(this.posx-camX > canvas.width || this.posy-camY > canvas.height)
+                                this.onScreen=false;
+                          };
+            this.dr_w=()=>
+                          {
+                            if(!this.onScreen) return false;                            
+                            ctx.save();
+                            ctx.translate(this.posx-camX, this.posy-camY);                            
+                            ctx.drawImage(
+                                          this.imgx,
+                                          -this.width / 2,
+                                          -this.height / 2,
+                                          this.width,
+                                          this.height
+                                         );                         
+                            ctx.restore();                          
+
+                          };
+        }        
+    //bullet ends
+    //zombie's damagebomb starts
+    function DamageBomb(posx,posy)
+        {
+            this.posx=posx;
+            this.posy=posy;
+            this.fixedPosx=posx;
+            this.fixedPosy=posy;
+            this.onScreen=true;
+            this.width=50*xscale;
+            this.height=50*yscale;
+            this.imgx=new Image();
+            this.imgx.src='./sprites/redcube.png';
+            this.onScreen=true;
+            this.lifeTimer  =0;
+            this.maxLifeTime=500;
+            this.runTimer=()=>
+              {
+                this.lifeTimer+=deltaTime;
+                if(this.lifeTimer > this.maxLifeTime)
+                    this.onScreen=false;
+              }
+            this.dr_w=()=>
+              {
+                if(!this.onScreen) return false;  
+                this.inflictDamage(); 
+                this.runTimer();    
+                /*                     
+                ctx.save();
+                ctx.translate(this.posx, this.posy);                            
+                ctx.drawImage(
+                              this.imgx,
+                              -this.width / 2,
+                              -this.height / 2,
+                              this.width,
+                              this.height
+                             );                         
+                ctx.restore(); 
+                */
+              };
+            this.inflictDamage=()=>
+                {
+                    for(let x of soldiersList)
+                        {
+                            if(!x.onScreen) continue;
+                            if(collisioncheckz(this,x))
+                                {
+                                    this.onScreen=false;
+                                    x.takeDamage(20);
+                                }
+                        }
+                }
+        }
+    //zombie's damagebomb ends
+    //Treebush starts
+    function TreeBush(posx,posy,i,j)
+        {
+            this.posx=posx;
+            this.posy=posy;
+            this.xoffset=i*50;
+            this.yoffset=j*50;
+            this.onScreen=true;
+            this.width=100*xscale;
+            this.height=100*yscale;
+            this.imgx=new Image();
+            this.imgx.src="./sprites/tree bushes.png";
+            this.dr_w=()=>
+                          {
+                            if(!this.onScreen) return false;                            
+                            ctx.save();
+                            ctx.translate(this.posx-camX, this.posy-camY);                            
+                            ctx.drawImage(
+                                          this.imgx,this.xoffset,this.yoffset,50,50,
+                                          -this.width / 2,
+                                          -this.height / 2,
+                                          this.width,
+                                          this.height
+                                         );                         
+                            ctx.restore();                          
+
+                          }
+        }
+    //Treebush ends
+    //redblock starts
+    function RedBlock(posx,posy)
+    	{
+    		this.posx=posx;
+    		this.posy=posy;
+            this.fixedPosx=posx;
+            this.fixedPosy=posy;
+    		this.onScreen=true;
+    		this.width=10*xscale;
+    		this.height=10*yscale;
+    		this.imgx=new Image();
+    		this.imgx.src='./sprites/redcube.png';
+    		this.onScreen=true;
+    		this.dr_w=()=>
+    				      {
+    				      	if(!this.onScreen) return false;    				      	
+    				      	ctx.save();
+    						ctx.translate(this.posx, this.posy);    						
+    						ctx.drawImage(
+        								  this.imgx,
+        								  -this.width / 2,
+        								  -this.height / 2,
+        								  this.width,
+        								  this.height
+      								     );    						
+    						ctx.restore();   						
+
+    				      };
+
+
+    	}
+    //redblock ends
+    //Zombie starts
+    
+    function Zombie(posx,posy)
+        {
+            this.tag="Zombie";
+            this.layer="Enemy";
+            this.posx=posx;
+            this.posy=posy;
+            this.onScreen=true;
+            this.width=120*xscale;
+            this.height=120*yscale;
+            this.vel=2* Math.sqrt(xscale**2+yscale**2);
+            this.velx=0;
+            this.vely=this.vel;
+            this.rotangle=0;
+            this.rotSpeed=1;            
+            this.collisionBlock=new RedBlock(50*xscale,0*yscale); 
+            this.animationCounter=0; 
+            this.animInQueue="none";
+            this.targetx=soldiersList[0];
+            this.targetProximDistance=0.4*canvas.width;
+            this.maxLife=100;
+            this.life=this.maxLife;
+            this.hBar=new HealthBar(-30*xscale,-45*yscale,50*xscale,5*yscale,this.maxLife);
+            this.healthBarVisible=true;
+            this.healthBarTimer=0;
+            this.maxHealthBarTimer=2000;
+
+            //vars for attack starts
+            this.attackProgTimer=0;
+            this.maxAttackProgTimer=500;         
+            this.maxAttackTimer=1000;
+            this.attackTimer=this.maxAttackTimer;
+            //vars for attack ends
+
+            this.damageBombs=[];
+
+
+
+            this.idle_images=[];
+            for(i=0;i<17;i++)
+                {
+                let imgx=new Image();                        
+                imgx.src=`./sprites/Zombie/idle/skeleton-idle_${i}.png`;
+                this.idle_images.push(imgx);
+                }        
+            this.attack_images=[];
+            for(i=0;i<9;i++)
+                {
+                let imgx=new Image();                        
+                imgx.src=`./sprites/Zombie/attack/skeleton-attack_${i}.png`;
+                this.attack_images.push(imgx);
+                }  
+            this.move_images=[];
+            for(i=0;i<13;i++)
+                {
+                let imgx=new Image();                        
+                imgx.src=`./sprites/Zombie/move/skeleton-move_${i}.png`;
+                this.move_images.push(imgx);
+                } 
+
+            this.presentAnimationState=0;
+            this.animationStates=[this.idle_images,this.attack_images,this.move_images];
+            this.animationSpeeds=[1,4,2];
+            this.animationSpeedTimers=[0,0,0];
+            this.controlAnimationSpeed=()=>
+                  {
+                    this.animationSpeedTimers[this.presentAnimationState]+=1;
+                    if(this.animationSpeedTimers[this.presentAnimationState]>=
+                            this.animationSpeeds[this.presentAnimationState] 
+                      )
+                        {
+                        this.animationSpeedTimers[this.presentAnimationState]=0;
+                        return true;
+                        }
+                    return false;
+                  }
+            this.changeAnimation=(anim)=>
+                  {                    
+                    if ((anim=="idle") && this.presentAnimationState!=0)
+                        {
+                        this.animationCounter=0;
+                        this.presentAnimationState=0;
+                        }
+                    else if ((anim=="attack") && this.presentAnimationState!=1)
+                        {
+                        this.animationCounter=0;
+                        this.presentAnimationState=1;
+                        }
+                    else if ((anim=="move") && this.presentAnimationState!=2)
+                        {
+                        this.animationCounter=0;
+                        this.presentAnimationState=2;
+                        }
+                  }
+            this.runningAnimation=()=>
+                  {
+                    if(this.presentAnimationState==0) return "idle";
+                    if(this.presentAnimationState==1) return "attack";
+                    if(this.presentAnimationState==2) return "move";
+                    return "unknown";
+                  }
+
+            this.updateAnimationFrame=()=>
+                  {
+                    if(!this.controlAnimationSpeed()) return;
+                    this.animationCounter+=1;                                           
+                    if(this.animationCounter >= this.animationStates[this.presentAnimationState].length)
+                        {
+                        if(this.animInQueue=="none")
+                           this.animationCounter=0;
+                        else
+                            {
+                              this.changeAnimation(this.animInQueue);
+                              this.animInQueue="none";
+                            }
+                        }
+                  };
+            this.takeDamage=(x)=>
+                {
+                    if(this.life > 0)
+                        this.life-=x;
+                    this.hBar.reduceHealth(x);
+                    this.healthBarVisible=true;
+                    if(this.life <= 0)
+                        this.onScreen=false;
+                };
+
+
+            this.controlHealthBarVisibility=()=>
+                {
+                    if(!this.healthBarVisible) return;
+                    this.healthBarTimer+=deltaTime;
+                    if(this.healthBarTimer > this.maxHealthBarTimer)
+                        {
+                            this.healthBarTimer=0;
+                            this.healthBarVisible=false;
+                        }
+                }
+
+            this.dr_w=()=>
+                          {
+                            if(!this.onScreen) return false;
+                            this.drawAndWorkDBombs();                                                     
+                            ctx.save();
+                            ctx.translate(this.posx-camX, this.posy-camY);
+                            ctx.rotate(this.rotangle*Math.PI/180);
+                            this.drawDependentSubComponents();
+                            ctx.drawImage(
+                                          this.animationStates[this.presentAnimationState][this.animationCounter],
+                                          -this.width / 2,
+                                          -this.height / 2,
+                                          this.width,
+                                          this.height
+                                         ); 
+                                                                                
+                            ctx.restore(); 
+                            this.updateAnimationFrame();
+                            this.controlHealthBarVisibility(); 
+                            this.drawSubComponents();                          
+
+                          };
+            this.drawDependentSubComponents=()=>
+                {
+                    if(this.healthBarVisible)
+                    this.hBar.dr_w();
+                }
+            this.drawSubComponents=()=>
+                           {
+                            ctx.save();
+                            ctx.translate(this.posx-camX, this.posy-camY);
+                            // this.collisionBlock.dr_w();
+                            ctx.restore(); 
+                           };
+            this.drawAndWorkDBombs=()=>
+                    {
+                    for(let x of this.damageBombs) 
+                        {
+                        x.dr_w();
+                        }
+                    flushArray(this.damageBombs);
+                    }
+            this.move=()=>
+                    {
+                        this.moveTowardsPoint();
+                    };
+
+
+            this.moveTowardsPoint=()=>
+                          {
+                            if(!this.targetx || !this.targetx.onScreen)
+                                return;
+                            let posx=this.targetx.posx;
+                            let posy=this.targetx.posy;
+                            let ysep=posy-this.posy;
+                            let xsep=posx-this.posx;
+                            let rawAngle=Math.atan(Math.abs(ysep)/Math.abs(xsep))/Math.PI*180;
+                            let origAngle=rawAngle;
+                            if(ysep>0 && xsep<0) rawAngle=180-rawAngle;
+                            else if(ysep<0 && xsep<0) rawAngle=180+rawAngle;
+                            else if(ysep<0 && xsep>0) rawAngle=360-rawAngle;
+                            
+
+                            this.rotangle=Lerp(this.rotangle,rawAngle,9); 
+                            // this.rotangle=rawAngle;                           
+                            this.pointMe();
+
+                            if(DistBween(posx,posy,this.posx,this.posy) >50*xscale && this.runningAnimation()!="attack")
+                                {
+                                    this.posx=Lerp(this.posx,this.posx+this.velx);
+                                    this.posy=Lerp(this.posy,this.posy+this.vely);
+                                    this.changeAnimation("move");
+                                    if(this.attackTimer < this.maxAttackTimer)
+                                        this.attackTimer=this.maxAttackTimer;
+                                }                            
+                            else
+                                {
+                                    // this.changeAnimation("idle");
+                                    this.attack();
+                                }
+                            }
+
+            this.attack=()=>
+                            {
+                                if(this.runningAnimation()=="attack")
+                                    {
+                                        this.attackProgTimer+=deltaTime;
+                                        if(this.attackProgTimer > this.maxAttackProgTimer)
+                                            {
+                                              this.damageBombs.push(
+                                                            new DamageBomb(this.collisionBlock.posx+this.posx,
+                                                                           this.collisionBlock.posy+this.posy
+                                                                           )
+                                                                   );
+                                              this.attackProgTimer=0;
+                                            }
+                                    }
+                                else
+                                    {
+                                        if(this.attackProgTimer!=0) this.attackProgTimer=0;
+                                        this.changeAnimation("idle");
+                                        this.attackTimer+=deltaTime;
+                                        if(this.attackTimer > this.maxAttackTimer)
+                                            {
+                                              this.attackTimer=0;
+                                              this.animInQueue="idle";
+                                              this.changeAnimation("attack");
+                                            }
+                                    }
+                            }
+            this.pointMe=()=>
+                            {
+                                this.velx=this.vel * Math.cos(this.rotangle/180*Math.PI);
+                                this.vely=this.vel * Math.sin(this.rotangle/180*Math.PI);
+                                this.adjustSubComponents();
+                            }
+            this.adjustAsPerRotAngle=(x,y)=>
+                            {                            
+                            // console.log("x:"+x+" rotangle:"+this.rotangle);
+                             //console.log(`rotangle:${this.rotangle}, and xpos:${len * Math.cos(this.rotangle/180*Math.PI)}`);
+                             let cosine=Math.cos(this.rotangle/180*Math.PI);
+                             let sine  =Math.sin(this.rotangle/180*Math.PI);
+                             return [x*cosine-y*sine,x*sine+y*cosine];                           
+                            };
+            this.adjustSubComponents=()=>
+                            {
+                                
+                                [this.collisionBlock.posx,this.collisionBlock.posy]=
+                                this.adjustAsPerRotAngle(this.collisionBlock.fixedPosx,this.collisionBlock.fixedPosy);
+                            };
+           
+        }
+        
+    //Zombie ends
+    //Health Bar and HealthBar Child starts
+    function HealthBar(posx,posy,wd,ht,maxLife)
+        {
+            this.posx=posx;
+            this.posy=posy;
+            this.onScreen=true;            
+            this.redBar=new HealthBarChild(0,0,"#94b8b8",wd,ht,"redbar",maxLife);
+            this.greenBar=new HealthBarChild(0,0,"#00FF00",wd,ht,"greenbar",maxLife);
+
+            this.dr_w=()=>
+                {
+                  if(!this.onScreen) return false; 
+                  ctx.save();
+                  ctx.translate(this.posx,this.posy);
+                  this.redBar.dr_w();
+                  this.greenBar.dr_w();
+                  ctx.restore();  
+                }
+            this.reduceHealth=(x)=>
+                {
+                    this.greenBar.reduceHealth(x);
+                }
+        }
+    function HealthBarChild(posx,posy,colorCode,wd,ht,namex,maxLife)
+        {
+            this.onScreen=true;
+            this.posx=posx;
+            this.posy=posy;
+            this.height=yscale*ht;
+            this.width=xscale*wd;
+            this.maxWidth=this.width;            
+            this.xptsOrig=[   0,   1,  1,   0];
+            this.yptsOrig=[-0.5,-0.5,0.5, 0.5];
+            this.xpts=this.xptsOrig.map(x=>x*this.width);
+            this.ypts=this.yptsOrig.map(x=>x*this.height);
+            this.colorCode=colorCode;
+            this.namex=namex;
+            this.maxLife=maxLife;
+            this.life=maxLife;
+        this.dr_w= function()
+                {
+                if(!this.onScreen) return false;                
+                ctx.save();
+                ctx.translate(this.posx,this.posy);              
+                ctx.fillStyle=this.colorCode;
+                ctx.strokeStyle=this.colorCode;
+                ctx.beginPath();
+                ctx.moveTo(this.xpts[0],this.ypts[0]);
+                for(var g=1;g<this.xpts.length;g++)
+                    ctx.lineTo(this.xpts[g],this.ypts[g]);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                ctx.restore();    
+
+                };
+        this.reduceHealth=(x)=>
+            {
+                this.life-=x;
+                this.width=this.maxWidth * this.life/this.maxLife;                
+                this.xpts=this.xptsOrig.map(x=>x*this.width);
+            }
+        }
+    //Health Bar and HealthBar Child ends
+
+    //solider starts
+    function Soldier(posx,posy)
+    	{
+    		this.posx=posx;
+    		this.posy=posy;
+    		this.onScreen=true;
+    		this.width=120*xscale;
+    		this.height=120*yscale;
+    		this.vel=4* Math.sqrt(xscale**2+yscale**2);
+    		this.velx=0;
+    		this.vely=this.vel;
+    		this.rotangle=0;
+    		this.rotSpeed=1;
+            this.doubleTapTimer=0;
+            this.confirmMouseDown=false;
+    		this.collisionBlock=new RedBlock(60*xscale,29*yscale);
+            this.sFeet=new SoldierFeet(20*xscale,0);
+            this.destinX=canvas.width;
+            this.destinY=canvas.height/2;     
+            this.bulletsShot=[];
+            this.stay=false; 
+            this.shotInQueue=false;     
+            this.animInQueue="none";            
+            this.maxLife=100;
+            this.life=this.maxLife;
+            this.hBar=new HealthBar(0.85*canvas.width,0.05*canvas.height,200,30,this.maxLife);
+
+
+    		this.animationCounter=0;
+    		this.idle_images=[];
+
+    		for(i=0;i<19;i++)
+    			{
+    			let imgx=new Image();    			         
+    		    imgx.src=`./sprites/soldier/idle/survivor-idle_handgun_${i}.png`;
+    			this.idle_images.push(imgx);
+    			}
+            this.shootImages=[];
+            for(i=0;i<3;i++)
+                {
+                let imgx=new Image();                          
+                imgx.src=`./sprites/soldier/shoot/survivor-shoot_handgun_${i}.png`;
+                this.shootImages.push(imgx);
+                }
+
+    		this.presentAnimationState=0;
+    		this.animationStates=[this.idle_images,this.shootImages];
+            
+            this.animationSpeeds=[1,2];
+            this.animationSpeedTimers=[0,0];
+            this.takeDamage=(x)=>
+                {
+                    if(this.life > 0)
+                        this.life-=x;
+
+                    this.hBar.reduceHealth(x);
+                    if(this.life <= 0) 
+                        {
+                          this.onScreen=false;
+                        }
+                };
+            this.controlAnimationSpeed=()=>
+                  {
+                    this.animationSpeedTimers[this.presentAnimationState]+=1;
+                    if(this.animationSpeedTimers[this.presentAnimationState]>=
+                            this.animationSpeeds[this.presentAnimationState] 
+                      )
+                        {
+                        this.animationSpeedTimers[this.presentAnimationState]=0;
+                        return true;
+                        }
+                    return false;
+                  }
+            
+            this.changeAnimation=(anim)=>
+                  {  
+                    
+                    if ((anim=="shoot") && this.presentAnimationState!=1)
+                        {
+                        this.animationCounter=0;
+                        this.presentAnimationState=1;
+                        }
+                    else if ((anim=="idle") && this.presentAnimationState!=0)
+                        {
+                        this.animationCounter=0;
+                        this.presentAnimationState=0;
+                        }
+                  }
+            this.runningAnimation=()=>
+                  {
+                    if(this.presentAnimationState==0) return "idle";
+                    if(this.presentAnimationState==1) return "shoot";
+                    return "unknown";
+                  }
+
+    		this.updateAnimationFrame=()=>
+				  {
+                    if(!this.controlAnimationSpeed()) return;
+				  	this.animationCounter+=1;    									  	
+				  	if(this.animationCounter >= this.animationStates[this.presentAnimationState].length)
+                        {
+                        if(this.animInQueue=="none")
+				  		   this.animationCounter=0;
+                        else
+                            {
+                              this.changeAnimation(this.animInQueue);
+                              this.animInQueue="none";
+                            }
+                        }
+				  };
+            this.drawAndMoveBullets=()=>
+                          {                            
+                            for(let b of this.bulletsShot)
+                                {
+                                    if(!b.onScreen) continue;
+                                    b.dr_w();
+                                    b.move();
+                                }
+                            flushArray(this.bulletsShot);
+                          }
+            this.shoot=()=>
+                    {
+                        if(this.runningAnimation()=="shoot")
+                            {                                
+                                return;
+                            }
+                        this.animInQueue="idle";
+                        this.changeAnimation("shoot");
+                        this.bulletsShot.push(new Bullet(this.collisionBlock.posx+this.posx,
+                                                         this.collisionBlock.posy+this.posy,
+                                                         this.rotangle
+                                                         )
+                                            );
+                    }
+
+    		this.dr_w=()=>
+    				      {
+    				      	if(!this.onScreen) return false;
+                            this.drawAndMoveBullets();
+    				      	ctx.save();
+    						ctx.translate(this.posx-camX, this.posy-camY);
+    						ctx.rotate(this.rotangle*Math.PI/180);
+    						this.drawDependentSubComponents();
+    						ctx.drawImage(
+        								  this.animationStates[this.presentAnimationState][this.animationCounter],
+        								  -this.width / 2,
+        								  -this.height / 2,
+        								  this.width,
+        								  this.height
+      								     ); 
+                                  						  						
+    						ctx.restore();
+    						this.updateAnimationFrame();
+    						this.drawSubComponents();
+                            this.drawUIComponents();
+    				      };
+
+    		this.drawSubComponents=()=>
+						   {
+						   	ctx.save();
+							ctx.translate(this.posx-camX, this.posy-camY);
+							// this.collisionBlock.dr_w();                            
+							ctx.restore(); 
+						   };
+            this.drawUIComponents=()=>
+                            {
+                            this.hBar.dr_w();
+                            }
+            this.drawDependentSubComponents=()=>
+                           {
+                            this.sFeet.dr_w();
+                           };
+    		this.adjustAsPerRotAngle=(x,y)=>
+							{							 
+                            // console.log("x:"+x+" rotangle:"+this.rotangle);
+                             //console.log(`rotangle:${this.rotangle}, and xpos:${len * Math.cos(this.rotangle/180*Math.PI)}`);
+                             let cosine=Math.cos(this.rotangle/180*Math.PI);
+                             let sine  =Math.sin(this.rotangle/180*Math.PI);
+                             return [x*cosine-y*sine,x*sine+y*cosine];							 
+							};
+			this.adjustSubComponents=()=>
+						    {
+                                
+						    	[this.collisionBlock.posx,this.collisionBlock.posy]=
+						    	this.adjustAsPerRotAngle(this.collisionBlock.fixedPosx,this.collisionBlock.fixedPosy);
+						    };
+            this.clickedWithinBounds=()=>
+                            {
+                                if(mouseX > 0 && mouseX < canvas.width)
+                                if(mouseY > 0 && mouseY < canvas.height)
+                                    return true;
+                                return false;
+                            }
+    		this.move=()=>
+    			  		  {
+                            
+                            this.runDoubleTapTimer();
+                            if(mousePressed && this.doubleTapTimer==0 && this.clickedWithinBounds())
+                                { 
+                                    mousePressed=false;
+                                    this.doubleTapTimer+=deltaTime;
+                                }
+
+                            if(this.confirmMouseDown)
+                                { 
+                                    this.confirmMouseDown=false;
+                                    this.stay=false;
+
+                                    this.destinX=mouseX+camX;
+                                    this.destinY=mouseY+camY;
+                                }
+                            this.moveTowardsPoint(this.destinX,this.destinY);
+
+    			  		  }
+
+            this.runDoubleTapTimer=()=>
+                          {
+                            if(this.doubleTapTimer==0) return;
+                            else
+                                {
+                                    this.doubleTapTimer+=deltaTime;
+                                    if(this.doubleTapTimer > 500)
+                                        {
+                                            this.confirmMouseDown=true;
+                                            this.doubleTapTimer=0;
+                                        }
+                                    else if(mousePressed)
+                                        {
+                                            mousePressed=false;                                            
+                                            this.doubleTapTimer=0;
+                                            this.stay=true;
+                                            this.destinX=mouseX+camX;
+                                            this.destinY=mouseY+camY;
+                                            // this.moveTowardsPoint(this.destinX,this.destinY);
+                                            this.shotInQueue=true;
+                                            
+                                        }
+                                }
+                          }
+            this.moveTowardsPoint=(posx,posy)=>
+                          {
+                            // let dirAngle=Math.atan((posy-this.posy)/(posx-this.posx))/Math.PI*180;
+                            // this.rotangle=Lerp(this.rotangle,dirAngle);
+                            
+                            //new
+                            let ysep=posy-this.posy;
+                            let xsep=posx-this.posx;
+                            let rawAngle=Math.atan(Math.abs(ysep)/Math.abs(xsep))/Math.PI*180;
+                            let origAngle=rawAngle;
+                            if(ysep>0 && xsep<0) rawAngle=180-rawAngle;
+                            else if(ysep<0 && xsep<0) rawAngle=180+rawAngle;
+                            else if(ysep<0 && xsep>0) rawAngle=360-rawAngle;
+                            
+
+                            this.rotangle=Lerp(this.rotangle,rawAngle,9);
+                            if(this.shotInQueue && Math.abs(this.rotangle-rawAngle)<0.1 )
+                                {
+                                    this.shoot();
+                                    this.shotInQueue=false;
+                                }
+                            
+                            this.pointMe();
+                            if(DistBween(this.destinX,this.destinY,this.posx,this.posy) >20 && !this.stay)
+                                {
+                                    this.posx=Lerp(this.posx,this.posx+this.velx);
+                                    this.posy=Lerp(this.posy,this.posy+this.vely);
+                                    this.sFeet.changeAnimation("run");
+                                }
+                            else
+                                {
+                                    this.sFeet.changeAnimation("idle");
+                                }
+                            }
+    		this.pointMe=()=>
+    						{
+    							this.velx=this.vel * Math.cos(this.rotangle/180*Math.PI);
+    							this.vely=this.vel * Math.sin(this.rotangle/180*Math.PI);
+    							this.adjustSubComponents();
+    						}
+
+    	}
+    //soldier ends
+
+    function firstdisplay(elem,el)
+        {
+        document.getElementById(el).value=elem.value;
+        soldiersList[0].collisionBlock.posy=elem.value;
+        // debugVar1.width=elem.value;
+        }
+    
+	</script>
+</head>
+
+
+<body>
+	<canvas style='border:3px solid black;' onmousemove="trackMouse(event)">  
+	</canvas>
+    <!-- Debug values starts -->
+    <div style="border:1px solid black;display:flex;justify-content: space-between;background-color: black;">
+        <input type="range" min="-100" max="100" value="1" style="width:500px;" oninput="firstdisplay(this,'col1')">
+        <span>
+            <span style="background-color: black;color:white;">input Name:</span>
+            <input type="text" id="col1" value=0>
+        <span>
+    </div>
+
+    <!-- Debug values ends -->
+	<script>	 	
+	var canvas = document.querySelector('canvas');	
+   	ctx = canvas.getContext('2d');
+   	canvas.width = window.innerWidth-35;
+  	canvas.height = window.innerHeight-100;
+  	let xscale=canvas.width/1501,yscale=canvas.height/654;
+
+	var resize = function () 
+		{
+  		canvas.width = window.innerWidth-35;
+  		canvas.height = window.innerHeight-100;
+		};			
+	window.addEventListener('resize', resize);
+
+	document.onkeypress=function (e)
+					{			
+                    if(e.keyCode==32) spacePress=true;
+					if(e.keyCode==119) upPress=true;
+					if(e.keyCode==100) rightPress=true;
+					if(e.keyCode==115) downPress=true;
+					if(e.keyCode==97) leftPress=true;
+					if(e.keyCode==103) gPress=true;
+					if(e.keyCode==102) fPress=true;
+					if(e.keyCode==13)  enterPress=true;				
+					};
+	document.onkeyup=function (e)
+					{	
+                    if(e.keyCode==32) spacePress=false;			
+					if(e.keyCode==87) upPress=false;
+					if(e.keyCode==68) rightPress=false;
+					if(e.keyCode==83) downPress=false;
+					if(e.keyCode==65) leftPress=false;
+					if(e.keyCode==71) gPress=false;
+					if(e.keyCode==70) fPress=false;
+					if(e.keyCode==13)  enterPress=false;
+					};
+
+	document.onmousedown=function(e)
+					{
+					mousePressed=true;	
+                    // RunDoubleTapDetection();												
+					};	
+	document.onmouseup=function(e)
+					{
+					mousePressed=false;												
+					};
+    var RunDoubleTapDetection=()=>
+                    {
+                        if(mouseDoubleTap) return false;
+                        if(doubleTapTimer==0)
+                            {
+                                doubleTapTimer+=deltaTime;
+                            }
+                        else if(doubleTapTimer<1000)
+                            {
+                                doubleTapTimer=0;
+                                alert("double tap");
+                                mouseDoubleTap=true;
+                            }
+                        else
+                            {
+                                doubleTapTimer=0;
+                            }
+                    };
+    let maxAllowedRoamingX=0.3 * canvas.width;
+    let maxAllowedRoamingY=0.1 * canvas.height;
+    let slackX=0;
+    let slackY=0;
+    var RunCamera=(tgt)=>
+            {
+
+                //adjusting in xdirection starts
+                let roamingDistX=tgt.posx-(camX+canvas.width/2);
+                if(Math.abs(roamingDistX) > maxAllowedRoamingX)
+                    {   
+                      if(roamingDistX > 0)
+                        {
+                            camX=camX+roamingDistX-maxAllowedRoamingX+slackX*maxAllowedRoamingX;
+                        }
+                      else
+                        {
+                            camX=camX+roamingDistX+maxAllowedRoamingX-slackX*maxAllowedRoamingX;
+                        }
+                    }
+                //adjusting in xdirection ends
+                //adjusting in ydirection starts
+                let roamingDistY=tgt.posy-(camY+canvas.height/2);
+                if(Math.abs(roamingDistY) > maxAllowedRoamingY)
+                    {   
+                      if(roamingDistY > 0)
+                        {
+                            camY=camY+roamingDistY-maxAllowedRoamingY+slackY*maxAllowedRoamingY;
+                        }
+                      else
+                        {
+                            camY=camY+roamingDistY+maxAllowedRoamingY-slackY*maxAllowedRoamingY;
+                        }
+                    }
+                //adjusting in ydirection ends
+            };
+    //main Program starts
+    let soldiersList=[],zombiesList=[],bushesList=[];
+   
+
+
+    soldiersList.push(new Soldier(canvas.width/2,canvas.height/2) );
+    zombiesList.push(new Zombie(canvas.width/4,canvas.height/2) );
+    for(let i=0;i<5;i++)
+        for(let j=0;j<5;j++)
+            bushesList.push(new TreeBush(Math.random()*canvas.width,Math.random()*canvas.height,
+                                         Math.floor(Math.random()*2),Math.floor(Math.random()*2)
+                                         )
+                           );
+
+
+   
+    RunDoubleTapTimer=()=>
+                {
+                    if(doubleTapTimer!=0)
+                        doubleTapTimer+=deltaTime;
+                };
+    RunGame=()=>
+    			{
+                    // RunDoubleTapTimer();
+                    if(spacePress)
+                        {
+                        spacePress=false;
+                        pauseGame=!pauseGame;
+                        }
+                   
+                    RunCamera(soldiersList[0]);
+    				for(let x of soldiersList)
+    					{
+    						x.move();
+                            if(!pauseGame)
+                             {
+                              x.dr_w();    						                                
+                             }
+    					}
+                    for(let x of zombiesList)
+                        {    
+                                                   
+                            x.dr_w();
+                            if(!pauseGame)
+                              x.move();
+                        }
+                    for(let x of bushesList)
+                        {
+                            x.dr_w();
+                        }
+    			}
+    //main Program ends
+
+	window.addEventListener('load', 
+							function () 
+									{
+								 	resize();									
+							 		var loop = function () 
+													{										                    					
+													ctx.clearRect(0,0,canvas.width,canvas.height);	
+													ctx.fillStyle = backGroundColor;
+													ctx.fillRect(0,0,canvas.width, canvas.height);
+													RunGame();
+				                                 	};
+					  	     		setInterval(loop, deltaTime);					  		
+									}
+							);
+
+	</script>
+
+	
+</body>

@@ -1,0 +1,447 @@
+<head>
+	
+	<script>
+	let mouseX,mouseY;
+	let camX=0,camY=0;
+	let deltaTime=1000 / 60;
+	let upPress,leftPress,downPress,rightPress,fPress,gPress,enterPress,mousePressed,mouseDoubleTap,spacePress;
+	let mouseClicked;
+	
+	function trackMouse(e)
+		{
+		mouseX=e.clientX;
+		mouseY=e.clientY;
+		};
+    function w2screen(strr = "", px = 20, py = 30) 
+    	{
+	      ctx.font = "40px Haettenschweiler";
+	      ctx.fillStyle = "#FFFFFF";
+	      ctx.fillText(strr, px, py);
+    	}
+
+//hfns starts
+
+    function random(x,y)
+    	{
+    		if(y)
+    		{
+    			return Math.random()*(y-x)+x;
+    		}
+    		return Math.random()*x;
+    	}
+    function r2d(angle) 
+        {
+            return angle/Math.PI * 180;
+        }
+    function d2r(angle)
+        {
+            return angle/180*Math.PI;
+        }
+
+    function VecMult(vec,x)
+    	{
+    		let newVec=vec.copy();
+    		newVec.mult(x);
+    		return newVec;
+    	}
+    function VecDiv(vec,x)
+    	{
+    		let newVec=vec.copy();
+    		newVec.div(x);
+    		return newVec;
+    	}
+    function VecAdd(vec1,vec2)
+    	{
+    		let newVec=vec1.copy();
+    		newVec.set(vec1.x+vec2.x,vec1.y+vec2.y);
+    		return newVec;
+    	}
+    function VecSub(vec1,vec2)
+    	{
+    		let newVec=vec1.copy();
+    		newVec.set(vec1.x-vec2.x,vec1.y-vec2.y);
+    		return newVec;
+    	}
+    function createVector(x,y)
+        {
+            this.x=x;
+            this.y=y;
+            
+            this.copy=()=>
+                {
+                    let newVec=new createVector(this.x,this.y);
+                    return newVec;
+                }
+            this.set=(x,y)=>
+                {
+                    this.x=x;
+                    this.y=y;
+                }
+            this.add=(x)=>
+                {
+                    this.x+=x.x;
+                    this.y+=x.y;
+                }
+            this.sub=(x)=>
+                {
+                    this.x-=x.x;
+                    this.y-=x.y;
+                }
+            this.mult=(x)=>
+                {
+                    this.x*=x;
+                    this.y*=x;
+                }
+            this.div=(x)=>
+                {
+                    this.x/=x;
+                    this.y/=x;
+                }
+            this.normalize=()=>
+                {
+                    let mag=Math.sqrt(this.x**2+this.y**2);
+                    if(mag!=0)
+                    {
+                    this.x=this.x/mag;
+                    this.y=this.y/mag;
+                    }
+                    
+                }
+            this.mag=()=>
+                {
+                    return Math.sqrt(this.x**2+this.y**2);
+                }
+            this.heading=()=>
+                {
+                    let ang=Math.atan2(this.y,this.x)/Math.PI*180;
+                    if(ang < 0) ang+=360;
+                    return ang;
+                }
+        }
+    function flushArray(arr) 
+        {
+        var lis = [];
+        for (var i in arr) 
+            {
+            if (!arr[i].onScreen) lis.push(i);
+            }
+      for (var i in lis) 
+            {
+            arr.splice(lis[i], 1);
+            for (var j in lis) lis[j] -= 1;
+            }
+        }
+    let DistBween=(x1,y1,x2,y2)=>
+                                {
+                                    return Math.sqrt((x1-x2)**2+(y1-y2)**2);
+                                };
+    let Lerp=(startValue,endValue,lerpFac=2)=>
+    								{
+    									return startValue+(endValue-startValue)/lerpFac;
+    								};
+	function collisioncheckz(elem1,elem2)
+				{
+			return (inter_ects(elem1.posx-elem1.width/2,elem1.posy-elem1.height/2,
+							   elem1.width,elem1.height,
+					   		   elem2.posx-elem2.width/2,elem2.posy-elem2.height/2,
+					   		   elem2.width,elem2.height
+					  		  )
+				   );
+				}
+	function collisioncheckzVec(elem1,elem2)
+				{
+			return (inter_ects(elem1.position.x-elem1.width/2,elem1.position.y-elem1.height/2,
+							   elem1.width,elem1.height,
+					   		   elem2.position.x-elem2.width/2,elem2.position.y-elem2.height/2,
+					   		   elem2.width,elem2.height
+					  		  )
+				   );
+				}
+	function circularCollision(elem1,elem2)
+		{
+			let centerSeperation=elem1.position.copy();
+			centerSeperation.sub(elem2.position);
+			centerSeperation=centerSeperation.mag();
+			return centerSeperation < elem1.width/2+elem2.width/2;//kmhere
+		}
+	function inter_ects(q1,q2,ql1,ql2,w1,w2,wl1,wl2)
+				{
+				if(w1>=q1)
+					{
+					if((w1-q1)<ql1)
+						{
+						if(w2>=q2)
+							{
+							if((w2-q2)<ql2) return true;
+							return false;
+							}
+						else
+							{
+							if((q2-w2)<wl2) return true;
+							return false;
+							}
+						}
+					}
+				else
+					{
+					if((q1-w1)<wl1)
+						{
+						if(w2>=q2)
+							{
+							if((w2-q2)<ql2) return true;
+							return false;
+							}
+						else
+							{
+							if((q2-w2)<wl2) return true;
+							return false;
+							}
+						}
+					}
+				}
+
+
+//hfns ends
+
+    
+	</script>
+</head>
+
+
+<body>
+	<canvas style='border:3px solid black;' onmousemove="trackMouse(event)">  
+	</canvas>
+	<script>	 	
+	var canvas = document.querySelector('canvas');
+   	ctx = canvas.getContext('2d');
+   	canvas.width = window.innerWidth-35;
+  	canvas.height = window.innerHeight-100;
+    let xscale=canvas.width/1501;
+    let yscale=canvas.height/654;
+	var resize = function () 
+		{
+  		canvas.width = window.innerWidth-35;
+  		canvas.height = window.innerHeight-100;
+		};			
+	window.addEventListener('resize', resize);
+
+	document.onkeypress=function (e)
+					{			
+
+					if(e.keyCode==119) upPress=true;
+					if(e.keyCode==100) rightPress=true;
+					if(e.keyCode==115) downPress=true;
+					if(e.keyCode==97) leftPress=true;
+					if(e.keyCode==103) gPress=true;
+					if(e.keyCode==102) fPress=true;
+					if(e.keyCode==13)  enterPress=true;				
+					};
+	document.onkeyup=function (e)
+					{					
+					if(e.keyCode==87) upPress=false;
+					if(e.keyCode==68) rightPress=false;
+					if(e.keyCode==83) downPress=false;
+					if(e.keyCode==65) leftPress=false;
+					if(e.keyCode==71) gPress=false;
+					if(e.keyCode==70) fPress=false;
+					if(e.keyCode==13)  enterPress=false;
+					};
+
+	document.onmousedown=function(e)
+					{
+					mousePressed=true;													
+					};	
+	document.onmouseup=function(e)
+					{
+					mousePressed=false;												
+					};
+	let platforms=[],balls=[];
+	let g=new createVector(0,1);
+	let bSpawner=new ballSpawner();
+	let collisionSurfaces=[],movingObjects=[];
+
+	platforms.push(new platform(600*xscale,600*yscale));
+	collisionSurfaces.push(platforms[platforms.length-1]);
+	//balls.push(new ball(canvas.width/2,canvas.height/2));
+	RunGame=()=>
+		{
+			for(let x of platforms)
+				{
+					x.dr_w();
+				}
+			for(let x of balls)
+				{
+					x.dr_w();
+					x.update();
+				}
+			flushArray(balls);
+			bSpawner.update();
+
+		};
+
+	window.addEventListener('load', 
+							function () 
+									{
+								 	resize();									
+							 		var loop = function () 
+													{										                    					
+													ctx.clearRect(0,0,canvas.width,canvas.height);	
+													ctx.fillStyle = '#000000';
+													ctx.fillRect(0,0,canvas.width, canvas.height);											
+													RunGame();		
+
+				                                 	};
+					  	     		setInterval(loop, deltaTime);					  		
+									}
+							);
+
+	function ballSpawner()
+		{
+			this.allowedToSpawn=true;
+			this.update=()=>
+				{
+					if(mousePressed && this.allowedToSpawn)
+						{
+						this.allowedToSpawn=false;
+						balls.push(new ball(mouseX,mouseY));
+						movingObjects.push(balls[balls.length-1]);
+						}
+					else if(!mousePressed)
+						{	
+						this.allowedToSpawn=true;
+						}
+				}
+		}
+
+	function platform(posx,posy)
+		{
+			this.position=new createVector(posx,posy);
+			this.onScreen=true;
+			this.width=500*xscale;
+			this.height=50*yscale;
+            this.xptsOrig=[-0.5, 0.5,0.5,-0.5];
+            this.yptsOrig=[-0.5,-0.5,0.5, 0.5];
+            this.xpts=this.xptsOrig.map(x=>x*this.width);
+            this.ypts=this.yptsOrig.map(x=>x*this.height);
+        this.dr_w= function()
+                {
+                if(!this.onScreen) return false;  
+                            
+                ctx.save();
+                ctx.translate(this.position.x-camX,this.position.y-camY);              
+                ctx.fillStyle="#FF0000";
+                ctx.strokeStyle="#000000";
+                ctx.beginPath();
+                ctx.moveTo(this.xpts[0],this.ypts[0]);
+                for(var g=1;g<this.xpts.length;g++)
+                    ctx.lineTo(this.xpts[g],this.ypts[g]);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();               
+                ctx.restore();    
+                
+                };  
+		}
+	
+	function applyDamping(obj)
+		{ 
+			//return;			
+			let force=obj.velocity.copy();
+			let dConst=0.01;
+			force.normalize();
+			force.mult(-1*dConst*obj.mass);
+			obj.applyForce(force);
+		}
+	function transferMomentum(obj1,obj2)
+		{
+			let deltaV=VecSub(obj1.velocity,obj2.velocity);
+			obj1.velocity.sub(deltaV);
+			obj2.velocity.add(deltaV);
+		}
+
+	function ball(posx,posy)
+		{
+			this.position=new createVector(posx,posy);
+			this.onScreen=true;
+			this.width=80*xscale;
+			this.height=this.width;
+			this.velocity=new createVector(0,0);
+			this.acceleration=new createVector(0,0);
+			this.mass=1;
+			this.allowed=true;
+
+			this.update=()=>
+				{
+					if(!this.onScreen) return;
+					this.applyForce(VecMult(g,this.mass));
+					applyDamping(this);
+					this.velocity.add(this.acceleration);
+					this.position.add(this.velocity);
+					this.acceleration.mult(0);
+					this.checkLimits();
+					this.checkOutCollisionSurfaces();
+					this.cWMO();
+				}
+			this.applyForce=(f)=>
+				{
+					//console.log(JSON.stringify(g.mult(2)));
+					let a=VecDiv(f,this.mass);											
+					this.acceleration.add(a);					
+				}
+			this.checkLimits=()=>
+				{
+					if(this.position.x > canvas.width || this.position.x < 0 ||
+						this.position.y > canvas.height || this.position.y < 0
+					  )
+						this.onScreen=false;
+				}
+
+			this.checkOutCollisionSurfaces=()=>
+				{
+				for(let x of collisionSurfaces)
+					{
+					if(!x.onScreen) return;
+					if(collisioncheckzVec(this,x))
+						{								
+						this.position.sub(this.velocity);
+						this.velocity.set(-this.velocity.x,-this.velocity.y);
+						}
+					}
+				}
+			this.cWMO=()=>
+				{
+					for(let x of movingObjects)
+					{
+						if(!x.onScreen) continue;
+						if(x==this) continue;
+						if(collisioncheckzVec(this,x))
+							{
+								this.position.sub(this.velocity);
+								transferMomentum(this,x);
+							}
+					}
+				}
+
+			
+	        this.dr_w= function()
+	                {
+	                if(!this.onScreen) return false;  
+	                            
+	                ctx.save();
+	                ctx.translate(this.position.x-camX,this.position.y-camY);              
+	                ctx.fillStyle="#FFFF00";
+	                ctx.strokeStyle="#000000";
+	                ctx.beginPath();
+	                ctx.arc(0,0,this.width/2,0,2*Math.PI);
+	                ctx.closePath();
+	                ctx.fill();
+	                ctx.stroke();               
+	                ctx.restore();    
+	                
+	                }; 
+		}
+
+	</script>
+
+	
+</body>

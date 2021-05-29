@@ -1,0 +1,661 @@
+<head>
+	<script>
+	let mouseX,mouseY;
+	let camX=0,camY=0;
+	let upPress,leftPress,downPress,rightPress,fPress,gPress,enterPress,mousePressed,mouseDoubleTap,spacePress;
+    let pauseGame=false;
+    let doubleTapTimer=0;
+	let backGroundColor="#16a1b3";
+    let deltaTime=1000 / 60;
+    let debugVar1;
+
+	function trackMouse(e)
+		{
+		mouseX=e.clientX;
+		mouseY=e.clientY;
+
+		};
+    function w2screen(strr = "", px = 20, py = 30) 
+    	{
+	      ctx.font = "40px Haettenschweiler";
+	      ctx.fillStyle = "#FFFFFF";
+	      ctx.fillText(strr, px, py);
+    	}
+
+    //hfns
+    function flushArray(arr) 
+        {
+        var lis = [];
+        for (var i in arr) 
+            {
+            if (!arr[i].onScreen) lis.push(i);
+            }
+      for (var i in lis) 
+            {
+            arr.splice(lis[i], 1);
+            for (var j in lis) lis[j] -= 1;
+            }
+        }
+    let DistBween=(x1,y1,x2,y2)=>
+                                {
+                                    return Math.sqrt((x1-x2)**2+(y1-y2)**2);
+                                };
+    let Lerp=(startValue,endValue,lerpFac=2)=>
+    								{
+    									return startValue+(endValue-startValue)/lerpFac;
+    								};
+	function collisioncheckz(elem1,elem2)
+				{
+			return (inter_ects(elem1.posx-elem1.width/2,elem1.posy-elem1.height/2,
+							   elem1.width,elem1.height,
+					   		   elem2.posx-elem2.width/2,elem2.posy-elem2.height/2,
+					   		   elem2.width,elem2.height
+					  		  )
+				   );
+				}
+	function inter_ects(q1,q2,ql1,ql2,w1,w2,wl1,wl2)
+				{
+				if(w1>=q1)
+					{
+					if((w1-q1)<ql1)
+						{
+						if(w2>=q2)
+							{
+							if((w2-q2)<ql2) return true;
+							return false;
+							}
+						else
+							{
+							if((q2-w2)<wl2) return true;
+							return false;
+							}
+						}
+					}
+				else
+					{
+					if((q1-w1)<wl1)
+						{
+						if(w2>=q2)
+							{
+							if((w2-q2)<ql2) return true;
+							return false;
+							}
+						else
+							{
+							if((q2-w2)<wl2) return true;
+							return false;
+							}
+						}
+					}
+				}
+
+    //hfns
+
+    //soldier feet starts //subcomponent no camera
+    function SoldierFeet(posx,posy)
+    	{
+    		this.posx=posx;
+    		this.posy=posy;
+    		this.onScreen=true;	
+    		this.width=60*xscale;
+    		this.height=40*yscale;
+    		this.animationCounter=0;
+    		//loading idleanimation images starts
+    		this.idle_images=[];    		
+    		for(i=0;i<1;i++)
+    			{
+    			let imgx=new Image();     			         
+    		    imgx.src=`./sprites/soldierFeet/idle/survivor-idle_${i}.png`;
+    			this.idle_images.push(imgx);
+    			}
+    		//loading idleanimation images ends
+    		//loading idleanimation images starts
+    		this.run_images=[];    		
+    		for(i=0;i<20;i++)
+    			{
+    			let imgx=new Image();     			         
+    		    imgx.src=`./sprites/soldierFeet/run/survivor-run_${i}.png`;
+    			this.run_images.push(imgx);
+    			}
+    		//loading runanimation images ends
+    		this.presentAnimationState=1;
+    		this.animationStates=[this.idle_images,this.run_images];
+            this.changeAnimation=(anim)=>
+                  {                    
+                    if ((anim=="run") && this.presentAnimationState!=1)
+                        {
+                        this.animationCounter=0;
+                        this.presentAnimationState=1;
+                        }
+                    else if ((anim=="idle") && this.presentAnimationState!=0)
+                        {
+                        this.animationCounter=0;
+                        this.presentAnimationState=0;
+                        }
+                  }
+
+            this.updateAnimationFrame=()=>
+                  {
+                    this.animationCounter+=1;                                           
+                    if(this.animationCounter >= this.animationStates[this.presentAnimationState].length)
+                        this.animationCounter=0;
+                  };
+
+            this.dr_w=()=>
+                  {
+                    if(!this.onScreen) return false;
+                    ctx.save();
+                    ctx.translate(this.posx, this.posy);
+                    // ctx.rotate(this.rotangle*Math.PI/180);                    
+                    ctx.drawImage(
+                                  this.animationStates[this.presentAnimationState][this.animationCounter],
+                                  -this.width / 2,
+                                  -this.height / 2,
+                                  this.width,
+                                  this.height
+                                 );                                                     
+                    ctx.restore();
+                    this.updateAnimationFrame();                    
+
+                  };
+
+    	}
+    //soldier feet ends
+    //bullet starts
+    function Bullet(posx,posy,ang)
+        {
+            this.posx=posx;
+            this.posy=posy;
+            this.onScreen=true;
+            this.width=10*xscale;
+            this.height=10*yscale;
+            this.speed=10;
+            this.ang=ang;            
+            this.velx=this.speed * Math.cos(this.ang/180*Math.PI);
+            this.vely=this.speed * Math.sin(this.ang/180*Math.PI);
+            this.imgx=new Image();
+            this.imgx.src='./sprites/redcube.png';
+            
+            this.move=()=>
+                          {
+                            if(!this.onScreen) return;                            
+                            this.posx+=this.velx;
+                            this.posy+=this.vely;
+                            this.checkBounds();
+                          };
+            this.checkBounds=()=>
+                          {
+                            if(this.posx-camX > canvas.width || this.posy-camY > canvas.height)
+                                this.onScreen=false;
+                          };
+            this.dr_w=()=>
+                          {
+                            if(!this.onScreen) return false;                            
+                            ctx.save();
+                            ctx.translate(this.posx-camX, this.posy-camY);                            
+                            ctx.drawImage(
+                                          this.imgx,
+                                          -this.width / 2,
+                                          -this.height / 2,
+                                          this.width,
+                                          this.height
+                                         );                         
+                            ctx.restore();                          
+
+                          };
+        }
+    //bullet ends
+    //redblock starts
+    function RedBlock(posx,posy)
+    	{
+    		this.posx=posx;
+    		this.posy=posy;
+            this.fixedPosx=posx;
+            this.fixedPosy=posy;
+    		this.onScreen=true;
+    		this.width=10*xscale;
+    		this.height=10*yscale;
+    		this.imgx=new Image();
+    		this.imgx.src='./sprites/redcube.png';
+    		this.onScreen=true;
+    		this.dr_w=()=>
+    				      {
+    				      	if(!this.onScreen) return false;    				      	
+    				      	ctx.save();
+    						ctx.translate(this.posx, this.posy);    						
+    						ctx.drawImage(
+        								  this.imgx,
+        								  -this.width / 2,
+        								  -this.height / 2,
+        								  this.width,
+        								  this.height
+      								     );    						
+    						ctx.restore();   						
+
+    				      };
+
+
+    	}
+    //redblock ends
+    //Zombie starts
+    
+    function Zombie(posx,posy)
+        {
+            this.posx=posx;
+            this.posy=posy;
+            this.onScreen=true;
+            this.width=120*xscale;
+            this.height=120*yscale;
+            this.vel=4* Math.sqrt(xscale**2+yscale**2);
+            this.velx=0;
+            this.vely=this.vel;
+            this.rotangle=0;
+            this.rotSpeed=1;            
+            this.collisionBlock=new RedBlock(60*xscale,29*yscale); 
+            this.animationCounter=0; 
+
+            this.idle_images=[];
+            for(i=0;i<17;i++)
+                {
+                let imgx=new Image();                        
+                imgx.src=`./sprites/Zombie/idle/skeleton-idle_${i}.png`;
+                this.idle_images.push(imgx);
+                }        
+            this.attack_images=[];
+            for(i=0;i<9;i++)
+                {
+                let imgx=new Image();                        
+                imgx.src=`./sprites/Zombie/attack/skeleton-attack_${i}.png`;
+                this.attack_images.push(imgx);
+                }  
+            this.move_images=[];
+            for(i=0;i<10;i++)
+                {
+                let imgx=new Image();                        
+                imgx.src=`./sprites/Zombie/move/skeleton-move_${i}.png`;
+                this.move_images.push(imgx);
+                } 
+                   
+           
+        }
+        
+    //Zombie ends
+
+    //solider starts
+    function Soldier(posx,posy)
+    	{
+    		this.posx=posx;
+    		this.posy=posy;
+    		this.onScreen=true;
+    		this.width=120*xscale;
+    		this.height=120*yscale;
+    		this.vel=4* Math.sqrt(xscale**2+yscale**2);
+    		this.velx=0;
+    		this.vely=this.vel;
+    		this.rotangle=0;
+    		this.rotSpeed=1;
+            this.doubleTapTimer=0;
+            this.confirmMouseDown=false;
+    		this.collisionBlock=new RedBlock(60*xscale,29*yscale);
+            this.sFeet=new SoldierFeet(20*xscale,0);
+            this.destinX=canvas.width;
+            this.destinY=canvas.height/2;     
+            this.bulletsShot=[];
+            this.stay=false; 
+            this.shotInQueue=false;     
+            this.animInQueue="none";
+
+    		this.animationCounter=0;
+    		this.idle_images=[];
+    		for(i=0;i<19;i++)
+    			{
+    			let imgx=new Image();    			         
+    		    imgx.src=`./sprites/soldier/idle/survivor-idle_handgun_${i}.png`;
+    			this.idle_images.push(imgx);
+    			}
+            this.shootImages=[];
+            for(i=0;i<3;i++)
+                {
+                let imgx=new Image();                          
+                imgx.src=`./sprites/soldier/shoot/survivor-shoot_handgun_${i}.png`;
+                this.shootImages.push(imgx);
+                }
+
+    		this.presentAnimationState=0;
+    		this.animationStates=[this.idle_images,this.shootImages];
+            this.changeAnimation=(anim)=>
+                  {                    
+                    if ((anim=="shoot") && this.presentAnimationState!=1)
+                        {
+                        this.animationCounter=0;
+                        this.presentAnimationState=1;
+                        }
+                    else if ((anim=="idle") && this.presentAnimationState!=0)
+                        {
+                        this.animationCounter=0;
+                        this.presentAnimationState=0;
+                        }
+                  }
+            this.runningAnimation=()=>
+                  {
+                    if(this.presentAnimationState==0) return "idle";
+                    if(this.presentAnimationState==1) return "shoot";
+                    return "unknown";
+                  }
+
+    		this.updateAnimationFrame=()=>
+				  {
+				  	this.animationCounter+=1;    									  	
+				  	if(this.animationCounter >= this.animationStates[this.presentAnimationState].length)
+                        {
+                        if(this.animInQueue=="none")
+				  		   this.animationCounter=0;
+                        else
+                            {
+                              this.changeAnimation(this.animInQueue);
+                              this.animInQueue="none";
+                            }
+                        }
+				  };
+            this.drawAndMoveBullets=()=>
+                          {                            
+                            for(let b of this.bulletsShot)
+                                {
+                                    if(!b.onScreen) continue;
+                                    b.dr_w();
+                                    b.move();
+                                }
+                            flushArray(this.bulletsShot);
+                          }
+            this.shoot=()=>
+                    {
+                        if(this.runningAnimation()=="shoot")
+                            {                                
+                                return;
+                            }
+                        this.animInQueue="idle";
+                        this.changeAnimation("shoot");
+                        this.bulletsShot.push(new Bullet(this.collisionBlock.posx+this.posx,
+                                                         this.collisionBlock.posy+this.posy,
+                                                         this.rotangle
+                                                         )
+                                            );
+                    }
+
+    		this.dr_w=()=>
+    				      {
+    				      	if(!this.onScreen) return false;
+                            this.drawAndMoveBullets();
+    				      	ctx.save();
+    						ctx.translate(this.posx-camX, this.posy-camY);
+    						ctx.rotate(this.rotangle*Math.PI/180);
+    						this.drawDependentSubComponents();
+    						ctx.drawImage(
+        								  this.animationStates[this.presentAnimationState][this.animationCounter],
+        								  -this.width / 2,
+        								  -this.height / 2,
+        								  this.width,
+        								  this.height
+      								     ); 
+                                  						  						
+    						ctx.restore();
+    						this.updateAnimationFrame();
+    						this.drawSubComponents();
+
+    				      };
+
+    		this.drawSubComponents=()=>
+						   {
+						   	ctx.save();
+							ctx.translate(this.posx-camX, this.posy-camY);
+							this.collisionBlock.dr_w();
+							ctx.restore(); 
+						   };
+            this.drawDependentSubComponents=()=>
+                           {
+                            this.sFeet.dr_w();
+                           };
+    		this.adjustAsPerRotAngle=(x,y)=>
+							{							 
+                            // console.log("x:"+x+" rotangle:"+this.rotangle);
+                             //console.log(`rotangle:${this.rotangle}, and xpos:${len * Math.cos(this.rotangle/180*Math.PI)}`);
+                             let cosine=Math.cos(this.rotangle/180*Math.PI);
+                             let sine  =Math.sin(this.rotangle/180*Math.PI);
+                             return [x*cosine-y*sine,x*sine+y*cosine];							 
+							};
+			this.adjustSubComponents=()=>
+						    {
+                                
+						    	[this.collisionBlock.posx,this.collisionBlock.posy]=
+						    	this.adjustAsPerRotAngle(this.collisionBlock.fixedPosx,this.collisionBlock.fixedPosy);
+						    };
+            this.clickedWithinBounds=()=>
+                            {
+                                if(mouseX > 0 && mouseX < canvas.width)
+                                if(mouseY > 0 && mouseY < canvas.height)
+                                    return true;
+                                return false;
+                            }
+    		this.move=()=>
+    			  		  {
+                            
+                            this.runDoubleTapTimer();
+                            if(mousePressed && this.doubleTapTimer==0 && this.clickedWithinBounds())
+                                { 
+                                    mousePressed=false;
+                                    this.doubleTapTimer+=deltaTime;
+                                }
+
+                            if(this.confirmMouseDown)
+                                { 
+                                    this.confirmMouseDown=false;
+                                    this.stay=false;
+
+                                    this.destinX=mouseX;
+                                    this.destinY=mouseY;
+                                }
+                            this.moveTowardsPoint(this.destinX,this.destinY);
+
+    			  		  }
+
+            this.runDoubleTapTimer=()=>
+                          {
+                            if(this.doubleTapTimer==0) return;
+                            else
+                                {
+                                    this.doubleTapTimer+=deltaTime;
+                                    if(this.doubleTapTimer > 500)
+                                        {
+                                            this.confirmMouseDown=true;
+                                            this.doubleTapTimer=0;
+                                        }
+                                    else if(mousePressed)
+                                        {
+                                            mousePressed=false;                                            
+                                            this.doubleTapTimer=0;
+                                            this.stay=true;
+                                            this.destinX=mouseX;
+                                            this.destinY=mouseY;
+                                            // this.moveTowardsPoint(this.destinX,this.destinY);
+                                            this.shotInQueue=true;
+                                            
+                                        }
+                                }
+                          }
+            this.moveTowardsPoint=(posx,posy)=>
+                          {
+                            // let dirAngle=Math.atan((posy-this.posy)/(posx-this.posx))/Math.PI*180;
+                            // this.rotangle=Lerp(this.rotangle,dirAngle);
+                            
+                            //new
+                            let ysep=posy-this.posy;
+                            let xsep=posx-this.posx;
+                            let rawAngle=Math.atan(Math.abs(ysep)/Math.abs(xsep))/Math.PI*180;
+                            let origAngle=rawAngle;
+                            if(ysep>0 && xsep<0) rawAngle=180-rawAngle;
+                            else if(ysep<0 && xsep<0) rawAngle=180+rawAngle;
+                            else if(ysep<0 && xsep>0) rawAngle=360-rawAngle;
+                            
+
+                            this.rotangle=Lerp(this.rotangle,rawAngle,9);
+                            if(this.shotInQueue && Math.abs(this.rotangle-rawAngle)<0.1 )
+                                {
+                                    this.shoot();
+                                    this.shotInQueue=false;
+                                }
+                            
+                            this.pointMe();
+                            if(DistBween(this.destinX,this.destinY,this.posx,this.posy) >20 && !this.stay)
+                                {
+                                    this.posx=Lerp(this.posx,this.posx+this.velx);
+                                    this.posy=Lerp(this.posy,this.posy+this.vely);
+                                    this.sFeet.changeAnimation("run");
+                                }
+                            else
+                                {
+                                    this.sFeet.changeAnimation("idle");
+                                }
+                            }
+    		this.pointMe=()=>
+    						{
+    							this.velx=this.vel * Math.cos(this.rotangle/180*Math.PI);
+    							this.vely=this.vel * Math.sin(this.rotangle/180*Math.PI);
+    							this.adjustSubComponents();
+    						}
+
+    	}
+    //soldier ends
+
+    function firstdisplay(elem,el)
+        {
+        document.getElementById(el).value=elem.value;
+        soldiersList[0].collisionBlock.posy=elem.value;
+        // debugVar1.width=elem.value;
+        }
+    
+	</script>
+</head>
+
+
+<body>
+	<canvas style='border:3px solid black;' onmousemove="trackMouse(event)">  
+	</canvas>
+    <!-- Debug values starts -->
+    <div style="border:1px solid black;display:flex;justify-content: space-between;background-color: black;">
+        <input type="range" min="-100" max="100" value="1" style="width:500px;" oninput="firstdisplay(this,'col1')">
+        <span>
+            <span style="background-color: black;color:white;">input Name:</span>
+            <input type="text" id="col1" value=0>
+        <span>
+    </div>
+
+    <!-- Debug values ends -->
+	<script>	 	
+	var canvas = document.querySelector('canvas');	
+   	ctx = canvas.getContext('2d');
+   	canvas.width = window.innerWidth-35;
+  	canvas.height = window.innerHeight-100;
+  	let xscale=canvas.width/1501,yscale=canvas.height/654;
+
+	var resize = function () 
+		{
+  		canvas.width = window.innerWidth-35;
+  		canvas.height = window.innerHeight-100;
+		};			
+	window.addEventListener('resize', resize);
+
+	document.onkeypress=function (e)
+					{			
+                    if(e.keyCode==32) spacePress=true;
+					if(e.keyCode==119) upPress=true;
+					if(e.keyCode==100) rightPress=true;
+					if(e.keyCode==115) downPress=true;
+					if(e.keyCode==97) leftPress=true;
+					if(e.keyCode==103) gPress=true;
+					if(e.keyCode==102) fPress=true;
+					if(e.keyCode==13)  enterPress=true;				
+					};
+	document.onkeyup=function (e)
+					{	
+                    if(e.keyCode==32) spacePress=false;			
+					if(e.keyCode==87) upPress=false;
+					if(e.keyCode==68) rightPress=false;
+					if(e.keyCode==83) downPress=false;
+					if(e.keyCode==65) leftPress=false;
+					if(e.keyCode==71) gPress=false;
+					if(e.keyCode==70) fPress=false;
+					if(e.keyCode==13)  enterPress=false;
+					};
+
+	document.onmousedown=function(e)
+					{
+					mousePressed=true;	
+                    // RunDoubleTapDetection();												
+					};	
+	document.onmouseup=function(e)
+					{
+					mousePressed=false;												
+					};
+    var RunDoubleTapDetection=()=>
+                    {
+                        if(mouseDoubleTap) return false;
+                        if(doubleTapTimer==0)
+                            {
+                                doubleTapTimer+=deltaTime;
+                            }
+                        else if(doubleTapTimer<1000)
+                            {
+                                doubleTapTimer=0;
+                                alert("double tap");
+                                mouseDoubleTap=true;
+                            }
+                        else
+                            {
+                                doubleTapTimer=0;
+                            }
+                    };
+    //main Program starts
+    let soldiersList=[];
+    soldiersList.push(new Soldier(canvas.width/2,canvas.height/2) );
+    RunDoubleTapTimer=()=>
+                {
+                    if(doubleTapTimer!=0)
+                        doubleTapTimer+=deltaTime;
+                };
+    RunGame=()=>
+    			{
+                    // RunDoubleTapTimer();
+                    if(spacePress)
+                        {
+                        spacePress=false;
+                        pauseGame=!pauseGame;
+                        }
+
+    				for(let x of soldiersList)
+    					{
+    						x.dr_w();
+                            if(!pauseGame)
+    						x.move();
+    					}
+    			}
+    //main Program ends
+
+	window.addEventListener('load', 
+							function () 
+									{
+								 	resize();									
+							 		var loop = function () 
+													{										                    					
+													ctx.clearRect(0,0,canvas.width,canvas.height);	
+													ctx.fillStyle = backGroundColor;
+													ctx.fillRect(0,0,canvas.width, canvas.height);
+													RunGame();
+				                                 	};
+					  	     		setInterval(loop, deltaTime);					  		
+									}
+							);
+
+	</script>
+
+	
+</body>
