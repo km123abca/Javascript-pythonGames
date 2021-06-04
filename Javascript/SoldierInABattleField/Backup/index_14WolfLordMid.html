@@ -6,7 +6,7 @@
     let pauseGame=false;
     let doubleTapTimer=0;
 	let backGroundColor="#16a1b3";
-    let deltaTime=1000 / 60;
+    let deltaTime=1000/60;
     let debugVar1;
 
 	function trackMouse(e)
@@ -215,6 +215,78 @@
 
     	}
     //soldier feet ends
+    //darkball starts
+    function DarkBall(posx,posy,angle)
+        {
+            this.posx=posx;
+            this.posy=posy;
+            this.onScreen=true;
+            this.vel=8*xscale;
+            this.velx=this.vel * Math.cos(d2r(angle));
+            this.vely=this.vel * Math.sin(d2r(angle));
+            this.lifeTimex=4;
+            this.lifeTimerx=0;
+            this.lastPointx=this.posx;
+            this.lastPointy=this.posy;
+            this.gap=50*xscale;
+            this.n=0;
+            this.width=100*xscale;
+            this.height=100*yscale;
+            this.checkLife=()=>
+                {
+                    this.lifeTimerx+=deltaTime;
+                    
+                    
+                    if(this.lifeTimerx > this.lifeTimex * 1000)
+                        {
+                            this.onScreen=false;
+                        }
+                }
+            this.move=()=>
+                {
+                    this.posx+=this.velx;
+                    this.posy+=this.vely;
+                }
+            this.checkSmoke=()=>
+                {
+                    this.n+=1;
+                    if(this.n > 50) this.onScreen=false;
+                }
+            this.inflictDamage=()=>
+                {
+                    for(let x of soldiersList)
+                        {
+                            if(!x.onScreen) return;
+                            if(collisioncheckz(this,x.boxCollider))
+                                {
+                                    x.takeDamage(50);
+                                    this.onScreen=false;
+                                }
+                        }
+                }
+            this.lightUpPath=()=>
+                {
+                    
+                    if(DistBween(this.posx,this.posy,this.lastPointx,this.lastPointy) > this.gap)
+                        {
+                        spawnDustClouds(this.posx,this.posy,25,true);
+                        this.checkSmoke();
+                        this.lastPointx=this.posx;
+                        this.lastPointy=this.posy;
+                        }
+                }
+            this.update=()=>
+                {
+                    if(!this.onScreen) return;
+                    this.move();
+                    this.checkLife();
+                    this.lightUpPath();
+                    this.inflictDamage();
+                }
+
+
+        }
+    //darkball ends
     //bullet starts
     function Bullet(posx,posy,ang)
         {
@@ -250,6 +322,14 @@
                                 }
                         }
                     for(let z of spheresList)
+                        {
+                            if(collisioncheckz(this,z))
+                                {
+                                    z.takeDamage(10);
+                                    this.onScreen=false;
+                                }
+                        }
+                    for(let z of wolfList)
                         {
                             if(collisioncheckz(this,z))
                                 {
@@ -546,7 +626,7 @@
         }
     //redblockdyn ends
     //DustCloud starts
-    function DustCloud(posx,posy)
+    function DustCloud(posx,posy,dark=false)
         {
             this.posx=posx;
             this.posy=posy;
@@ -558,7 +638,10 @@
             this.width=50*xscale;
             this.height=50*yscale;
             this.imgx=new Image();
-            this.imgx.src='./sprites/cloud-1.png';
+            if(!dark)
+                this.imgx.src='./sprites/cloud-1.png';
+            else
+                this.imgx.src='./sprites/cloud-1dark.png';  
             this.move=()=>
                 {
                     if(!this.onScreen) return false; 
@@ -589,10 +672,10 @@
         }
     //DustCloud ends
     
-    let spawnDustClouds=(posx,posy,n)=>
+    let spawnDustClouds=(posx,posy,n,dark=false)=>
         {
             for(let i=0;i < n;i++)
-                dustCloudsList.push(new DustCloud(posx,posy));
+                dustCloudsList.push(new DustCloud(posx,posy,dark));
         }
     //gamecontroller starts
     function GameController()
@@ -681,7 +764,7 @@
                     }
                     else if(this.zombieUp && zombiesList.length==0 && this.sphereCount<1)
                     {
-                        console.log("sphere sphere");
+                        //console.log("sphere sphere");
                         this.SpawnSphere();
                     }
                 }
@@ -1751,6 +1834,475 @@
 
         }
     //major damage circle ends
+    //spitfire starts
+    function SpitFireBlock(posx,posy,n)
+        {
+            this.posx=posx;
+            this.posy=posy;
+            this.spitFires=[];            
+            for(let i=0;i <n;i++)
+                this.spitFires.push(new SpitFire(this.posx,this.posy,360/n*i));
+            this.onScreen=true;
+            this.update=()=>
+                {
+                    if(!this.onScreen) return;
+                    for(let x of this.spitFires)
+                        {
+                            x.dr_w();
+                            if(!pauseGame)
+                                x.move();
+                        }
+                    flushArray(this.spitFires);
+                    if(this.spitFires.length==0) this.onScreen=false;
+                }
+        }    
+    function SpitFire(posx,posy,angle)
+        {
+            this.posx=posx;
+            this.posy=posy;
+            this.onScreen=true;
+            this.rotangle=0;
+            this.width=80*xscale;
+            this.height=80*yscale;
+            this.maxWidth=this.width;
+            this.maxHeight=this.height;
+            this.vel=2* Math.sqrt(xscale**2+yscale**2);
+            this.velx=this.vel*Math.cos(angle/180*Math.PI);
+            this.vely=this.vel*Math.sin(angle/180*Math.PI); 
+            this.imgx=new Image();
+            this.imgx.src="./sprites/fireball.png";
+            this.lifeMeter=0;
+            this.lifeTime=4;            
+            this.move=()=>
+                {
+                    this.posx+=this.velx;
+                    this.posy+=this.vely;
+                    this.rotangle+=2;
+                    if(this.rotangle > 360) this.rotangle-=360;
+                    this.lifeMeter+=deltaTime;
+
+                    this.width*=0.98;
+                    this.height*=0.98;
+                    this.checkForCollisions();
+                    if(this.lifeMeter > this.lifeTime*1000)
+                        {
+                        this.onScreen=false;                        
+                        }
+                }
+            this.checkForCollisions=()=>
+                {
+                    for(let x of soldiersList)
+                        {
+                            if(!this.onScreen) return;
+                            if(collisioncheckz(this,x.boxCollider))
+                                {
+                                    this.onScreen=false;
+                                    x.takeDamage(this.width/this.maxWidth*50);
+                                }
+                        }
+                }
+            this.dr_w=()=>
+              {
+                if(!this.onScreen) return false;                                                                                
+                ctx.save();
+                ctx.translate(this.posx-camX, this.posy-camY);
+                ctx.rotate(this.rotangle*Math.PI/180);                
+                ctx.drawImage(
+                              this.imgx,
+                              -this.width/2,
+                              -this.height/2,
+                              this.width,
+                              this.height
+                             );                                                                    
+                ctx.restore();                     
+
+              };
+        }
+    //spitfire ends
+    //WolfLord starts
+    function WolfLord(posx,posy)
+        {
+            this.posx=posx;
+            this.posy=posy;
+            this.onScreen=true;
+            this.rotangle=0;
+            this.animInQueue="none";
+            this.vel=2* Math.sqrt(xscale**2+yscale**2);
+            this.velx=0;
+            this.vely=0;            
+            this.presentAnimationState=3;
+            this.state="pursue";
+            this.targetx=soldiersList[0];
+            this.width=200;
+            this.height=200;
+            this.targetProximDistance=200*xscale;
+            this.attackTimers={"spit":0,"dark":0};
+            this.attackTimersMax={"spit":3,"dark":6};
+            this.spitFireBlocks=[];
+            this.darkBalls=[];
+            //within image params starts
+            this.attackAnimInfo={"xoffset":64,"yoffset":64,"maxXoffset":192,"maxYoffset":192};
+            this.woundedAnimInfo={"xoffset":64,"yoffset":64,"maxXoffset":192,"maxYoffset":192};
+            this.deathAnimInfo={"xoffset":64,"yoffset":64,"maxXoffset":192,"maxYoffset":448};
+            this.moveAnimInfo={"xoffset":64,"yoffset":64,"maxXoffset":192,"maxYoffset":192};
+            //within image params ends
+            this.animationSpeedTimers=[0,0,0,0];
+            this.animationSpeeds=[4,4,5,4];
+            this.animationStates=[];
+            this.maxLife=50;
+            this.life=this.maxLife;
+            //healthbar vars starts
+            this.hBar=new HealthBar(-100*xscale,-30*yscale,50*xscale,5*yscale,this.maxLife);
+            this.healthBarVisible=true;
+            this.healthBarTimer=0;
+            this.maxHealthBarTimer=2000;
+            //healthbar vars ends
+            //loading images starts
+
+            //this.imgy=new Image();
+            //this.imgy.src="./sprites/WolfBeast/"+"wolfbeast-move";
+
+            let inms=["wolfbeast-attack.png","wolfbeast-attack-wounded.png","wolfbeast-death.png","wolfbeast-move.png"];
+            for(let imgName of inms)
+                {
+                this.imgx=new Image();
+                this.imgx.src="./sprites/WolfBeast/"+imgName;                
+                this.animationStates.push(this.imgx); 
+                }
+
+            //loading images ends
+            this.xWithin=0;
+            this.yWithin=0;
+            
+            this.animationInfo=[this.attackAnimInfo,this.woundedAnimInfo,this.deathAnimInfo,this.moveAnimInfo];
+            this.changeAnimation=(anim)=>
+                  {                    
+                    if ((anim=="attack") && this.presentAnimationState!=0)
+                        {
+                                    this.xWithin=0;
+                                    this.yWithin=0;
+                        this.presentAnimationState=0;
+                        }
+                    else if ((anim=="wounded") && this.presentAnimationState!=1)
+                        {
+                                    this.xWithin=0;
+                                    this.yWithin=0;
+                        this.presentAnimationState=1;
+                        }
+                    else if ((anim=="death") && this.presentAnimationState!=2)
+                        {
+                                    this.xWithin=0;
+                                    this.yWithin=0;
+                        this.presentAnimationState=2;
+                        }
+                    else if ((anim=="move") && this.presentAnimationState!=3)
+                        {
+                                    this.xWithin=0;
+                                    this.yWithin=0;
+                        this.presentAnimationState=3;
+                        }
+                  }
+
+            this.runningAnimation=()=>
+                  {
+                    if(this.presentAnimationState==0) return "attack";
+                    if(this.presentAnimationState==1) return "wounded";
+                    if(this.presentAnimationState==2) return "death";
+                    if(this.presentAnimationState==3) return "move";
+                    return "unknown";
+                  }
+
+            this.updateAnimationFrame=()=>
+                {
+                    if(!this.controlAnimationSpeed()) return;
+                    this.xWithin+=this.animationInfo[this.presentAnimationState].xoffset;
+                    if(this.xWithin > this.animationInfo[this.presentAnimationState].maxXoffset)
+                        {
+                            this.xWithin=0;
+                            this.yWithin+=this.animationInfo[this.presentAnimationState].yoffset;
+                            if(this.yWithin > this.animationInfo[this.presentAnimationState].maxYoffset)
+                                {
+                                if(this.animInQueue=="none")
+                                    this.yWithin=0;
+                                else
+                                    {
+                                    this.changeAnimation(this.animInQueue);
+                                    this.animInQueue="none";
+                                    }
+                                }
+                        }
+                };
+            this.controlAnimationSpeed=()=>
+                  {
+                    this.animationSpeedTimers[this.presentAnimationState]+=1;
+                    if(this.animationSpeedTimers[this.presentAnimationState]>=
+                            this.animationSpeeds[this.presentAnimationState] 
+                      )
+                        {
+                        this.animationSpeedTimers[this.presentAnimationState]=0;
+                        return true;
+                        }
+                    return false;
+                  }
+            //wolflords spitfirerun
+            this.spitFireRun=()=>
+                {
+                    for(let x of this.spitFireBlocks)
+                        x.update();
+                    flushArray(this.spitFireBlocks);
+                }
+            //wolflords darkBalls
+            this.drawDarkBalls=()=>
+                {
+
+                    for(let x of this.darkBalls)
+                        x.update();
+                    flushArray(this.darkBalls);
+                }
+            this.spawnSpitFireBlock=()=>
+                {
+                    
+                    if(this.attackTimers["spit"]==0)
+                    {
+                        this.attackTimers["spit"]=deltaTime;
+                        this.animInQueue=this.runningAnimation();                        
+                        this.changeAnimation("attack");
+                        this.spitFireBlocks.push(new SpitFireBlock(this.posx,this.posy,10));
+                    }
+
+                }
+            this.spawnDarkBalls=()=>
+                {
+                   
+                    this.darkBalls.push(new DarkBall(this.posx,this.posy,this.rotangle));
+                }
+//dark ball attack starts
+            this.facedEnemy=false;
+            this.fumed=false;
+            this.facingDelta=5;
+            this.fumeTimerMax=3;
+            this.fumeTimer=0;
+            this.darkAttackTimer=0;
+            this.darkAttackTimerMax=3;
+            this.doDarkAttack=()=>
+                {
+                    if(!this.fumed)
+                        this.fumeUp();
+                    else if(!this.facedEnemy)
+                        this.faceTarget();                    
+                    else
+                        this.LaunchDark();
+                }
+            this.faceTarget=()=>
+                {
+                    if(this.facedEnemy) return;
+                    let targetDir=new createVector(this.targetx.posx,this.targetx.posy);
+                    let myPos    =new createVector(this.posx,this.posy);
+                    targetDir.sub(myPos);
+                    let targetAngle=targetDir.heading();
+
+
+                    
+                    if(Math.abs(targetAngle-this.rotangle)>Math.abs(360+targetAngle-this.rotangle))
+                        {
+                            targetAngle+=360;
+                        }
+                    else if(Math.abs(targetAngle-this.rotangle)>Math.abs(360+this.rotangle-targetAngle))
+                        {
+                            this.rotangle+=360;
+                        }                    
+
+                    this.rotangle=Lerp(this.rotangle,targetAngle,9);  
+                    if(this.rotangle > 360) this.rotangle-=360;
+
+                    if(Math.abs(this.rotangle-targetAngle)< this.facingDelta)
+                        {
+                        this.facedEnemy=true;
+                        this.pointMe(5*this.vel);
+                        }
+
+                }
+            this.fumeUp=()=>
+                {
+                    this.fumeTimer+=deltaTime;
+                    if(this.fumeTimer > 0.5* this.fumeTimerMax*1000)
+                        spawnDustClouds(this.posx,this.posy,25);
+                    if(this.fumeTimer > this.fumeTimerMax*1000)
+                        {
+                            this.fumeTimer=0;
+                            this.fumed=true;
+                            spawnDustClouds(this.posx,this.posy,25);
+                        }
+                }
+            this.LaunchDark=()=>
+                {     
+                    if(this.attackTimers.dark==0)
+                    {
+                        this.spawnDarkBalls();
+                        this.attackTimers.dark=deltaTime;
+                    }   
+                    this.darkAttackTimer+=deltaTime;
+                    if(this.darkAttackTimer > this.darkAttackTimerMax*1000)
+                        {
+                            this.breakDarkAttack();
+                        }                 
+                }
+            this.breakDarkAttack=()=>
+                {                    
+                    this.facedEnemy=false;   
+                    this.fumed=false;   
+                    this.darkAttackTimer=0;
+                    this.attackTimers.dark=0;  
+                    this.state="pursue";            
+                }
+
+//dark ball attack ends
+            this.takeDamage=(x)=>
+                {
+                    if(!this.onScreen) return;
+                    if(this.life > 0)
+                        this.life-=x;
+                    this.hBar.reduceHealth(x);
+                    this.healthBarVisible=true;
+                    if(this.life <= 0)
+                        {
+                        this.onScreen=false;
+                        spawnDustClouds(this.posx,this.posy,25,true);
+                        }
+                };
+            //wolflords
+            this.runTimers=()=>
+                {
+                    for(let x in this.attackTimers)
+                    {
+                        if(this.attackTimers[x]==0) continue;
+                        this.attackTimers[x]+=deltaTime;
+                        if(this.attackTimers[x] > this.attackTimersMax[x]*1000)
+                        {
+                            this.attackTimers[x]=0;
+                        }
+                    }
+                }
+            //wolflords
+            this.controlHealthBarVisibility=()=>
+                {
+                    if(!this.healthBarVisible) return;                    
+                    this.healthBarTimer+=deltaTime;
+                    if(this.healthBarTimer > this.maxHealthBarTimer)
+                        {
+                            this.healthBarTimer=0;
+                            this.healthBarVisible=false;
+                        }
+                }
+            //wolflords's pointme
+            this.pointMe=(vel=this.vel)=>
+                            {
+                                this.velx=vel * Math.cos(this.rotangle/180*Math.PI);
+                                this.vely=vel * Math.sin(this.rotangle/180*Math.PI);
+                                // this.adjustSubComponents();
+                            }
+            //wolfLord's move
+            this.moveTowardsPoint=()=>
+                {
+                    //if(!this.onScreen) return false;
+                    //if(!this.targetx || !this.targetx.onScreen) return;
+
+                    let targetDir=new createVector(this.targetx.posx,this.targetx.posy);
+                    let myPos    =new createVector(this.posx,this.posy);
+                    targetDir.sub(myPos);                   
+                    let targetAngle=targetDir.heading();                    
+                    if(Math.abs(targetAngle-this.rotangle)>Math.abs(360+targetAngle-this.rotangle))
+                        {
+                            targetAngle+=360;
+                        }
+                    else if(Math.abs(targetAngle-this.rotangle)>Math.abs(360+this.rotangle-targetAngle))
+                        {
+                            this.rotangle+=360;
+                        }  
+                    this.rotangle=Lerp(this.rotangle,targetAngle,9); 
+                    if(this.rotangle > 360) this.rotangle-=360;
+                    this.pointMe();
+
+                    if(DistBween(this.posx,this.posy,this.targetx.posx,this.targetx.posy) > this.targetProximDistance
+                        && this.runningAnimation()=="move"
+                        )
+                        {
+                            this.posx+=this.velx;
+                            this.posy+=this.vely;
+                            this.changeAnimation("move");
+                            //checking whether enemy is out of short range for long
+                            this.outORangeTimer+=deltaTime;
+                            if(this.outORangeTimer > this.outORangeTimerMax*1000)
+                                {
+                                    this.outORangeTimer=0;
+                                    this.state="darkattackmode";
+                                }
+                            //checking whether enemy is out of short range for long
+                        }
+                    else
+                        {
+                            if(this.outORangeTimer!=0) this.outORangeTimer=0;
+                            this.spawnSpitFireBlock();
+                        }
+                };
+                this.outORangeTimer=0;
+                this.outORangeTimerMax=3;
+            //of wolflord            
+            this.move=()=>
+                {
+                    
+                    if(!this.onScreen) return false;
+                    if(!this.targetx || !this.targetx.onScreen) return;
+
+                    if(this.state=="pursue")
+                        this.moveTowardsPoint();
+                    else if(this.state=="darkattackmode")
+                        {
+                        this.doDarkAttack();
+
+                        }
+                }
+
+            
+            this.update=()=>
+                {
+                    
+                    this.controlHealthBarVisibility();
+                    this.move();
+                    this.runTimers();
+                    this.spitFireRun();
+                    this.drawDarkBalls();
+                }
+
+            this.dr_w=()=>
+              {
+                if(!this.onScreen) return false;                                                                    
+                ctx.save();
+                ctx.translate(this.posx-camX, this.posy-camY);
+                ctx.rotate((this.rotangle+90)*Math.PI/180);
+                if(this.healthBarVisible) this.hBar.dr_w();
+                ctx.drawImage(
+                              this.animationStates[this.presentAnimationState],
+                              this.xWithin,
+                              this.yWithin,
+                              this.animationInfo[this.presentAnimationState].xoffset,
+                              this.animationInfo[this.presentAnimationState].yoffset,
+                              -this.width / 2,
+                              -this.height / 2,
+                              this.width,
+                              this.height
+                             );                                                                    
+                ctx.restore(); 
+                this.updateAnimationFrame();                    
+                //this.boxCollider.dr_w(); 
+              };
+
+
+
+        }
+    //wolfLord ends
+
+
     //Sphere starts
     function Sphere(posx,posy)
         {
@@ -2046,7 +2598,6 @@
                         }
                     flushArray(this.lasers);
                     }
-            //sphere's
             this.pointMe=(vel=this.vel)=>
                             {
                                 this.velx=vel * Math.cos(this.rotangle/180*Math.PI);
@@ -2195,7 +2746,7 @@
                 }
 
             //vars and functions for plunge attack ends
-            //of sphere
+
             this.moveTowardsPoint=()=>
                 {
 
@@ -2329,7 +2880,7 @@
             this.stay=false; 
             this.shotInQueue=false;     
             this.animInQueue="none";            
-            this.maxLife=100;
+            this.maxLife=1000;
             this.life=this.maxLife;
             this.hBar=new HealthBar(0.85*canvas.width,0.05*canvas.height,200,30,this.maxLife);
             this.mouseX= this.destinX;
@@ -2944,6 +3495,8 @@
                 }
     
     //open and exit definition blocks ends
+    let wolfList=[];
+    wolfList.push(new WolfLord(canvas.width*0.9,canvas.height/2));
 
     //spheresList.push(new Sphere(200,200));
      let gC=new GameController();
@@ -2988,6 +3541,16 @@
                             if(!pauseGame && !uiScreenOn)
                               x.move();
                         }
+                    for(let x of wolfList)
+                        {
+                            // continue;
+                            x.dr_w();                            
+                            if(!pauseGame && !uiScreenOn)
+                             {
+                              x.update();                                                         
+                             }
+                        }
+                    flushArray(wolfList);
                     for(let x of dustCloudsList)
                         {
                             x.dr_w();
@@ -3004,7 +3567,7 @@
                             x.dr_w();
                         }
                     // DrawUIElements();
-                    gC.update();
+                    //gC.update();
     			}
     //main Program ends
 

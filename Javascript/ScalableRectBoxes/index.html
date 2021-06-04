@@ -1,22 +1,20 @@
 <head>
-	
+
 	<script>
 	let mouseX,mouseY;
 	let camX=0,camY=0;
 	let deltaTime=1000 / 60;
 	let upPress,leftPress,downPress,rightPress,fPress,gPress,enterPress,mousePressed,mouseDoubleTap,spacePress;
-	let iPress,jPress,kPress,lPress;
-	let mouseClicked;
 	
 	function trackMouse(e)
 		{
 		mouseX=e.clientX;
 		mouseY=e.clientY;
 		};
-    function w2screen(strr = "", px = 20, py = 30) 
+    function w2screen(strr = "", px = 20, py = 30,fillStyle="#FFFFFF") 
     	{
 	      ctx.font = "40px Haettenschweiler";
-	      ctx.fillStyle = "#FFFFFF";
+	      ctx.fillStyle = fillStyle;
 	      ctx.fillText(strr, px, py);
     	}
 
@@ -262,8 +260,6 @@
 
 
 //hfns ends
-
-    
 	</script>
 </head>
 
@@ -287,23 +283,17 @@
 
 	document.onkeypress=function (e)
 					{			
-					// console.log(e.keyCode);
+
 					if(e.keyCode==119) upPress=true;
 					if(e.keyCode==100) rightPress=true;
 					if(e.keyCode==115) downPress=true;
 					if(e.keyCode==97) leftPress=true;
 					if(e.keyCode==103) gPress=true;
 					if(e.keyCode==102) fPress=true;
-					if(e.keyCode==13)  enterPress=true;		
-
-					if(e.keyCode==105)  iPress=true;
-					if(e.keyCode==106)  jPress=true;
-					if(e.keyCode==107)  kPress=true;
-					if(e.keyCode==108)  lPress=true;		
+					if(e.keyCode==13)  enterPress=true;				
 					};
 	document.onkeyup=function (e)
-					{	
-					// console.log(e.keyCode);				
+					{					
 					if(e.keyCode==87) upPress=false;
 					if(e.keyCode==68) rightPress=false;
 					if(e.keyCode==83) downPress=false;
@@ -311,11 +301,6 @@
 					if(e.keyCode==71) gPress=false;
 					if(e.keyCode==70) fPress=false;
 					if(e.keyCode==13)  enterPress=false;
-
-					if(e.keyCode==73)  iPress=false;
-					if(e.keyCode==74)  jPress=false;
-					if(e.keyCode==75)  kPress=false;
-					if(e.keyCode==76)  lPress=false;
 					};
 
 	document.onmousedown=function(e)
@@ -326,134 +311,79 @@
 					{
 					mousePressed=false;												
 					};
-	let platforms=[],balls=[];
-	let g=new createVector(0,1);
-	let bSpawner=new ballSpawner();
-	let collisionSurfaces=[],movingObjects=[];
-	let boxes=[];
-	//boxes.push(new expBox(canvas.width/2,canvas.height/2));
-	//boxes.push(new expBox(canvas.width/2,canvas.height/2,true));
+    //script to drag screen starts
+    let mouseLockX=0,mouseLockY=0;
+    RunMouseMover=()=>
+                {
+                if(mousePressed)
+                    {
+                    if(mouseLockX==0)
+                        {
+                            mouseLockX=mouseX;
+                        }
+                    if(mouseLockY==0)
+                        {
+                            mouseLockY=mouseY;
+                        }
+                    camX=camX-(mouseX- mouseLockX)/10;
+                    camY=camY-(mouseY- mouseLockY)/10;
+                    }
+                else
+                    {
+                        mouseLockX=0;
+                        mouseLockY=0;
+                    }
 
-	platforms.push(new platform(600*xscale,600*yscale));
-	collisionSurfaces.push(platforms[platforms.length-1]);
-	//balls.push(new ball(canvas.width/2,canvas.height/2));
+                }
+    //script to drag screen ends
+	let boxes=[];
+	let boxWidth=400;
+	let boxHeight=100;
+	boxes.push(new Box(500*xscale,200*yscale));
 	RunGame=()=>
 		{
-			if(collisioncheckzVec(boxes[0],boxes[1]))				
-				w2screen("Yes",50,0.4*canvas.width);
-			else
-				w2screen("No",50,0.4*canvas.width);
-				
-			for(let x of platforms)
-				{
-					x.dr_w();
-				}
-			for(let x of balls)
-				{
-					x.dr_w();
-					x.update();
-				}
-			flushArray(balls);
+			RunMouseMover();
 			for(let x of boxes)
-				{
-					x.dr_w();
-					x.update();
-				}
-			flushArray(boxes);
-			bSpawner.update();
-
+			{
+				x.dr_w();
+			}
 		};
-
-	window.addEventListener('load', 
-							function () 
-									{
-								 	resize();									
-							 		var loop = function () 
-													{										                    					
-													ctx.clearRect(0,0,canvas.width,canvas.height);	
-													ctx.fillStyle = '#000000';
-													ctx.fillRect(0,0,canvas.width, canvas.height);											
-													RunGame();		
-
-				                                 	};
-					  	     		setInterval(loop, deltaTime);					  		
-									}
-							);
-
-	function ballSpawner()
-		{
-			this.allowedToSpawn=true;
-			this.update=()=>
-				{
-					if(mousePressed && this.allowedToSpawn)
-						{
-						this.allowedToSpawn=false;
-						balls.push(new ball(mouseX,mouseY));
-						movingObjects.push(balls[balls.length-1]);
-						}
-					else if(!mousePressed)
-						{	
-						this.allowedToSpawn=true;
-						}
-				}
-		}
-
-	function expBox(posx,posy,alter=false)
+	function Box(posx,posy,parent=null)
 		{
 			this.position=new createVector(posx,posy);
 			this.onScreen=true;
-			this.width=400*xscale;
-			this.height=100*xscale;
+			this.width=boxWidth*xscale;
+			this.height=boxHeight*yscale;
             this.xptsOrig=[-0.5, 0.5,0.5,-0.5];
             this.yptsOrig=[-0.5,-0.5,0.5, 0.5];
             this.xpts=this.xptsOrig.map(x=>x*this.width);
-            this.ypts=this.yptsOrig.map(x=>x*this.height);
-            this.rotangle=0;
-            this.rotspeed=1;
-            this.speed=2;
-            this.velocity=new createVector(0,0);
+            this.ypts=this.yptsOrig.map(x=>x*this.height);            
             this.colorx=RandomColor();
-            this.alter=alter;
+            this.circleRad=20;
+            this.circle1=new ClickableCircle(this.position.x-0.4*this.width,
+            								this.position.y+0.5*this.height+this.circleRad,
+            								this.circleRad,true,parent);
+            this.circle2=new ClickableCircle(this.position.x+0.4*this.width,
+            								 this.position.y+0.5*this.height+this.circleRad,
+            								 this.circleRad,false,parent);
             
         this.update=function()
-        		{
-        			this.calcVel();
-        			
-        			if(!this.alter)
-	        			{
-						if(upPress) 
-	        				this.position.add(this.velocity);
-	        			else if(downPress)
-	        				this.position.sub(this.velocity);
-	        			if(leftPress) 
-	        				this.rotangle-=this.rotspeed;
-	        			else if(rightPress) this.rotangle+=this.rotspeed;
-	        			}
-        			else
-	        			{
-						if(iPress) 
-	        				this.position.add(this.velocity);
-	        			else if(kPress)
-	        				this.position.sub(this.velocity);
-	        			if(jPress) 
-	        				this.rotangle-=this.rotspeed;
-	        			else if(lPress) this.rotangle+=this.rotspeed;
-	        			}
+        		{        			
         			
         			
         		}
-        this.calcVel=()=>
+        this.changePositionx=(newx)=>
         	{
-        		this.velocity.x=this.speed*Math.cos(d2r(this.rotangle));
-        		this.velocity.y=this.speed*Math.sin(d2r(this.rotangle));
+        		this.position.x=newx;
+        		this.circle2.changePositionx(this.position.x-0.4*this.width);
+        		this.circle1.changePositionx(this.position.x+0.4*this.width);
         	}
+      
         this.dr_w= function()
                 {
-                if(!this.onScreen) return false;  
-                            
+                if(!this.onScreen) return false;                            
                 ctx.save();
-                ctx.translate(this.position.x-camX,this.position.y-camY);  
-                ctx.rotate(d2r(this.rotangle));            
+                ctx.translate(this.position.x-camX,this.position.y-camY);                          
                 ctx.fillStyle=this.colorx;
                 ctx.strokeStyle="#000000";
                 ctx.beginPath();
@@ -463,137 +393,123 @@
                 ctx.closePath();
                 ctx.fill();
                 ctx.stroke();               
-                ctx.restore();    
-                
+                ctx.restore();
+                this.drawAndUpdateCircles();         
                 }; 
+        this.drawAndUpdateCircles=()=>
+        	{
+                this.circle1.dr_w();     
+                this.circle2.dr_w();
+                this.circle1.update();     
+                this.circle2.update();
+        	}
 		}
-
-	function platform(posx,posy)
+	function LeadingOutLine(posx,posy,width,height,left,parent)
 		{
-			this.position=new createVector(posx,posy);
-			this.onScreen=true;
-			this.width=500*xscale;
-			this.height=50*yscale;
-            this.xptsOrig=[-0.5, 0.5,0.5,-0.5];
-            this.yptsOrig=[-0.5,-0.5,0.5, 0.5];
-            this.xpts=this.xptsOrig.map(x=>x*this.width);
-            this.ypts=this.yptsOrig.map(x=>x*this.height);
+		this.position=new createVector(posx,posy);
+		this.onScreen=true;
+		this.lineLength=width;
+		this.lineHeight=height;
+		if(!left) this.lineLength*=-1;
+		this.left=left;
+
+		this.xpts=[0,0,-this.lineLength,-this.lineLength];
+		this.ypts=[0,this.lineHeight,this.lineHeight,2*this.lineHeight];
+		this.box=new Box(this.position.x-this.lineLength,this.position.y+2*this.lineHeight+boxHeight/2,this);
+		this.parent=parent;
+		if(this.parent)
+			{
+				if(this.parent.left && !this.left || !this.parent.left && this.left)
+					this.parent.increaseLineLength();
+					//todo shift new line and box also here kmhere
+			}
+		this.increaseLineLength=()=>
+				{
+					this.lineLength+=boxWidth/2;
+					this.xpts=[0,0,-this.lineLength,-this.lineLength];
+					this.ypts=[0,this.lineHeight,this.lineHeight,2*this.lineHeight];
+					this.box.changePositionx(this.position.x-this.lineLength);
+					if(this.parent)
+					{
+						if(this.parent.left && !this.left || !this.parent.left && this.left)
+							this.parent.increaseLineLength();
+					}
+				}
+		this.changePositionx=(newx)=>
+				{
+					this.box.changePositionx(newx-this.lineLength);
+				}
         this.dr_w= function()
                 {
-                if(!this.onScreen) return false;  
-                            
+                if(!this.onScreen) return false;                            
                 ctx.save();
-                ctx.translate(this.position.x-camX,this.position.y-camY);              
-                ctx.fillStyle="#FF0000";
-                ctx.strokeStyle="#000000";
+                ctx.translate(this.position.x-camX,this.position.y-camY);         
+                ctx.strokeStyle="#00FF00";
                 ctx.beginPath();
                 ctx.moveTo(this.xpts[0],this.ypts[0]);
                 for(var g=1;g<this.xpts.length;g++)
-                    ctx.lineTo(this.xpts[g],this.ypts[g]);
-                ctx.closePath();
-                ctx.fill();
+                    ctx.lineTo(this.xpts[g],this.ypts[g]);                
                 ctx.stroke();               
-                ctx.restore();    
-                
-                };  
+                ctx.restore();     
+                this.drawAndUpdateBoxes();                
+                };
+        this.drawAndUpdateBoxes=()=>
+        		{
+        			this.box.dr_w();
+        		}
 		}
-	
-	function applyDamping(obj)
-		{ 
-			//return;			
-			let force=obj.velocity.copy();
-			let dConst=0.01;
-			force.normalize();
-			force.mult(-1*dConst*obj.mass);
-			obj.applyForce(force);
-		}
-	function transferMomentum(obj1,obj2)
-		{
-			let deltaV=VecSub(obj1.velocity,obj2.velocity);
-			obj1.velocity.sub(deltaV);
-			obj2.velocity.add(deltaV);
-		}
-	function transferMomentumCircular(obj1,obj2)
-		{
-			let deltaV=VecSub(obj1.velocity,obj2.velocity);
-			let effectiveVelocity=VecSub(obj2.position,obj1.position);
-			effectiveVelocity.normalize();
-			let dp=VecDot(deltaV,effectiveVelocity);
-			effectiveVelocity.mult(dp);
-			obj1.velocity.sub(effectiveVelocity);
-			obj2.velocity.add(effectiveVelocity);
-		}
-
-	function ball(posx,posy)
+	function ClickableCircle(posx,posy,cRad,left=false,parent=null)
 		{
 			this.position=new createVector(posx,posy);
 			this.onScreen=true;
-			this.width=80*xscale;
+			this.width=cRad*2*xscale;
 			this.height=this.width;
-			this.velocity=new createVector(0,0);
-			this.acceleration=new createVector(0,0);
-			this.mass=1;
-			this.allowed=true;
-
+			this.xoffset=6*xscale;
+			this.yoffset=-5*yscale;
+			this.lines=[];
+			this.drewLine=false;
+			this.parent=parent;
+			//this.lines.push(new LeadingOutLine(this.position.x,this.position.y,200*xscale,100*yscale,left));
 			this.update=()=>
 				{
-					if(!this.onScreen) return;
-					this.applyForce(VecMult(g,this.mass));
-					applyDamping(this);
-					this.velocity.add(this.acceleration);
-					this.position.add(this.velocity);
-					this.acceleration.mult(0);
-					this.checkLimits();
-					this.checkOutCollisionSurfaces();
-					this.cWMO();
+					if(!this.drewLine && mousePressed)
+						{						  
+						  if(this.clickedWithin())
+						  	{
+						  	this.drewLine=true;
+						  	this.lines.push(new LeadingOutLine(this.position.x,this.position.y,
+						  									   boxWidth/2*xscale,
+						  									   boxHeight/2*yscale,
+						  									   left,this.parent));
+						  	}
+						}/*
+					else if(!mousePressed)
+						{
+							this.drewLine=false;
+						}*/
 				}
-			this.applyForce=(f)=>
+			this.changePositionx=(newx)=>
 				{
-					//console.log(JSON.stringify(g.mult(2)));
-					let a=VecDiv(f,this.mass);											
-					this.acceleration.add(a);					
-				}
-			this.checkLimits=()=>
-				{
-					if(this.position.x > canvas.width || this.position.x < 0 ||
-						this.position.y > canvas.height || this.position.y < 0
-					  )
-						this.onScreen=false;
-				}
-
-			this.checkOutCollisionSurfaces=()=>
-				{
-				for(let x of collisionSurfaces)
-					{
-					if(!x.onScreen) return;
-					if(collisioncheckzVec(this,x))
-						{								
-						this.position.sub(this.velocity);
-						this.velocity.set(this.velocity.x,-this.velocity.y);
+					this.position.x=newx;
+					for(let x of this.lines)
+						{
+							x.changePositionx(newx);
 						}
-					}
-				}
-			this.cWMO=()=>
-				{
-					for(let x of movingObjects)
-					{
-						if(!x.onScreen) continue;
-						if(x==this) continue;
-						if(circularCollision(this,x))
-							{
-								this.position.sub(this.velocity);
-								transferMomentumCircular(this,x);
-							}
-					}
 				}
 
-			
+			this.clickedWithin=()=>
+				{
+
+					return (DistBween(mouseX,mouseY,this.position.x-camX,this.position.y-camY) <= this.width/2);
+				}			
+
 	        this.dr_w= function()
 	                {
-	                if(!this.onScreen) return false;  
-	                            
+	                if(!this.onScreen) return false;                 
+
 	                ctx.save();
-	                ctx.translate(this.position.x-camX,this.position.y-camY);              
+	                ctx.translate(this.position.x-camX,this.position.y-camY);  
+
 	                ctx.fillStyle="#FFFF00";
 	                ctx.strokeStyle="#000000";
 	                ctx.beginPath();
@@ -601,10 +517,32 @@
 	                ctx.closePath();
 	                ctx.fill();
 	                ctx.stroke();               
-	                ctx.restore();    
-	                
+	                ctx.restore(); 
+	                w2screen("+",this.position.x-camX-this.xoffset,this.position.y-camY-this.yoffset,"#FF0000");
+	                 this.drawAndUpdateLines();
+	                	                
 	                }; 
+	        this.drawAndUpdateLines=()=>
+	        		{
+	        		for (let line of this.lines)    
+	                	line.dr_w();
+	        		}
 		}
+
+	window.addEventListener('load', 
+							function () 
+									{
+								 	resize();									
+							 		var loop = function () 
+													{										                    					
+													ctx.clearRect(0,0,canvas.width,canvas.height);	
+													ctx.fillStyle = '#000000';
+													ctx.fillRect(0,0,canvas.width, canvas.height);
+													RunGame();				
+				                                 	};
+					  	     		setInterval(loop, deltaTime);					  		
+									}
+							);
 
 	</script>
 
