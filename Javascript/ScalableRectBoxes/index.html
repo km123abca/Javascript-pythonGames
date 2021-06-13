@@ -417,15 +417,42 @@
 		this.ypts=[0,this.lineHeight,this.lineHeight,2*this.lineHeight];
 		this.box=new Box(this.position.x-this.lineLength,this.position.y+2*this.lineHeight+boxHeight/2,this);
 		this.parent=parent;
+		this.informedParent=false;
+		/*
 		if(this.parent)
-			{
+			{				
 				if(this.parent.left && !this.left || !this.parent.left && this.left)
-					this.parent.increaseLineLength();
-					//todo shift new line and box also here kmhere
+				{
+					this.parent.increaseLineLength();					
+					this.position.x=this.position.x+this.lineLength;
+					this.box.changePositionx(this.position.x-this.lineLength);					
+				}
+				this.parent.childInfo(this);
+			}
+			*/
+		this.informParent=()=>
+			{
+				if(!this.informedParent)
+				{
+					if(this.parent) this.parent.childInfo(this);
+					this.informedParent=true;
+				}
+			}
+		this.childInfo=(child)=>
+			{
+				if(this.left && !child.left || !this.left && child.left)
+					{
+					this.increaseLineLength();
+					if(this.parent)
+					this.parent.childInfo(this);
+					}
+				else if(this.parent)
+					this.parent.childInfo(child);
 			}
 		this.increaseLineLength=()=>
 				{
-					this.lineLength+=boxWidth/2;
+
+					this.lineLength+=boxWidth/2*this.lineLength/Math.abs(this.lineLength);
 					this.xpts=[0,0,-this.lineLength,-this.lineLength];
 					this.ypts=[0,this.lineHeight,this.lineHeight,2*this.lineHeight];
 					this.box.changePositionx(this.position.x-this.lineLength);
@@ -441,7 +468,8 @@
 				}
         this.dr_w= function()
                 {
-                if(!this.onScreen) return false;                            
+                if(!this.onScreen) return false; 
+                this.informParent();                           
                 ctx.save();
                 ctx.translate(this.position.x-camX,this.position.y-camY);         
                 ctx.strokeStyle="#00FF00";
