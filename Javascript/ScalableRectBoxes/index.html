@@ -375,8 +375,8 @@
         this.changePositionx=(newx)=>
         	{
         		this.position.x=newx;
-        		this.circle2.changePositionx(this.position.x-0.4*this.width);
-        		this.circle1.changePositionx(this.position.x+0.4*this.width);
+        		this.circle2.changePositionx(this.position.x+0.4*this.width);
+        		this.circle1.changePositionx(this.position.x-0.4*this.width);
         	}
       
         this.dr_w= function()
@@ -415,7 +415,7 @@
 
 		this.xpts=[0,0,-this.lineLength,-this.lineLength];
 		this.ypts=[0,this.lineHeight,this.lineHeight,2*this.lineHeight];
-		this.box=new Box(this.position.x-this.lineLength,this.position.y+2*this.lineHeight+boxHeight/2,this);
+		this.box=new Box(this.position.x-this.lineLength,this.position.y+2*this.lineHeight+boxHeight*yscale/2,this);
 		this.parent=parent;
 		this.informedParent=false;
 		/*
@@ -452,18 +452,21 @@
 		this.increaseLineLength=()=>
 				{
 
-					this.lineLength+=boxWidth/2*this.lineLength/Math.abs(this.lineLength);
+					this.lineLength+=boxWidth*this.lineLength/Math.abs(this.lineLength);
 					this.xpts=[0,0,-this.lineLength,-this.lineLength];
 					this.ypts=[0,this.lineHeight,this.lineHeight,2*this.lineHeight];
 					this.box.changePositionx(this.position.x-this.lineLength);
+					/*
 					if(this.parent)
 					{
 						if(this.parent.left && !this.left || !this.parent.left && this.left)
 							this.parent.increaseLineLength();
 					}
+					*/
 				}
 		this.changePositionx=(newx)=>
 				{
+					this.position.x=newx;
 					this.box.changePositionx(newx-this.lineLength);
 				}
         this.dr_w= function()
