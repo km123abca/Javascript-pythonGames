@@ -252,7 +252,7 @@
 			let centerSeperation=elem1.position.copy();
 			centerSeperation.sub(elem2.position);
 			centerSeperation=centerSeperation.mag();
-			return centerSeperation < elem1.width/2+elem2.width/2;
+			return centerSeperation < elem1.width/2+elem2.width/2;//kmhere
 		}
 	function inter_ects(q1,q2,ql1,ql2,w1,w2,wl1,wl2)
 				{
@@ -351,20 +351,12 @@
 					};
 	let insects=[],dustCloudsList=[],flowers=[];
 	let fspawner=new FlowerSpawner();
-	for(let i=0;i<5;i++)
-		{
-		insects.push(new Insect(50*xscale+random(20,100),200*yscale+random(20,100),'red',true,'r1'));
-		insects.push(new Insect(1000*xscale+random(20,100),500*yscale+random(20,100),'green',true,'g2'));
-		}
-	/*
-	insects.push(new Insect(50*xscale,200*yscale,'red',true,'r1'));
-	insects.push(new Insect(100*xscale,300*yscale,'red',true,'r2'));
-	insects.push(new Insect(1200*xscale,500*yscale,'green',true,'g1'))
-	insects.push(new Insect(1000*xscale,500*yscale,'green',true,'g2'));
-	*/
+	insects.push(new Insect(50*xscale,200*yscale,'red',true));
+	insects.push(new Insect(100*xscale,300*yscale,'red',true));
+	insects.push(new Insect(1200*xscale,500*yscale,'green',true))
+	insects.push(new Insect(1000*xscale,500*yscale,'green',true));
 	RunGame=()=>
 		{
-
 			if(spacePress)
 				{
 					spacePress=false;
@@ -448,8 +440,8 @@
 			this.position=new createVector(posx,posy);
 			this.rotangle=0;
 			this.onScreen=true;
-			this.width=40*xscale;
-			this.height=40*yscale;
+			this.width=100*xscale;
+			this.height=100*yscale;
             this.imgx=new Image();
             this.imgx.src='./Sprites/flowers/flower.png';          
             this.maxVolume=100;
@@ -637,9 +629,8 @@
                 dustCloudsList.push(new DustCloud(posx,posy,dark));
         }
 	//Insect starts
-	function Insect(posx,posy,clan,startIdle=false,nm="bob")
+	function Insect(posx,posy,clan,startIdle=false)
 		{
-			this.nm=nm;
 			this.position=new createVector(posx,posy);
 			this.home=this.position.copy();
 			this.roamingPos=[VecAdd(this.position,createdVec(600,0)),
@@ -647,7 +638,6 @@
 							 this.position.copy()
 							];
 			//life and healthbar starts
-			this.debugInfo='';
 			this.maxHealth=100;
 			this.split=2;
 			this.health=this.maxHealth;
@@ -671,8 +661,8 @@
 			this.presentAnimationState=2;
 			this.animationCounter=0;
 			this.animInQueue="none";
-			this.width=20*xscale;
-			this.height=25*yscale;
+			this.width=80*xscale;
+			this.height=100*yscale;
 			this.targetx=false;
 			this.mass=1;
 			this.moving=false;
@@ -684,7 +674,7 @@
 
 			this.dustCloudsList=[];
 			
-			this.proximDist=this.width*xscale;
+			this.proximDist=10*xscale;
 			
 			this.idle_images=[];
 			this.f=clan=="red"?'':'g';
@@ -783,43 +773,20 @@
 					return VecDist(this.position,dest) < this.proximDist;
 
 				}
-			this.enemyRange=10*this.height;
-			this.troubleRange=10*this.height;
+			this.enemyRange=300*xscale;
 			this.enemy=false;
 			this.watchOutForEnemies=()=>
 				{
-
 					for(let x of insects)
 						{
 							if(!x.onScreen || x==this || x.state=="escape" ) continue;
-
-							if(x.clan!=this.clan && x.enemy && x.enemy!=this) continue;
+							if(x.enemy && x.enemy!=this) continue;
 							
-							if(x.clan==this.clan) 
-								{
-									if(this.state!="givingA" && x.state=="gettingA" && !x.helpAcquired )
-										{
-											
-											if(VecDist(this.position,x.position) < this.troubleRange)
-												{
-													this.state="givingA";
-													x.helpAcquired=true;
-													this.friend=x;
-												}
-										}
-								continue;
-								}
-							else if(x.state=="gettingA")
-								continue;
+							if(x.clan==this.clan) continue;
 							if(VecDist(this.position,x.position) < this.enemyRange)
 								{
 									this.enemy=x;
 									this.state="enemypursue";
-									if(this.friend)
-										{
-										this.friend.helpAcquired=false;
-										this.friend=false;
-										}
 									break;
 								}
 						}
@@ -828,8 +795,7 @@
 						{
 						for(let x of insects)
 							{
-								if(!x.onScreen || x==this || x.state=="escape" || x.state=="gettingA" ) 
-									continue;					
+								if(!x.onScreen || x==this || x.state=="escape" ) continue;					
 								if(x.clan==this.clan) continue;
 								if(VecDist(this.position,x.position) < this.enemyRange)
 									{
@@ -842,9 +808,9 @@
 						}
 				}
 			//going after flowers starts
-			this.flowerRange=10*this.height;
+			this.flowerRange=300*xscale;
 			this.flowerToEat=false;
-			this.flowerProximDist=this.width*xscale;
+			this.flowerProximDist=60*xscale;
 			this.watchOutForFlowers=()=>
 				{
 					for(let x of flowers)
@@ -905,13 +871,12 @@
 				}
 			//this.attacktimer ends
 			//escape starts
-			this.homeProximDist=this.width*xscale;
+			this.homeProximDist=10*xscale;
 			this.stayHomeTimer=0;
 			this.stayHomeMax=3;
 			this.doEscape=()=>
 				{
 					if(this.speed!=this.escapeSpeed) this.speed=this.escapeSpeed;
-					//this.enemy=null;
 					this.turnTowardsTarget(this.home);
 					this.Heal(0.0001);
 					if(VecDist(this.position,this.home) > this.homeProximDist)
@@ -926,213 +891,25 @@
 						this.changeAnimation("idle");
 						if(this.stayHomeTimer >  this.stayHomeMax *1000)
 							{
-								if(this.enemy && this.enemy.onScreen )
-									this.state="enemypursue";
-								else
-									{
-									this.enemy=false;
-									this.state="idle";
-									}
+								this.state="enemypursue";
 								this.stayHomeTimer=0;
 							}
-						
 						
 						}
 				}
 			//escape ends
 
-			//givingA starts
-			//watchoutfor Runners included in watchout for enemies
-			this.friend=false;
-			this.runInForAssistance=()=>
-				{
-					
-					this.turnTowardsTarget(this.friend.position);
-
-					if(!this.metAlly && VecDist(this.position,this.friend.position) > this.homeProximDist)
-						{
-						this.moveForward();
-						this.moving=true;	
-						}
-						/* deletable since metally can be set by the one seeking assistance
-					else if(!this.metAlly && VecDist(this.position,this.friend.position) < this.homeProximDist)
-						{
-						this.metAlly=true;
-						}
-						*/
-					else if(this.metAlly)
-						{
-							this.state='goToFixedSpot';
-							this.callInEveryBody(this.friend.spot);
-							this.goingTowardsIdlePos=false;
-							this.spot=this.friend.spot;
-							this.metAlly=false;
-							this.friend=false;
-						}
-					this.watchOutForEnemies();
-				}
-			this.callInEveryBody=(spot)=>
-				{
-					for(let x of insects)
-						{
-							if(!x.onScreen || 
-								x.clan!=this.clan ||
-								x.state=="goToFixedSpot"								
-								 ) continue;
-							if(x.state=="idle" ||
-							   x.state=="roaming" ||
-							   x.state=="goafterfood"
-								)
-							{
-								x.state="goToFixedSpot";
-								x.spot=spot;
-							}
-
-						}
-				}
-
-			//givingA ends
-
-
-
-			//geting reinforcements starts
-			this.spot=false;
-			this.metAlly=false;
-			this.helpAcquired=false;
-			this.getReinforcements=()=>
-				{
-					if(this.doubleEngaged) 
-						{
-						this.enemy=false;
-						this.doubleEngaged=false;
-						this.spot=this.position.copy();
-						}
-						this.turnTowardsTarget(this.home);						
-						if(!this.metAlly && VecDist(this.position,this.home) > this.homeProximDist)
-							{
-							this.moveForward();
-							this.moving=true;
-							this.watchOutForAllies();
-							}
-						else
-							{
-								this.state='goToFixedSpot';
-								this.goingTowardsIdlePos=false;
-								this.metAlly=false;
-								this.helpAcquired=false;
-							}
-						
-				}
-			this.allyProximDistance=2*this.width;
-			this.watchOutForAllies=()=>
-				{
-					for(let x of insects)
-						{
-							if(!x.onScreen || x.clan!=this.clan || x.state!="givingA") continue;
-							if(VecDist(this.position,x.position)< this.allyProximDistance)
-								{
-									this.metAlly=true;
-									x.metAlly=true;
-								}
-						}
-				}
-			this.menAvailable=()=>
-				{
-					for(let x of insects)
-						{
-							if(!x.onScreen || x.clan!=this.clan) continue;
-							if(!x.enemy)
-								return true;
-						}
-					return false;
-				}
-
-			//getting reinforcements ends
-
-			//bulk retreat starts
-			this.rsplit=2;
-			this.checkCombinedHealth=()=>
-				{
-					let a=0,ma=0;
-					for(let x of insects)
-						{
-							if(!x.onScreen) continue;
-							a+=x.health;
-							ma+=x.maxHealth;
-
-						}
-					if(a < ma/this.rsplit && this.rsplit<4)
-						{
-
-							console.log('combined health fallen');
-							this.rsplit+=2;
-							if(this.state=="enemypursue")
-							{
-							this.spot=this.home;
-							this.goingTowardsIdlePos=true;
-							this.state="goToFixedSpot";
-							}
-
-						}
-				}
-			//bulk retreat ends
-
-			//goToFixedSpot starts
-			this.goingTowardsIdlePos=false;
-			this.goToFixedSpot=()=>
-				{
-					this.turnTowardsTarget(this.spot);
-					if(VecDist(this.position,this.spot) > this.homeProximDist)
-						{
-							this.moveForward();
-							this.moving=true;							
-						}
-					else if(this.goingTowardsIdlePos)
-						{
-							this.goingTowardsIdlePos=false;
-							this.spot=false;
-							this.state="idle";
-						}
-					else
-						{
-							this.spot=this.home;
-							this.goingTowardsIdlePos=true;
-						}
-					this.watchOutForEnemies();
-					this.watchOutForFlowers();
-				}
-			//goToFixedSpot ends
-
-
-
 			//enemy pursue starts
-			this.enemyProximDist=2*this.width*xscale;
+			this.enemyProximDist=100*xscale;
 			this.attackTimerMaxAPlunge=5;
 			// this.escapable=false;
-			this.doubleEngageTimer=0;
 			this.doEnemyPursue=()=>
 				{
-					
-					if(this.doubleEngaged && this.doubleEngageTimer < 1000)
-						{
-							this.doubleEngageTimer+=deltaTime;
-						}
-					else if(this.doubleEngaged && this.menAvailable())
-						{
-							this.state="gettingA";
-							this.doubleEngageTimer=0;
-						}
-					else if(this.doubleEngageTimer!=0)
-						{
-							this.doubleEngageTimer=0;
-						}
-						
 					// if(!this.escapable) this.escapable=true;
 					if(this.speed!=this.followSpeed) this.speed=this.followSpeed;
 					this.turnTowardsTarget(this.enemy.position);
-					if(!this.enemy || !this.enemy.onScreen || this.enemy.state=="escape" || this.enemy.state=="gettingA")
+					if(!this.enemy || !this.enemy.onScreen || this.enemy.state=="escape")
 						{
-							console.log(this.nm+" turned idle");
 							this.state="idle";
 							this.enemy=false;
 						}
@@ -1143,14 +920,12 @@
 						}
 					else
 						{
-						
 						if(this.health < this.maxHealth/this.split  && this.split <8)
 							{
 								
 								this.split+=2;								
 								this.state="escape";
 							}
-
 						this.moving=false;						
 						if(this.attackTimer==0) 
 							if(random(2)<1)
@@ -1303,7 +1078,7 @@
 			this.plungeVelocitySet=false;
 			this.plungeVelocity=new createVector(0,0);			
 			this.plungeSpeed=10;
-			this.plungePTimer=0;this.plungeP1TimerMax=0.1;this.plungeP2TimerMax=0.5;
+			this.plungePTimer=0;this.plungeP1TimerMax=.25;this.plungeP2TimerMax=0.75;
 			this.plungeForce=6;
 			this.setPlungeVelocity=()=>
 				{
@@ -1437,23 +1212,19 @@
                               this.width,
                               this.height
                              );                 
-                this.hBar.dr_w();
-
+                this.hBar.dr_w();                                                                    
                 ctx.restore(); 
                 this.updateAnimationFrame();
                 //this.controlHealthBarVisibility();	                            
                 //this.boxCollider.dr_w();    
                 this.noseC.display();      
                 this.bodyC.display();
-                //this.drawDebugCircle();      
-                //w2screen(this.nm+':'+this.state+(this.enemy?"y":"n"),this.position.x,this.position.y-50);
-                //w2screen(this.debugInfo,this.position.x-50,this.position.y-50);
+                //this.drawDebugCircle();         
 				}
 
 			this.update=()=>
 				{
 				  if(!this.onScreen) return;
-				  this.checkCombinedHealth();
 				  this.noseC.changeParams(this.position,this.rotangle+90);
 				  this.bodyC.changeParams(this.position,this.rotangle+90);
 				  this.runAttackTimers();
@@ -1505,21 +1276,6 @@
 				  	else if(this.state=="goafterfood")
 				  		{
 				  		    this.pursueFood();
-				  		}
-				  	else if(this.state=="gettingA")
-				  		{
-				  			this.changeAnimation("move");
-				  		    this.getReinforcements();
-				  		}
-				  	else if(this.state=="givingA")
-				  		{
-				  			this.changeAnimation("move");
-				  		    this.runInForAssistance();
-				  		}
-				  	else if(this.state=="goToFixedSpot")
-				  		{
-				  			this.changeAnimation("move");
-				  			this.goToFixedSpot();
 				  		}
 				}
 
