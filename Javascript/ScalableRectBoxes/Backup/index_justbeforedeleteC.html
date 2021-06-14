@@ -366,10 +366,10 @@
             this.circle2=new ClickableCircle(this.position.x+0.4*this.width,
             								 this.position.y+0.5*this.height+this.circleRad,
             								 this.circleRad,false,parent);
-            
+            /*
             this.dcircle=new ClickableCircle(this.position.x+0.4*this.width,
             								 this.position.y-0.3*this.height+this.circleRad,
-            								 this.circleRad,false,parent,true);
+            								 this.circleRad,false,parent);*/
             
         this.update=function()
         		{        			
@@ -381,7 +381,6 @@
         		this.position.x=newx;
         		this.circle2.changePositionx(this.position.x+0.4*this.width);
         		this.circle1.changePositionx(this.position.x-0.4*this.width);
-        		this.dcircle.changePositionx(this.position.x+0.4*this.width);
         	}
       
         this.dr_w= function()
@@ -407,8 +406,6 @@
                 this.circle2.dr_w();
                 this.circle1.update();     
                 this.circle2.update();
-                this.dcircle.dr_w();
-                this.dcircle.update();
         	}
 		}
 	function LeadingOutLine(posx,posy,width,height,left,parent)
@@ -456,24 +453,9 @@
 				else if(this.parent)
 					this.parent.childInfo(child);
 			}
-
-		this.childInfoD=(child,len)=>
-			{
-				if(this.left && !child.left || !this.left && child.left)
-					{
-						this.decreaseLineLength(len);
-						if(this.parent)
-							this.parent.childInfoD(this,len);
-					}
-				else if(this.parent)
-					this.parent.childInfoD(this,len);
-			}
-		this.increasedLength=0;
-
 		this.increaseLineLength=()=>
 				{
 
-					this.increasedLength+=boxWidth*this.lineLength/Math.abs(this.lineLength);
 					this.lineLength+=boxWidth*this.lineLength/Math.abs(this.lineLength);
 					this.xpts=[0,0,-this.lineLength,-this.lineLength];
 					this.ypts=[0,this.lineHeight,this.lineHeight,2*this.lineHeight];
@@ -486,29 +468,6 @@
 					}
 					*/
 				}
-		this.lineCollapsed=(left)=>
-			{
-				if(this.left && !left || !this.left && left)
-					{
-						this.decreaseLineLength(this.increasedLength);
-						if(this.parent)
-							this.parent.childInfoD(this,this.increasedLength);
-						this.increasedLength=0;
-					}
-				else
-					{
-						if(this.parent) 
-							this.parent.lineCollapsed(this.left);//this is not correct , entire line has not collapsed
-					}
-			}
-		this.decreaseLineLength=(len)=>
-			{
-				this.increasedLength-=Math.abs(len)*this.lineLength/Math.abs(this.lineLength);
-				this.lineLength-=Math.abs(len)*this.lineLength/Math.abs(this.lineLength);
-				this.xpts=[0,0,-this.lineLength,-this.lineLength];
-				this.ypts=[0,this.lineHeight,this.lineHeight,2*this.lineHeight];
-				this.box.changePositionx(this.position.x-this.lineLength);
-			}
 		this.changePositionx=(newx)=>
 				{
 					this.position.x=newx;
@@ -534,7 +493,7 @@
         			this.box.dr_w();
         		}
 		}
-	function ClickableCircle(posx,posy,cRad,left=false,parent=null,del=false)
+	function ClickableCircle(posx,posy,cRad,left=false,parent=null)
 		{
 			this.position=new createVector(posx,posy);
 			this.onScreen=true;
@@ -545,12 +504,9 @@
 			this.lines=[];
 			this.drewLine=false;
 			this.parent=parent;
-			this.del=del;
 			//this.lines.push(new LeadingOutLine(this.position.x,this.position.y,200*xscale,100*yscale,left));
 			this.update=()=>
 				{
-					if(!this.del)
-					{
 					if(!this.drewLine && mousePressed)
 						{						  
 						  if(this.clickedWithin())
@@ -561,29 +517,11 @@
 						  									   boxHeight/2*yscale,
 						  									   left,this.parent));
 						  	}
-						}
-					}
-					else
-					{
-						if(mousePressed && this.clickedWithin())
+						}/*
+					else if(!mousePressed)
 						{
-							let bbox;
-							if(!this.parent.parent) bbox=boxes[0];
-							else bbox=this.parent.parent.box;
-							if(this.parent.left)
-								{
-								bbox.circle1.lines=[];
-								bbox.circle1.drewLine=false;
-								}
-							else
-								{
-								bbox.circle2.lines=[];
-								bbox.circle2.drewLine=false;
-								}
-
-
-						}
-					}
+							this.drewLine=false;
+						}*/
 				}
 			this.changePositionx=(newx)=>
 				{
@@ -615,10 +553,7 @@
 	                ctx.fill();
 	                ctx.stroke();               
 	                ctx.restore(); 
-	                if(!this.del)
 	                w2screen("+",this.position.x-camX-this.xoffset,this.position.y-camY-this.yoffset,"#FF0000");
-	            	else
-	            	w2screen("-",this.position.x-camX-this.xoffset,this.position.y-camY-this.yoffset,"#FF0000");
 	                 this.drawAndUpdateLines();
 	                	                
 	                }; 
