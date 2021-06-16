@@ -336,7 +336,6 @@
 
                 }
     //script to drag screen ends
-    let datum=[]
 	let boxes=[];
 	let boxWidth=400;
 	let boxHeight=100;
@@ -351,7 +350,6 @@
 		};
 	function Box(posx,posy,parent=null)
 		{
-
 			this.position=new createVector(posx,posy);
 			this.onScreen=true;
 			this.width=boxWidth*xscale;
@@ -372,24 +370,6 @@
             this.dcircle=new ClickableCircle(this.position.x+0.4*this.width,
             								 this.position.y-0.3*this.height+this.circleRad,
             								 this.circleRad,false,parent,true);
-
-        if(!parent)
-        	this.idx="0";
-        else
-        	{
-        		if(!parent.parent)
-        			{
-        				if(parent.left) this.idx="00";
-        				else this.idx="01";
-        			}
-        		else
-        			{
-        				if(parent.left) this.idx=parent.parent.box.idx+"0";
-        				else this.idx=parent.parent.box.idx+"1"
-        			} 
-        	}
-            	
-        datum.push({"idx":this.idx});
             
         this.update=function()
         		{        			
