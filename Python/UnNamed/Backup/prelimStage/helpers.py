@@ -1,9 +1,8 @@
 import math
 import pygame
 from pygame.locals import *
-import variableStore as v
 FRAME_RATE=30
-deltaTime=1000/FRAME_RATE
+deltaTime=1000/30
 
 def Lerp(startValue,endValue,lerpFac):
 	return startValue+(endValue-startValue)/lerpFac;
@@ -22,17 +21,9 @@ def draw_translate_rotate(img,rotangle,x,y,win):
 	win.blit(rotated_image,new_rect.topleft)
 
 def boxCollision(obj1,obj2):
-	rect1=pygame.rect(obj1.position.x-v.camera.position.x,obj1.position.y-v.camera.position.y,obj1.width,obj1.height)
-	rect2=pygame.rect(obj2.position.x-v.camera.position.x,obj2.position.y-v.camera.position.y,obj2.width,obj2.height)
+	rect1=pygame.rect(obj1.position.x-camera.position.x,obj1.position.y-camera.position.y,obj1.width,obj1.height)
+	rect2=pygame.rect(obj2.position.x-camera.position.x,obj2.position.y-camera.position.y,obj2.width,obj2.height)
 	return rect1.colliderect(rect2)
-
-def check_collision(obj1,obj2):
-	mask1=obj1.get_mask()
-	mask2=obj2.get_mask()
-	offset=(round(obj2.position.x-obj1.position.x),round(obj2.position.y-obj1.position.y))
-	if mask1.overlap(mask2,offset):
-		return True
-	return False
 
 def flushList(lis):
 	for elem in lis[:]:

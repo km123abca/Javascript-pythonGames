@@ -7,19 +7,16 @@ import math
 from pygame.locals import *
 from helpers import *
 from soldier import *
-from Camera import *
-import variableStore as v
 
 pygame.font.init()
 
+FRAME_RATE=30
 
-v.LEFTPRESSED,v.RIGHTPRESSED,v.UPPRESSED,v.DOWNPRESSED=False,False,False,False
-v.FRAME_RATE=30
-v.BACKGROUND_COLOR=(0,0,0)
-v.WIN_WIDTH,v.WIN_HEIGHT=1000,500
-v.mouseAtx,v.mouseAty,v.mouseClicked=0,0,True
-v.soldiersList=[]
-v.camera=Camera()
+BACKGROUND_COLOR=(0,0,0)
+WIN_WIDTH,WIN_HEIGHT=1000,500
+LEFTPRESSED,RIGHTPRESSED,UPPRESSED,DOWNPRESSED=False,False,False,False
+mouseAtx,mouseAty,mouseClicked=0,0,True
+
 '''
 BACKGROUND_IMAGE=pygame.transform.scale( pygame.image.load(
 														   os.path.join("images","background.png")
@@ -34,30 +31,36 @@ def draw_background(win):
 
 
 
+def check_collision(obj1,obj2):
+	mask1=obj1.get_mask()
+	mask2=obj2.get_mask()
+	offset=(round(obj2.x-obj1.x),round(obj2.y-obj1.y))
+	if mask1.overlap(mask2,offset):
+		return True
+	return False
 
 
 
-
-
-v.soldiersList.append(soldier(v.WIN_WIDTH/2,v.WIN_HEIGHT/2))
+soldiersList=[]
+soldiersList.append(soldier(WIN_WIDTH/2,WIN_HEIGHT/2))
 def RunGame():
-	win.fill(v.BACKGROUND_COLOR)
-	for x in v.soldiersList:
+	win.fill(BACKGROUND_COLOR)
+	for x in soldiersList:
 		x.display(win)
-		x.update()
+		x.update(LEFTPRESSED,RIGHTPRESSED,UPPRESSED,DOWNPRESSED)
 
 
 
 
 #MAIN PROGRAM STARTS HERE
-win = pygame.display.set_mode((v.WIN_WIDTH,v.WIN_HEIGHT))
+win = pygame.display.set_mode((WIN_WIDTH,WIN_HEIGHT))
 clock= pygame.time.Clock()
 run=True
 
 
 
 while run:	
-	clock.tick(v.FRAME_RATE)
+	clock.tick(FRAME_RATE)
 	
 	
 	for event in pygame.event.get():
@@ -68,13 +71,13 @@ while run:
 
 		if event.type == KEYUP:
 			if event.key in (K_UP, K_w):
-				v.UPPRESSED=False
+				UPPRESSED=False
 			elif event.key in (K_DOWN, K_s):
-				v.DOWNPRESSED = False	        
+				DOWNPRESSED = False	        
 			elif event.key in (K_LEFT, K_a):
-				v.LEFTPRESSED= False      
+				LEFTPRESSED= False      
 			elif event.key in (K_RIGHT, K_d):
-				v.RIGHTPRESSED= False
+				RIGHTPRESSED= False
 			if event.key==K_ESCAPE:
 				pygame.quit()
 				sys.exit()
@@ -82,22 +85,22 @@ while run:
 		elif event.type == KEYDOWN:
 			if event.key in (K_UP, K_w):
 				# print('up key pressed')
-				v.UPPRESSED=True
+				UPPRESSED=True
 			elif event.key in (K_DOWN, K_s):
-				v.DOWNPRESSED = True	        
+				DOWNPRESSED = True	        
 			elif event.key in (K_LEFT, K_a):
-				v.LEFTPRESSED= True      
+				LEFTPRESSED= True      
 			elif event.key in (K_RIGHT, K_d):
-				v.RIGHTPRESSED= True
+				RIGHTPRESSED= True
 
 		if event.type == MOUSEBUTTONDOWN:
-			v.mousex, v.mousey = event.pos
-			v.mouseClicked = True
+			mousex, mousey = event.pos
+			mouseClicked = True
 			
 
 		if event.type == MOUSEBUTTONUP:
-			v.mousex,v.mousey = event.pos			
-			v.mouseClicked = False
+			mousex,mousey = event.pos			
+			mouseClicked = False
 
 	#draw_background(win)
 	#ALL OBJECTS WILL WORK BELOW

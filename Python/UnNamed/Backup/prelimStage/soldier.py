@@ -2,8 +2,6 @@ import pygame
 from pygame.locals import *
 from helpers import *
 import os
-import variableStore as v
-
 
 
 class soldier:
@@ -30,13 +28,13 @@ class soldier:
 		self.images=[self.idle_images,self.move_images,self.shoot_images]
 		self.animTimers=[0,0,0]
 		self.animTimerMax=[1,1,1]
-		self.anim=0
+		self.anim=1
 		self.frame=0
 		self.rotationSpeed=2
+		self.velocity=CreateVector(0,0)
+		self.acceleration=CreateVector(0,0)
+		self.amax=2
 		self.vmax=5
-		self.velMin=1
-		self.velocity=CreateVector(self.velMin,0)	
-		self.vel=self.velMin
 
 	def animUpdateAllowed(self):
 		self.animTimers[self.anim]+=1
@@ -66,44 +64,48 @@ class soldier:
 			self.anim=2
 			self.frame=0
 
-	def update(self):
-		if v.LEFTPRESSED:
-			self.angle+=self.rotationSpeed
+	def update(self,leftPressed,rightPressed,upPressed,downPressed):
+		if leftPressed:
+			self.angle-=self.rotationSpeed
 			if self.angle < 0:
 				self.angle+=360
-			self.updateVelocity()
-		elif v.RIGHTPRESSED:
-			self.angle-=self.rotationSpeed
+			self.updateAcceleration()
+		elif rightPressed:
+			self.angle+=self.rotationSpeed
 			if self.angle > 360:
 				self.angle=360-self.angle
-			self.updateVelocity()
+			self.updateAcceleration()
 
-		if v.UPPRESSED:	
-			self.ChangeAnimation("move")		
-			self.ApplyVelocity()
+		if upPressed:			
+			self.ApplyAcceleration()
 		else:
-			self.ChangeAnimation("idle")
-			self.DeApplyVelocity()
-		
+			self.ApplyDecceleration()
+		self.ApplyVelocity()
 			
 		
-	def updateVelocity(self):
-		rangle=360-self.angle
-		self.velocity.x=self.vel * math.cos(d2r(rangle))
-		self.velocity.y=self.vel * math.sin(d2r(rangle))			
+	def updateAcceleration(self):
+		self.acceleration.x=self.amax * math.cos(d2r(self.angle))
+		self.acceleration.y=self.amax * math.sin(d2r(self.angle))
+
+	def ApplyAcceleration(self):
+		self.velocity.add(self.acceleration)
+		if self.velocity.mag() > self.vmax:
+			self.velocity.sub(self.acceleration)
+	def ApplyDecceleration(self):
+		if self.velocity.x==0 and self.velocity.y==0:
+			return False
+		self.velocity.div(2)
+		if self.velocity.mag() < 0.5:
+			self.velocity.set(0,0)
 
 	def ApplyVelocity(self):
-		if self.vel < self.vmax:
-			self.vel+=1
-			self.updateVelocity()
 		self.position.add(self.velocity)
+		
 
-	def DeApplyVelocity(self):
-		if self.vel <=self.velMin:
-			return True
-		self.vel-=1
-		self.updateVelocity()
-		self.position.add(self.velocity)
+
+
+
+
 
 
 	def display(self,win):
