@@ -4,13 +4,29 @@ from helpers import *
 import os
 import variableStore as v
 
+class collisionBox:
+	def __init__(self,x,y,width,height):
+		self.width=width
+		self.height=height
+		self.position=CreateVector(x,y)
+	def display(self,win):
+		pygame.draw.rect(win,(255,0,0),
+									(self.position.x-self.width/2-v.camera.position.x,
+									 self.position.y-self.height/2-v.camera.position.y,self.width,self.height))
+	def update(self,pos):
+		if self.position.x !=pos.x or self.position.y !=pos.y:
+			self.position.x=pos.x
+			self.position.y=pos.y
+
 
 
 class soldier:
 	def __init__(self,x,y):
+		self.onScreen=True
 		self.width=200
 		self.height=200
 		self.position=CreateVector(x,y)
+		self.boxCollider=collisionBox(x,y,self.width*0.5,self.height*0.5)
 		self.idle_images,self.move_images,self.shoot_images=[],[],[]		
 		self.images=[]	
 		self.angle=0
@@ -84,6 +100,8 @@ class soldier:
 		else:
 			self.ChangeAnimation("idle")
 			self.DeApplyVelocity()
+
+		self.boxCollider.update(self.position)
 		
 			
 		
@@ -107,8 +125,38 @@ class soldier:
 
 
 	def display(self,win):
-		draw_translate_rotate(self.images[self.anim][self.frame],self.angle,self.position.x-self.width/2,self.position.y-self.height/2,win)
+		draw_translate_rotate(self.images[self.anim][self.frame],
+							  self.angle,self.position.x-self.width/2-v.camera.position.x,
+							  self.position.y-self.height/2-v.camera.position.y,win)
 		self.updateAnimation()
+		self.boxCollider.display(win)
+
+
+
+class pipe:
+	def __init__(self,x,y,width,height,hori=True):
+		self.onScreen=True
+		self.position=CreateVector(x,y)
+		self.width=width
+		self.height=height
+		self.angle=0
+		if hori:
+			self.imagex=pygame.transform.scale(pygame.image.load('./sprites/Pipes/pipeHori.png'),(self.width,self.height))
+		else:
+			self.imagex=pygame.transform.scale(pygame.image.load('./sprites/Pipes/pipe.png'),(self.width,self.height))
+
+		self.leftCollider= collisionBox(x-self.width*0.46,y,0.05*self.width,self.height*0.8)
+		self.rightCollider=collisionBox(x+self.width*0.46,y,0.05*self.width,self.height*0.8)
+		self.topCollider =collisionBox(x,y-self.height*0.35,0.8*self.width,0.05*self.height)
+		self.bottomCollider =collisionBox(x,y+self.height*0.35,0.8*self.width,0.05*self.height)
+		self.colliders=[self.leftCollider,self.rightCollider,self.bottomCollider,self.topCollider]
+
+	def display(self,win):
+		draw_translate_rotate(self.imagex,
+							  self.angle,self.position.x-self.width/2-v.camera.position.x,
+							  self.position.y-self.height/2-v.camera.position.y,win)
+		for col in self.colliders:
+			col.display(win)
 
 
 

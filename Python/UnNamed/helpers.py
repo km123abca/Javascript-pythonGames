@@ -22,8 +22,12 @@ def draw_translate_rotate(img,rotangle,x,y,win):
 	win.blit(rotated_image,new_rect.topleft)
 
 def boxCollision(obj1,obj2):
-	rect1=pygame.rect(obj1.position.x-v.camera.position.x,obj1.position.y-v.camera.position.y,obj1.width,obj1.height)
-	rect2=pygame.rect(obj2.position.x-v.camera.position.x,obj2.position.y-v.camera.position.y,obj2.width,obj2.height)
+	rect1=pygame.rect(obj1.position.x-obj1.width/2-v.camera.position.x,
+					  obj1.position.y-obj1.height/2-v.camera.position.y,
+					  obj1.width,obj1.height)
+	rect2=pygame.rect(obj2.position.x-obj2.width/2-v.camera.position.x,
+					  obj2.position.y-obj2.height/2-v.camera.position.y,
+					  obj2.width,obj2.height)
 	return rect1.colliderect(rect2)
 
 def check_collision(obj1,obj2):
