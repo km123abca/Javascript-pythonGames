@@ -2,16 +2,32 @@ import math
 import pygame
 from pygame.locals import *
 import variableStore as v
+import sys
 FRAME_RATE=30
 deltaTime=1000/FRAME_RATE
 
+def terminate():
+    pygame.quit()
+    sys.exit()
 def Lerp(startValue,endValue,lerpFac):
 	return startValue+(endValue-startValue)/lerpFac;
 
-def w2screen(txt,px,py,fsiz=50):
+def w2screen(win,txt,px,py,fsiz=50):
 	STAT_FONT= pygame.font.SysFont("comicsans",fsiz)
 	text=STAT_FONT.render(txt,1,(255,0,0))
 	win.blit(text,(px,py))
+
+def vectorInRotAx(a,angle):
+	t=d2r(angle)
+	xval= a.x * math.cos(t)+a.y*math.sin(t)
+	yval=-a.x * math.sin(t)+a.y*math.cos(t)
+	return CreateVector(xval,yval)
+
+def vectorInrRotAx(a,angle):
+	t=d2r(angle)
+	xval= a.x * math.cos(t)-a.y*math.sin(t)
+	yval= a.x * math.sin(t)+a.y*math.cos(t)
+	return CreateVector(xval,yval) 
 
 def d2r(ang):
 	return ang/180*math.pi
@@ -22,10 +38,10 @@ def draw_translate_rotate(img,rotangle,x,y,win):
 	win.blit(rotated_image,new_rect.topleft)
 
 def boxCollision(obj1,obj2):
-	rect1=pygame.rect(obj1.position.x-obj1.width/2-v.camera.position.x,
+	rect1=pygame.Rect(obj1.position.x-obj1.width/2-v.camera.position.x,
 					  obj1.position.y-obj1.height/2-v.camera.position.y,
 					  obj1.width,obj1.height)
-	rect2=pygame.rect(obj2.position.x-obj2.width/2-v.camera.position.x,
+	rect2=pygame.Rect(obj2.position.x-obj2.width/2-v.camera.position.x,
 					  obj2.position.y-obj2.height/2-v.camera.position.y,
 					  obj2.width,obj2.height)
 	return rect1.colliderect(rect2)
@@ -52,6 +68,9 @@ class CreateVector:
 	def set(self,x,y):
 		self.x=x
 		self.y=y
+	def setVec(self,vec):
+		self.x=vec.x
+		self.y=vec.y
 	def mag(self):
 		return math.sqrt(self.x**2+self.y**2)
 	def add(self,vec):
@@ -81,6 +100,9 @@ class CreateVector:
 	def copy(self):
 		copyVec=CreateVector(self.x,self.y)
 		return copyVec
+
+	def equals(self,vec):
+		return self.x==vec.x and self.y==vec.y
 	def desc(self):
 		return (f'Vector with values x:{self.x} and y:{self.y}' )
 

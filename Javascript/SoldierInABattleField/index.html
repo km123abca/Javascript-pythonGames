@@ -1,26 +1,26 @@
 <head>
-	<script>
-	let mouseX,mouseY;
-	let camX=0,camY=0;
-	let upPress,leftPress,downPress,rightPress,fPress,gPress,enterPress,mousePressed,mouseDoubleTap,spacePress;
+    <script>
+    let mouseX,mouseY;
+    let camX=0,camY=0;
+    let upPress,leftPress,downPress,rightPress,fPress,gPress,enterPress,mousePressed,mouseDoubleTap,spacePress;
     let pauseGame=false;
     let doubleTapTimer=0;
-	let backGroundColor="#16a1b3";
+    let backGroundColor="#16a1b3";
     let deltaTime=1000/60;
     let debugVar1;
 
-	function trackMouse(e)
-		{
-		mouseX=e.clientX;
-		mouseY=e.clientY;
+    function trackMouse(e)
+        {
+        mouseX=e.clientX;
+        mouseY=e.clientY;
 
-		};
-    function w2screen(strr = "", px = 20, py = 30,fstyle="#FFFFFF") 
-    	{
-	      ctx.font = "40px Haettenschweiler";
-	      ctx.fillStyle = fstyle;
-	      ctx.fillText(strr, px, py);
-    	}
+        };
+    function w2screen(strr = "", px = 20, py = 30,fstyle="#FFFFFF",font="40px Haettenschweiler") 
+        {
+          ctx.font = font;
+          ctx.fillStyle = fstyle;
+          ctx.fillText(strr, px, py);
+        }
 
     //hfns
     function r2d(angle) 
@@ -109,53 +109,53 @@
                                     return Math.sqrt((x1-x2)**2+(y1-y2)**2);
                                 };
     let Lerp=(startValue,endValue,lerpFac=2)=>
-    								{
-    									return startValue+(endValue-startValue)/lerpFac;
-    								};
-	function collisioncheckz(elem1,elem2)
-				{
-			return (inter_ects(elem1.posx-elem1.width/2,elem1.posy-elem1.height/2,
-							   elem1.width,elem1.height,
-					   		   elem2.posx-elem2.width/2,elem2.posy-elem2.height/2,
-					   		   elem2.width,elem2.height
-					  		  )
-				   );
-				}
-	function inter_ects(q1,q2,ql1,ql2,w1,w2,wl1,wl2)
-				{
-				if(w1>=q1)
-					{
-					if((w1-q1)<ql1)
-						{
-						if(w2>=q2)
-							{
-							if((w2-q2)<ql2) return true;
-							return false;
-							}
-						else
-							{
-							if((q2-w2)<wl2) return true;
-							return false;
-							}
-						}
-					}
-				else
-					{
-					if((q1-w1)<wl1)
-						{
-						if(w2>=q2)
-							{
-							if((w2-q2)<ql2) return true;
-							return false;
-							}
-						else
-							{
-							if((q2-w2)<wl2) return true;
-							return false;
-							}
-						}
-					}
-				}
+                                    {
+                                        return startValue+(endValue-startValue)/lerpFac;
+                                    };
+    function collisioncheckz(elem1,elem2)
+                {
+            return (inter_ects(elem1.posx-elem1.width/2,elem1.posy-elem1.height/2,
+                               elem1.width,elem1.height,
+                               elem2.posx-elem2.width/2,elem2.posy-elem2.height/2,
+                               elem2.width,elem2.height
+                              )
+                   );
+                }
+    function inter_ects(q1,q2,ql1,ql2,w1,w2,wl1,wl2)
+                {
+                if(w1>=q1)
+                    {
+                    if((w1-q1)<ql1)
+                        {
+                        if(w2>=q2)
+                            {
+                            if((w2-q2)<ql2) return true;
+                            return false;
+                            }
+                        else
+                            {
+                            if((q2-w2)<wl2) return true;
+                            return false;
+                            }
+                        }
+                    }
+                else
+                    {
+                    if((q1-w1)<wl1)
+                        {
+                        if(w2>=q2)
+                            {
+                            if((w2-q2)<ql2) return true;
+                            return false;
+                            }
+                        else
+                            {
+                            if((q2-w2)<wl2) return true;
+                            return false;
+                            }
+                        }
+                    }
+                }
     let click1,click1Confirmed,click2,click2Confirmed,click3,click3Confirmed;
     click1=false;click1Confirmed=false;
     click2=false;click2Confirmed=false;
@@ -226,33 +226,33 @@
 
     //soldier feet starts //subcomponent no camera
     function SoldierFeet(posx,posy)
-    	{
-    		this.posx=posx;
-    		this.posy=posy;
-    		this.onScreen=true;	
-    		this.width=60*xscale;
-    		this.height=40*yscale;
-    		this.animationCounter=0;
-    		//loading idleanimation images starts
-    		this.idle_images=[];    		
-    		for(i=0;i<1;i++)
-    			{
-    			let imgx=new Image();     			         
-    		    imgx.src=`./sprites/soldierFeet/idle/survivor-idle_${i}.png`;
-    			this.idle_images.push(imgx);
-    			}
-    		//loading idleanimation images ends
-    		//loading idleanimation images starts
-    		this.run_images=[];    		
-    		for(i=0;i<20;i++)
-    			{
-    			let imgx=new Image();     			         
-    		    imgx.src=`./sprites/soldierFeet/run/survivor-run_${i}.png`;
-    			this.run_images.push(imgx);
-    			}
-    		//loading runanimation images ends
-    		this.presentAnimationState=1;
-    		this.animationStates=[this.idle_images,this.run_images];
+        {
+            this.posx=posx;
+            this.posy=posy;
+            this.onScreen=true; 
+            this.width=60*xscale;
+            this.height=40*yscale;
+            this.animationCounter=0;
+            //loading idleanimation images starts
+            this.idle_images=[];            
+            for(i=0;i<1;i++)
+                {
+                let imgx=new Image();                        
+                imgx.src=`./sprites/soldierFeet/idle/survivor-idle_${i}.png`;
+                this.idle_images.push(imgx);
+                }
+            //loading idleanimation images ends
+            //loading idleanimation images starts
+            this.run_images=[];         
+            for(i=0;i<20;i++)
+                {
+                let imgx=new Image();                        
+                imgx.src=`./sprites/soldierFeet/run/survivor-run_${i}.png`;
+                this.run_images.push(imgx);
+                }
+            //loading runanimation images ends
+            this.presentAnimationState=1;
+            this.animationStates=[this.idle_images,this.run_images];
             this.changeAnimation=(anim)=>
                   {                    
                     if ((anim=="run") && this.presentAnimationState!=1)
@@ -292,7 +292,7 @@
 
                   };
 
-    	}
+        }
     //soldier feet ends
     //darkball starts
     function DarkBall(posx,posy,angle)
@@ -636,36 +636,36 @@
     //colblock ends
     //redblock starts
     function RedBlock(posx,posy,wid=10,hei=10)
-    	{
+        {
             
-    		this.posx=posx;
-    		this.posy=posy;
+            this.posx=posx;
+            this.posy=posy;
             this.fixedPosx=posx;
             this.fixedPosy=posy;
             this.angle=0;
-    		this.onScreen=true;
-    		this.width=wid*xscale;
-    		this.height=hei*yscale;
-    		this.imgx=new Image();
-    		this.imgx.src='./sprites/redcube.png';
-    		this.onScreen=true;
-    		this.dr_w=()=>
-    				      {
-    				      	if(!this.onScreen) return false;    				      	
-    				      	ctx.save();
-    						ctx.translate(this.posx, this.posy);    						
-    						ctx.drawImage(
-        								  this.imgx,
-        								  -this.width / 2,
-        								  -this.height / 2,
-        								  this.width,
-        								  this.height
-      								     );    						
-    						ctx.restore();   						
+            this.onScreen=true;
+            this.width=wid*xscale;
+            this.height=hei*yscale;
+            this.imgx=new Image();
+            this.imgx.src='./sprites/redcube.png';
+            this.onScreen=true;
+            this.dr_w=()=>
+                          {
+                            if(!this.onScreen) return false;                            
+                            ctx.save();
+                            ctx.translate(this.posx, this.posy);                            
+                            ctx.drawImage(
+                                          this.imgx,
+                                          -this.width / 2,
+                                          -this.height / 2,
+                                          this.width,
+                                          this.height
+                                         );                         
+                            ctx.restore();                          
 
-    				      };           
+                          };           
 
-    	}
+        }
     //redblock ends
     //redblockdyn starts
     function RedBlockDyn(posx,posy,wid=10,hei=10)
@@ -761,7 +761,7 @@
         {
             this.uiElements=[];
             this.tutorialClicks=[];
-
+            this.waitingForSometime=0;
            
             this.tutClickSpawns=[[100,200],[300,400],[100,200]];
             this.tutClickTypes=["single","single","double"];
@@ -833,7 +833,7 @@
                 }          
             this.skipTutsAndStartGame=()=>
                 {
-
+                    if(this.waitingForSometime!=0) return;
                     this.clipOnScreen=true;
                     this.tutClickIndex=0;
                     this.tutorialClicks=[];
@@ -844,8 +844,21 @@
                 {
                     if(soldiersList.length>0) return;
                     this.gameStarted=false;
-                    this.showMessage('You Died... triple click to restart');
+                    this.showMessage('You Died............');
+                    if(this.waitingForSometime==0) 
+                    this.waitingForSometime=deltaTime;
 
+                }
+
+            this.waitForSometime=()=>  
+                {
+                    if(this.waitingForSometime==0) return;
+                    this.waitingForSometime+=deltaTime;
+                    if(this.waitingForSometime > 3000)
+                        {
+                            showMidScreen=true;
+                            this.waitingForSometime=0;
+                        }
                 }
 
             this.update=()=>
@@ -855,6 +868,7 @@
                     this.DrawUIElements();
                     this.DrawTutorialClicks();
                     this.setupRestart();
+                    this.waitForSometime();
 
                     if(this.gameStarted && this.zombieCount < 1)
                     {
@@ -3329,21 +3343,21 @@
 
     //solider starts
     function Soldier(posx,posy)
-    	{
+        {
             this.tag="player";
-    		this.posx=posx;
-    		this.posy=posy;
-    		this.onScreen=true;
-    		this.width=120*xscale;
-    		this.height=120*yscale;
-    		this.vel=4* Math.sqrt(xscale**2+yscale**2);
-    		this.velx=0;
-    		this.vely=this.vel;
-    		this.rotangle=0;
-    		this.rotSpeed=1;
+            this.posx=posx;
+            this.posy=posy;
+            this.onScreen=true;
+            this.width=120*xscale;
+            this.height=120*yscale;
+            this.vel=4* Math.sqrt(xscale**2+yscale**2);
+            this.velx=0;
+            this.vely=this.vel;
+            this.rotangle=0;
+            this.rotSpeed=1;
             this.doubleTapTimer=0;
             this.confirmMouseDown=false;
-    		this.collisionBlock=new RedBlock(60*xscale,29*yscale);
+            this.collisionBlock=new RedBlock(60*xscale,29*yscale);
             this.sFeet=new SoldierFeet(20*xscale,0);
             this.destinX=canvas.width/2-58*xscale;
             this.destinY=canvas.height/2+50*yscale;     
@@ -3360,15 +3374,15 @@
             this.boxCollider=new RedBlockDyn(this.posx,this.posy,0.5*this.width,0.5*this.height);
 
 
-    		this.animationCounter=0;
-    		this.idle_images=[];
+            this.animationCounter=0;
+            this.idle_images=[];
 
-    		for(i=0;i<19;i++)
-    			{
-    			let imgx=new Image();    			         
-    		    imgx.src=`./sprites/soldier/idle/survivor-idle_handgun_${i}.png`;
-    			this.idle_images.push(imgx);
-    			}
+            for(i=0;i<19;i++)
+                {
+                let imgx=new Image();                        
+                imgx.src=`./sprites/soldier/idle/survivor-idle_handgun_${i}.png`;
+                this.idle_images.push(imgx);
+                }
             this.shootImages=[];
             for(i=0;i<3;i++)
                 {
@@ -3377,8 +3391,8 @@
                 this.shootImages.push(imgx);
                 }
 
-    		this.presentAnimationState=0;
-    		this.animationStates=[this.idle_images,this.shootImages];
+            this.presentAnimationState=0;
+            this.animationStates=[this.idle_images,this.shootImages];
             
             this.animationSpeeds=[1,2];
             this.animationSpeedTimers=[0,0];
@@ -3434,21 +3448,21 @@
                     if(this.life > this.maxLife) this.life=this.maxLife;
                 }
 
-    		this.updateAnimationFrame=()=>
-				  {
+            this.updateAnimationFrame=()=>
+                  {
                     if(!this.controlAnimationSpeed()) return;
-				  	this.animationCounter+=1;    									  	
-				  	if(this.animationCounter >= this.animationStates[this.presentAnimationState].length)
+                    this.animationCounter+=1;                                           
+                    if(this.animationCounter >= this.animationStates[this.presentAnimationState].length)
                         {
                         if(this.animInQueue=="none")
-				  		   this.animationCounter=0;
+                           this.animationCounter=0;
                         else
                             {
                               this.changeAnimation(this.animInQueue);
                               this.animInQueue="none";
                             }
                         }
-				  };
+                  };
             this.drawAndMoveBullets=()=>
                           {                            
                             for(let b of this.bulletsShot)
@@ -3474,37 +3488,37 @@
                                             );
                     }
 
-    		this.dr_w=()=>
-    				      {
-    				      	if(!this.onScreen) return false;
+            this.dr_w=()=>
+                          {
+                            if(!this.onScreen) return false;
                             // w2screen(this.destinX.toFixed(1)+","+this.destinY.toFixed(1),20,100);
                             this.drawAndMoveBullets();
-    				      	ctx.save();
-    						ctx.translate(this.posx-camX, this.posy-camY);
-    						ctx.rotate(this.rotangle*Math.PI/180);
-    						this.drawDependentSubComponents();
-    						ctx.drawImage(
-        								  this.animationStates[this.presentAnimationState][this.animationCounter],
-        								  -this.width / 2,
-        								  -this.height / 2,
-        								  this.width,
-        								  this.height
-      								     ); 
-                                  						  						
-    						ctx.restore();
-    						this.updateAnimationFrame();
-    						this.drawSubComponents();
+                            ctx.save();
+                            ctx.translate(this.posx-camX, this.posy-camY);
+                            ctx.rotate(this.rotangle*Math.PI/180);
+                            this.drawDependentSubComponents();
+                            ctx.drawImage(
+                                          this.animationStates[this.presentAnimationState][this.animationCounter],
+                                          -this.width / 2,
+                                          -this.height / 2,
+                                          this.width,
+                                          this.height
+                                         ); 
+                                                                                
+                            ctx.restore();
+                            this.updateAnimationFrame();
+                            this.drawSubComponents();
                             this.drawUIComponents();
                             //this.boxCollider.dr_w();
-    				      };
+                          };
 
-    		this.drawSubComponents=()=>
-						   {
-						   	ctx.save();
-							ctx.translate(this.posx-camX, this.posy-camY);
-							// this.collisionBlock.dr_w();                            
-							ctx.restore(); 
-						   };
+            this.drawSubComponents=()=>
+                           {
+                            ctx.save();
+                            ctx.translate(this.posx-camX, this.posy-camY);
+                            // this.collisionBlock.dr_w();                            
+                            ctx.restore(); 
+                           };
 
             this.drawUIComponents=()=>
                             {
@@ -3514,20 +3528,20 @@
                            {
                             this.sFeet.dr_w();
                            };
-    		this.adjustAsPerRotAngle=(x,y)=>
-							{							 
+            this.adjustAsPerRotAngle=(x,y)=>
+                            {                            
                             // console.log("x:"+x+" rotangle:"+this.rotangle);
                              //console.log(`rotangle:${this.rotangle}, and xpos:${len * Math.cos(this.rotangle/180*Math.PI)}`);
                              let cosine=Math.cos(this.rotangle/180*Math.PI);
                              let sine  =Math.sin(this.rotangle/180*Math.PI);
-                             return [x*cosine-y*sine,x*sine+y*cosine];							 
-							};
-			this.adjustSubComponents=()=>
-						    {
+                             return [x*cosine-y*sine,x*sine+y*cosine];                           
+                            };
+            this.adjustSubComponents=()=>
+                            {
                                 
-						    	[this.collisionBlock.posx,this.collisionBlock.posy]=
-						    	this.adjustAsPerRotAngle(this.collisionBlock.fixedPosx,this.collisionBlock.fixedPosy);
-						    };
+                                [this.collisionBlock.posx,this.collisionBlock.posy]=
+                                this.adjustAsPerRotAngle(this.collisionBlock.fixedPosx,this.collisionBlock.fixedPosy);
+                            };
             this.clickedWithinBounds=()=>
                             {
                                 if(mouseX > 0 && mouseX < canvas.width)
@@ -3557,8 +3571,8 @@
                                 
                     }
 
-    		this.move=()=>
-    			  		  {
+            this.move=()=>
+                          {
 
                             this.boxCollider.resetPosition(this.posx,this.posy);
                             this.runDoubleTapTimer();
@@ -3585,7 +3599,7 @@
                                 }
                             this.moveTowardsPoint(this.destinX,this.destinY);
 
-    			  		  }
+                          }
 
             this.runDoubleTapTimer=()=>
                           {
@@ -3659,14 +3673,14 @@
                                     this.sFeet.changeAnimation("idle");
                                 }
                             }
-    		this.pointMe=(vel=this.vel)=>
-    						{
-    							this.velx=vel * Math.cos(this.rotangle/180*Math.PI);
-    							this.vely=vel * Math.sin(this.rotangle/180*Math.PI);
-    							this.adjustSubComponents();
-    						}
+            this.pointMe=(vel=this.vel)=>
+                            {
+                                this.velx=vel * Math.cos(this.rotangle/180*Math.PI);
+                                this.vely=vel * Math.sin(this.rotangle/180*Math.PI);
+                                this.adjustSubComponents();
+                            }
 
-    	}
+        }
     //soldier ends
 
     function firstdisplay(elem,el)
@@ -3684,15 +3698,15 @@
 
         }
     
-	</script>
+    </script>
 </head>
 
 
 <body>
-	<canvas style='border:3px solid black;' onmousemove="trackMouse(event)">  
-	</canvas>
+    <canvas style='border:3px solid black;' onmousemove="trackMouse(event)">  
+    </canvas>
     <!-- Debug values starts -->
-    <div style="border:1px solid black;display:flex;justify-content: space-between;background-color: black;">
+   <!--  <div style="border:1px solid black;display:flex;justify-content: space-between;background-color: black;">
         <input type="range" min="0" max="4000" value="2000" style="width:500px;" oninput="firstdisplay(this,'col1')">
         <span>
             <span style="background-color: black;color:white;">width:</span>
@@ -3719,63 +3733,63 @@
             <span style="background-color: black;color:white;">posy:</span>
             <input type="text" id="col4" value=0>
         <span>
-    </div>
+    </div> -->
 
     <!-- Debug values ends -->
-	<script>	 	
-	var canvas = document.querySelector('canvas');	
-   	ctx = canvas.getContext('2d');
-   	canvas.width = window.innerWidth-35;
-  	canvas.height = window.innerHeight-100;
-  	let xscale=canvas.width/1501,yscale=canvas.height/654;
+    <script>        
+    var canvas = document.querySelector('canvas');  
+    ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth-35;
+    canvas.height = window.innerHeight-100;
+    let xscale=canvas.width/1501,yscale=canvas.height/654;
 
-	var resize = function () 
-		{
-  		canvas.width = window.innerWidth-35;
-  		canvas.height = window.innerHeight-100;
-		};			
-	window.addEventListener('resize', resize);
+    var resize = function () 
+        {
+        canvas.width = window.innerWidth-35;
+        canvas.height = window.innerHeight-100;
+        };          
+    window.addEventListener('resize', resize);
     let numpadOnePress=false,numpadTwoPress=false;
-	document.onkeypress=function (e)
-					{	
-                    // console.log(e.keyCode);		
+    document.onkeypress=function (e)
+                    {   
+                    // console.log(e.keyCode);      
                     if(e.keyCode==32) spacePress=true;
-					if(e.keyCode==119) upPress=true;
-					if(e.keyCode==100) rightPress=true;
-					if(e.keyCode==115) downPress=true;
-					if(e.keyCode==97) leftPress=true;
-					if(e.keyCode==103) gPress=true;
-					if(e.keyCode==102) fPress=true;
-					if(e.keyCode==13)  enterPress=true;	
+                    if(e.keyCode==119) upPress=true;
+                    if(e.keyCode==100) rightPress=true;
+                    if(e.keyCode==115) downPress=true;
+                    if(e.keyCode==97) leftPress=true;
+                    if(e.keyCode==103) gPress=true;
+                    if(e.keyCode==102) fPress=true;
+                    if(e.keyCode==13)  enterPress=true; 
 
                     if(e.keyCode==49) numpadOnePress=true;
-                    if(e.keyCode==50) numpadTwoPress=true;			
-					};
-	document.onkeyup=function (e)
-					{
-                    // console.log(e.keyCode); 	
-                    if(e.keyCode==32) spacePress=false;			
-					if(e.keyCode==87) upPress=false;
-					if(e.keyCode==68) rightPress=false;
-					if(e.keyCode==83) downPress=false;
-					if(e.keyCode==65) leftPress=false;
-					if(e.keyCode==71) gPress=false;
-					if(e.keyCode==70) fPress=false;
-					if(e.keyCode==13)  enterPress=false;
+                    if(e.keyCode==50) numpadTwoPress=true;          
+                    };
+    document.onkeyup=function (e)
+                    {
+                    // console.log(e.keyCode);  
+                    if(e.keyCode==32) spacePress=false;         
+                    if(e.keyCode==87) upPress=false;
+                    if(e.keyCode==68) rightPress=false;
+                    if(e.keyCode==83) downPress=false;
+                    if(e.keyCode==65) leftPress=false;
+                    if(e.keyCode==71) gPress=false;
+                    if(e.keyCode==70) fPress=false;
+                    if(e.keyCode==13)  enterPress=false;
 
                     if(e.keyCode==97) numpadOnePress=false;  
                     if(e.keyCode==98) numpadTwoPress=false;
-					};
+                    };
 
-	document.onmousedown=function(e)
-					{
-					mousePressed=true;	
-                    // RunDoubleTapDetection();												
-					};	
-	document.onmouseup=function(e)
-					{
-					mousePressed=false;												
-					};
+    document.onmousedown=function(e)
+                    {
+                    mousePressed=true;  
+                    // RunDoubleTapDetection();                                             
+                    };  
+    document.onmouseup=function(e)
+                    {
+                    mousePressed=false;                                             
+                    };
     var RunDoubleTapDetection=()=>
                     {
                         if(mouseDoubleTap) return false;
@@ -3975,11 +3989,49 @@
     let beetleList=[];
     // beetleList.push(new Beetle(canvas.width*0.9,canvas.height/2));
     //wolfList.push(new WolfLord(canvas.width*0.9,canvas.height/2));
+    let startScreenPassed=false;
+    let showMidScreen=false;
+    StartScreen=()=>
+                    {
+                        if(!startScreenPassed)
+                            {
+                                w2screen("This is a Point and Tap Game",400*xscale,100*yscale,"#FFFFFF","32px Cooper Black");
+                                w2screen("Tap anywhere on the screen to make the player move towards there",400*xscale,200*yscale,"#FFFFFF","32px Cooper Black");
+                                w2screen("Double tap to make the player shoot towards the tapped area",400*xscale,300*yscale,"#FFFFFF","32px Cooper Black");
+                                w2screen("Watch out when the enemy is fuming",400*xscale,400*yscale,"#FFFFFF","32px Cooper Black");
+                                w2screen("Triple tap to start the game",400*xscale,500*yscale,"#FFFFFF","32px Cooper Black")
+                                // w2screen("Hello ",200,200);
+                                if(TripleClick())
+                                    {
+                                    startScreenPassed=true;
+                                    gC.skipTutsAndStartGame();
+                                    }
+                            }
+                        
+                    }
+    MidScreen=()=>
+                    {
+                        if(showMidScreen)
+                            {
+                                w2screen("Triple tap to restart",400*xscale,100*yscale,"#FFFFFF","32px Cooper Black");
+                                
+                                // w2screen("Hello ",200,200);
+                                if(TripleClick())
+                                    {
+                                    showMidScreen=false;
+                                    gC.skipTutsAndStartGame();
+                                    }
+                            }
+                        
+                    }
 
     //spheresList.push(new Sphere(200,200));
      let gC=new GameController();
     RunGame=()=>
-    			{                    
+                {       
+                StartScreen();
+                MidScreen();
+                if(!startScreenPassed || showMidScreen) return;             
                     if(spacePress)
                         {
                         spacePress=false;
@@ -3996,15 +4048,15 @@
                     RunCamera(soldiersList[0]);
                     //DrawDoorBlocks();
                     CheckCollisionsWithRoadBlocks();
-    				for(let x of soldiersList)
-    					{
+                    for(let x of soldiersList)
+                        {
                             // continue;
-    						x.dr_w();                            
+                            x.dr_w();                            
                             if(!pauseGame && !uiScreenOn)
                              {
-                              x.move();   						                                
+                              x.move();                                                         
                              }
-    					}
+                        }
                     flushArray(soldiersList);
                     for(let x of zombiesList)
                         {    
@@ -4061,25 +4113,25 @@
                         }
                     // DrawUIElements();
                     gC.update();
-    			}
+                }
     //main Program ends
 
-	window.addEventListener('load', 
-							function () 
-									{
-								 	resize();									
-							 		var loop = function () 
-													{										                    					
-													ctx.clearRect(0,0,canvas.width,canvas.height);	
-													ctx.fillStyle = backGroundColor;
-													ctx.fillRect(0,0,canvas.width, canvas.height);
-													RunGame();
-				                                 	};
-					  	     		setInterval(loop, deltaTime);					  		
-									}
-							);
+    window.addEventListener('load', 
+                            function () 
+                                    {
+                                    resize();                                   
+                                    var loop = function () 
+                                                    {                                                                               
+                                                    ctx.clearRect(0,0,canvas.width,canvas.height);  
+                                                    ctx.fillStyle = backGroundColor;
+                                                    ctx.fillRect(0,0,canvas.width, canvas.height);
+                                                    RunGame();
+                                                    };
+                                    setInterval(loop, deltaTime);                           
+                                    }
+                            );
 
-	</script>
+    </script>
 
-	
+    
 </body>
