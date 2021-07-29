@@ -7,8 +7,8 @@ class Camera:
 		self.mouseLockX=0
 		self.mouseLockY=0
 		self.temp=0
-		self.maxAllowedXRoaming=v.WIN_WIDTH*0.3
-		self.maxAllowedYRoaming=v.WIN_HEIGHT*0.3
+		self.maxAllowedXRoaming=v.WIN_WIDTH*0.05
+		self.maxAllowedYRoaming=v.WIN_HEIGHT*0.05
 
 	def runwithmouse(self):
 		if v.mouseClicked:			

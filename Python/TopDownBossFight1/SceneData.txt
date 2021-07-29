@@ -1,0 +1,6 @@
+scene0
+player
+310,502,100,100
+wall
+100,300,50,200,0
+sceneend

@@ -1,0 +1,5 @@
+40 276  1992 404  --middle
+
+When is sphere is spawned these two are the arguments for x1 and x2 gate positions
+1468
+2610

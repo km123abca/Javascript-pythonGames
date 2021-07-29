@@ -3149,13 +3149,13 @@
             this.fumeUp=()=>
                 {
                     this.fumeTimer+=deltaTime;
-                    if(this.fumeTimer > 0.5* this.fumeTimerMax*1000)
-                        spawnDustClouds(this.posx,this.posy,25);
+                    //if(this.fumeTimer > 0.5* this.fumeTimerMax*1000)
+                        //spawnDustClouds(this.posx,this.posy,5);
                     if(this.fumeTimer > this.fumeTimerMax*1000)
                         {
                             this.fumeTimer=0;
                             this.fumed=true;
-                            spawnDustClouds(this.posx,this.posy,25);
+                            spawnDustClouds(this.posx,this.posy,5);
                         }
                 }
             this.plungeTowardsTarget=()=>

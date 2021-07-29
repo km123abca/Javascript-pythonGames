@@ -260,13 +260,161 @@
 
 
 //hfns ends
+	//datum is declared below
+	let dataBoxID="-1";
+	let absBoxUp=false;
+	let logData=()=>
+					{
+						console.log("data will be logged at id:"+dataBoxID);
+						let enteredText=document.querySelector('#desc').value;
+						for (let i in datum)
+							{
+								if(datum[i].idx==dataBoxID)
+								{
+									datum[i]={...datum[i],'desc':enteredText};
+								}
+							}
+
+					}
+
+	let closeBox=()=>
+					{
+						document.querySelector('#dispDiv').style.display="none";
+						absBoxUp=false;
+					}
+
+
+	//###########################Operations at Story Area starts################################
+	let presentId="0";
+	let showAppropriateStory=(rec=0)=>
+		{ 
+			
+			if(rec > 5) 
+				{
+				console.log('fatal error');
+				return;
+				}
+			let flag=false;
+			for(let elem of datum)
+				{
+					if(elem.idx==presentId)
+					{
+						flag=true;
+						if(elem.desc)
+						document.querySelector('#textRegion').innerHTML=elem.desc;
+					    else
+					    	document.querySelector('#textRegion').innerHTML="The End";
+					}
+				}
+			if(!flag)
+				{
+					presentId="0";
+					showAppropriateStory(rec+1);
+				}
+		}
+	let choiceChange=(x)=>
+		{
+			presentId+=x;
+			console.log("presentId in now:"+presentId);
+			showAppropriateStory();
+		}
+	//###########################Operations at Story Area ends ################################
+
+
+
+    //########################### Switching screen Logic starts ##########################
+	let storyAreaOn=false;
+	let switchScreens=()=>
+		{
+			if(storyAreaOn)
+			{
+				storyAreaOn=false;
+				document.querySelector('#storyArea').style.display="none";
+				document.querySelector('#mainCanvas').style.display="block";
+			}
+			else
+			{
+				storyAreaOn=true;
+				document.querySelector('#storyArea').style.display="block";
+				showAppropriateStory();
+				document.querySelector('#mainCanvas').style.display="none";
+			}
+		}
+    //########################### Switching screen Logic ends #############################
+
+
 	</script>
+
+	<style>
+		#storyArea
+			{
+				display:none;
+				height:91%;
+			}
+		#switchScreens
+			{
+				outline: 0;
+				cursor: pointer;
+				width:150px;
+				height: 40px;
+				font-weight: bold;
+				color:white;
+				background-color: black;
+				border-radius:5px;
+			}
+		.pageButtons
+			{
+				outline: 0;
+				cursor: pointer;
+				width:150px;
+				height: 40px;
+				font-weight: bold;
+				color:white;
+				background-color: black;
+				border-radius:5px;
+				box-shadow: 5px 10px #888888;
+			}
+		#buttonArea
+			{
+				display:flex;
+				justify-content: space-around;
+			}
+		#textRegion
+			{
+				max-width:90%;
+				margin:auto;
+				margin-top:20px;
+				margin-bottom:20px;
+			}
+	</style>
 </head>
 
 
 <body>
-	<canvas style='border:3px solid black;' onmousemove="trackMouse(event)">  
+	<canvas style='border:3px solid black;' onmousemove="trackMouse(event)" id="mainCanvas">  
 	</canvas>
+	<div id="storyArea">
+		<div id="textRegion">This is the text Region</div>
+		<div id="buttonArea">
+			<button class="pageButtons" onclick="choiceChange(0)">Choice 1</button>
+			<button class="pageButtons" onclick="choiceChange(1)">Choice 2</button>
+		</div>
+	</div>
+	<div
+		style="position: absolute;top:10%;left:30%;width:60%;height:30%;border:2px solid black;background-color: white;display: none"
+		id="dispDiv"
+	>
+		<div style="margin:auto;width:80%;margin-top:20px;margin-bottom: 20px;">
+			<textarea cols="80" rows="10" id="desc"></textarea>
+		</div>
+		<div>
+			<button style="cursor:pointer;outline:0;margin-left:30px;" onclick="logData()">Log</button>
+			<button style="cursor:pointer;outline:0;margin-left:30px;" onclick="closeBox()">Close</button>
+		</div>
+	</div>
+	<div>
+		<button id="switchScreens" onclick="switchScreens()">Switch</button>
+	</div>
 	<script>	 	
 	var canvas = document.querySelector('canvas');
    	ctx = canvas.getContext('2d');
@@ -343,10 +491,12 @@
 	boxes.push(new Box(500*xscale,200*yscale));
 	RunGame=()=>
 		{
+			if(storyAreaOn) return;
 			RunMouseMover();
 			for(let x of boxes)
 			{
 				x.dr_w();
+				x.update();
 			}
 		};
 	function Box(posx,posy,parent=null)
@@ -379,23 +529,58 @@
         	{
         		if(!parent.parent)
         			{
+        				console.log("new box");
         				if(parent.left) this.idx="00";
         				else this.idx="01";
         			}
         		else
         			{
-        				if(parent.left) this.idx=parent.parent.box.idx+"0";
-        				else this.idx=parent.parent.box.idx+"1"
+        				if(parent.left)
+        					{
+
+        					 this.idx=parent.parent.box.idx+"0";
+        					}
+        				else
+        					{ 
+        					this.idx=parent.parent.box.idx+"1";
+        					}
         			} 
         	}
             	
         datum.push({"idx":this.idx});
             
+        this.detectClick=false;
+        
         this.update=function()
-        		{        			
-        			
-        			
+        		{       			
+        			if(this.clickedWithinBox() && !absBoxUp)
+        			{
+        				document.querySelector('#dispDiv').style.display='block';
+        				absBoxUp=true;
+        				if(dataBoxID!=this.idx)
+        					dataBoxID=this.idx;
+        				console.log("dataBoxID changed to :"+dataBoxID);
+
+        			}
         		}
+        this.clickedWithinBox=()=>
+        		{
+        			if(mousePressed && !this.detectClick)
+        				{
+        				this.detectClick=true;
+        				// console.log(mouseX+','+mouseY);
+        				return(
+	        				(mouseX > (this.position.x-this.width/2-camX) && mouseX < (this.position.x+this.width/2-camX) ) &&
+	        				(mouseY > (this.position.y-this.height/2-camY) && mouseY < (this.position.y+this.height/2-camY) )
+        					);
+
+        				}
+        			else if (!mousePressed)
+        				{
+        				this.detectClick=false;
+        				}
+        		}
+
         this.changePositionx=(newx)=>
         	{
         		this.position.x=newx;
@@ -442,8 +627,9 @@
 
 		this.xpts=[0,0,-this.lineLength,-this.lineLength];
 		this.ypts=[0,this.lineHeight,this.lineHeight,2*this.lineHeight];
-		this.box=new Box(this.position.x-this.lineLength,this.position.y+2*this.lineHeight+boxHeight*yscale/2,this);
 		this.parent=parent;
+		this.box=new Box(this.position.x-this.lineLength,this.position.y+2*this.lineHeight+boxHeight*yscale/2,this);
+		
 		this.informedParent=false;
 		/*
 		if(this.parent)
@@ -566,6 +752,7 @@
         this.drawAndUpdateBoxes=()=>
         		{
         			this.box.dr_w();
+        			this.box.update();
         		}
 		}
 	function ClickableCircle(posx,posy,cRad,left=false,parent=null,del=false)
@@ -580,15 +767,24 @@
 			this.drewLine=false;
 			this.parent=parent;
 			this.del=del;
+			this.pBox=null;
+			
 			//this.lines.push(new LeadingOutLine(this.position.x,this.position.y,200*xscale,100*yscale,left));
 			this.update=()=>
 				{
+					if(!this.pBox)
+						{
+						if(!parent)	this.pBox=boxes[0];			
+						else this.pBox=parent.box;
+						}
 					if(!this.del)
 					{
 					if(!this.drewLine && mousePressed)
 						{						  
 						  if(this.clickedWithin())
 						  	{
+						  	this.pBox.bringUpWindow=false;
+						  	console.log('struck down');//kmhere
 						  	this.drewLine=true;
 						  	this.lines.push(new LeadingOutLine(this.position.x,this.position.y,
 						  									   boxWidth/2*xscale,
@@ -599,7 +795,7 @@
 					}
 					else
 					{
-						if(mousePressed && this.clickedWithin())
+						if(mousePressed && this.clickedWithin() && !absBoxUp)
 						{
 							let bbox;
 							if(!this.parent.parent) bbox=boxes[0];
