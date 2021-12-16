@@ -144,6 +144,11 @@ def PointInsideObject(objToCheck,pt):
 			return True
 	return False
 
+def FarOut(obj):
+	camSepx=obj.position.x-camera.position.x
+	camSepy=obj.position.y-camera.position.y
+	return (((camSepx > 0 and camSepx-obj.width/2 > WIN_WIDTH) or (camSepx < 0 and abs(camSepx) > obj.width/2)) or ((camSepy > 0 and camSepy-obj.height/2 > WIN_HEIGHT) or (camSepy < 0 and abs(camSepy) > obj.height/2)))
+
 ################## Helper functions end   #################
 
 ####IMAGES STARTS #########################################
@@ -155,6 +160,9 @@ SPHERE_IMAGE=pygame.image.load('./sprites/misc/sphere.png')
 TREE_IMAGE=pygame.image.load('./sprites/misc/Tree.png')
 CLOUDIMAGE=pygame.image.load('./sprites/misc/cloud.png')
 DOT=pygame.image.load('./sprites/misc/RedDot.png')
+GRASSPLATFORM=pygame.image.load('./sprites/GrassPlatform.png')
+THORNYBALL=pygame.image.load('./sprites/Thornyball.png')
+SOULMASTER=pygame.image.load('./sprites/soulmaster.png')
 
 ####IMAGES ENDS ###########################################
 
@@ -230,6 +238,7 @@ class Camera:
 		self.tgtPosition=None
 		self.camSpeed=100*xscale
 		self.lerpFactor=8
+		self.disableFollowing=False
 	def runwithmouse(self):
 		if MOUSECLICKED:			
 			if self.mouseLockX==0:
@@ -278,7 +287,7 @@ class Camera:
 			self.FixToTempPoint()
 			return
 		'''
-		if not self.target:
+		if not self.target or self.disableFollowing:
 			return
 		self.SmoothFocus()
 		return
@@ -379,6 +388,64 @@ def SpawnCloudGroup(pos):
 	for i in range(30):
 		cloudsList.append(cloudBurst(pos.x,pos.y))
 
+class Pad:
+	def __init__(self,x,y,wid,hei,startpad):
+		self.startpad=True if startpad==1 else False
+		if self.startpad:
+			camera.disableFollowing=True
+		self.position=CreateVector(x,y)
+		self.onScreen=True
+		self.width=wid*xscale
+		self.height=hei*yscale
+		self.imagexOrig=GRASSPLATFORM
+		self.imagex=pygame.transform.scale(self.imagexOrig,(self.width,self.height))
+		self.boxCollider=collisionBox(self.position.x,self.position.y,self.width,int(self.height*0.48))
+		self.velocity=CreateVector(5*xscale,0)
+		self.leftCollider=positionBlock(x,y,-0.495*wid,0,0,0.01*wid,0.3*hei,(0,0,255))
+		self.rightCollider=positionBlock(x,y,0.495*wid,0,0,0.01*wid,0.3*hei,(0,0,255))
+		self.topCollider=positionBlock(x,y,0,-0.2*hei,0,0.8*wid,0.1*hei)
+		self.bottomCollider=positionBlock(x,y,0,0.2*hei,0,0.8*wid,0.1*hei)
+		self.colliders=[self.leftCollider,self.rightCollider,self.topCollider,self.bottomCollider]
+		self.birthDay=time.time()
+		self.movementAllowed=True
+		self.lifeTime=1
+		self.loadDirectionGiven=False
+	def InContanctWithPlayer(self):
+		if boxCollision(self.topCollider,player):
+			return True
+		return False
+	def display(self):
+		myrect=self.imagex.get_rect()
+		myrect.centerx,myrect.centery=self.position.x-camera.position.x,self.position.y-camera.position.y
+		win.blit(self.imagex,myrect)
+		# for elem in self.colliders:
+		# 	elem.display()
+
+	def update(self):
+		for elem in self.colliders:
+			elem.update(0,self.position)
+		if self.startpad:
+			if self.movementAllowed and time.time()-self.birthDay > self.lifeTime:
+				self.movementAllowed=False
+				camera.disableFollowing=False
+			elif self.movementAllowed:			
+				if self.InContanctWithPlayer():
+					self.position.add(self.velocity)
+					player.position.add(self.velocity)
+		else:
+			if self.InContanctWithPlayer():
+				if not camera.disableFollowing:
+					camera.disableFollowing=True
+				self.position.add(self.velocity)
+				player.position.add(self.velocity)
+				if self.position.x > camera.position.x + WIN_WIDTH:
+					if not self.loadDirectionGiven:
+						gameManager.LoadNextLevel()
+						self.loadDirectionGiven=True
+			else:
+				if camera.disableFollowing:
+					camera.disableFollowing=False
+
 ################## Platform starts ########################################
 class Platform:
 	def __init__(self,x,y,wid,hei,hori):
@@ -406,13 +473,120 @@ class Platform:
 			col.display()
 ################## Platform ends ########################################
 
+################## Platform starts ########################################
+class MovingPlatform:
+	def __init__(self,x,y,wid,hei,hori):
+		self.position=CreateVector(x,y)
+		self.onScreen=True
+		self.isHorizontal=hori
+		if self.isHorizontal:
+			self.imagexOrig=HORIZONTALPIPE
+		else:
+			self.imageOrig=VERTICALPIPE
+		self.width,self.height=wid*xscale,hei*yscale
+		self.imagex=pygame.transform.scale(self.imagexOrig,(int(self.width),int(self.height)))
+
+		self.leftCollider=positionBlock(x,y,-0.48*wid,0,0,0.04*wid,0.8*hei,(0,0,255))
+		self.rightCollider=positionBlock(x,y,0.48*wid,0,0,0.04*wid,0.8*hei,(0,0,255))
+		self.topCollider=positionBlock(x,y,0,-0.45*hei,0,0.99*wid,0.1*hei)
+		self.bottomCollider=positionBlock(x,y,0,0.45*hei,0,0.99*wid,0.1*hei)
+		self.colliders=[self.leftCollider,self.rightCollider,self.topCollider,self.bottomCollider]
+		self.velocity=CreateVector(-5*xscale,0)
+		self.lastDirChangeTime=time.time()
+		self.dirlife=3
+
+	def display(self):
+		myrect=self.imagex.get_rect()
+		myrect.centerx,myrect.centery=self.position.x-camera.position.x,self.position.y-camera.position.y
+		win.blit(self.imagex,myrect)
+		for col in self.colliders:
+			col.display()
+
+	def reverseDirection(self):
+		if time.time()-self.lastDirChangeTime > self.dirlife:
+			self.lastDirChangeTime=time.time()
+			self.velocity.x*=-1
+
+
+	def update(self):
+		for col in self.colliders:
+			col.update(0,self.position)
+		self.position.add(self.velocity)
+		if boxCollision(self.topCollider,player):
+			player.position.add(self.velocity)
+		self.reverseDirection()
+
+################## Platform ends ########################################
+
+####################Wave Bullet###########################################
+class WaveBullet:
+	def __init__(self,x,y,dir,parent):
+		self.parent=parent
+		self.onScreen=True
+		self.position=CreateVector(x,y)
+		self.velocity=CreateVector(dir * 7*xscale,0)
+		self.imagexOrig=VENGEFUL_SPIRIT
+		self.maxWidth=80
+		self.width=self.maxWidth*xscale
+		self.height=self.maxWidth*yscale
+		self.dir=dir
+		self.imagex=pygame.transform.scale(pygame.transform.flip(self.imagexOrig,True if self.dir==-1 else False,False),(int(self.width),int(self.height)))
+		self.birthTime=time.time()
+		self.presentDirTime=time.time()
+		self.maxAge=10
+		self.maxTimeInOneDir=1.3
+		self.restTime=random.random()*2
+		self.ychangeAuthorized=False
+
+	def display(self):
+		myrect=self.imagex.get_rect()
+		myrect.centerx,myrect.centery=self.position.x-camera.position.x,self.position.y-camera.position.y 
+		win.blit(self.imagex,myrect)
+	def update(self):
+		self.CheckCollisions()
+		self.CheckLifeTime()
+		self.position.add(self.velocity)
+		self.alterYVelocity()
+		self.CheckCollisionWithGates()
+
+	def alterYVelocity(self):
+		if not self.ychangeAuthorized and time.time()-self.birthTime > self.restTime:
+			self.ychangeAuthorized=True
+			self.presentDirTime=time.time()
+			self.velocity=CreateVector(self.dir * 7*xscale,-5*yscale)
+
+		if self.ychangeAuthorized and time.time()-self.presentDirTime > self.maxTimeInOneDir:
+			self.velocity.y*=-1
+			self.presentDirTime=time.time()
+
+	def CheckCollisions(self):		
+		if self.parent!=player:
+			if boxCollision(self,player.boxCollider):
+				player.TakeDamage(10)
+				self.onScreen=False
+				rockSmash.play()
+				SpawnCloudGroup(self.position)
+
+	def CheckLifeTime(self):
+		if time.time()-self.birthTime > self.maxAge:
+			self.onScreen=False
+
+	def CheckCollisionWithGates(self):
+		for elem in fightGatesList:
+			if elem.onScreen and boxCollision(self,elem):
+				self.onScreen=False
+				SpawnCloudGroup(self.position)
+
+####################Wave Bullet Ends######################################
+
+
 
 ################## Bullet starts ########################################
 class Bullet:
 	def __init__(self,x,y,dir,parent):
 		self.parent=parent
 		self.position=CreateVector(x,y)
-		self.velocity=CreateVector(dir * 20,0)
+		self.velocity=CreateVector(dir * 20*xscale,0)
 		self.onScreen=True
 		self.imagexOrig=VENGEFUL_SPIRIT
 		self.maxWidth=80
@@ -446,7 +620,11 @@ class Bullet:
 				if not x.onScreen:
 					enemiesList.remove(x)
 					continue
-				if boxCollision(self,x):
+				if x.boxCollider:
+					colObj=x.boxCollider
+				else:
+					colObj=x
+				if boxCollision(self,colObj):
 					x.TakeDamage(10)
 					self.onScreen=False
 					rockSmash.play()
@@ -459,6 +637,7 @@ class Bullet:
 #######################Battle Trigger starts ############################
 class BattleTrigger:
 	def __init__(self,x,y,wid,hei,bossID):
+		# print(f'trigger with bossid:+{bossID}')
 		self.bossID=bossID
 		self.position=CreateVector(x,y)
 		self.onScreen=True
@@ -522,7 +701,7 @@ class Sphere:
 		self.bossGates=[gate1,gate2]
 		self.state="idle"
 		self.dir=1
-		self.maxHealth=100
+		self.maxHealth=50
 		self.health=self.maxHealth
 		self.bullets=[]
 		self.bombs=[]
@@ -538,6 +717,7 @@ class Sphere:
 		self.plungeTimerRev=0
 		self.hitTargetWhilePlunging=False
 		self.itemToDestroy=itemToDestroy
+		self.boxCollider=collisionBox(self.position.x,self.position.y,self.width*0.55,self.height*0.55)
 		# self.plungeVelocitySet=False
 		SpawnCloudGroup(self.position)
 		self.birthTime=time.time()
@@ -567,8 +747,8 @@ class Sphere:
 			fogGateSound.play()
 			self.onScreen=False
 			self.bossGates[0].onScreen=False
-			self.bossGates[1].onScreen=False
-			self.itemToDestroy=False
+			self.bossGates[1].onScreen=False			
+			self.itemToDestroy.onScreen=False
 			camera.target=player
 			camera.lerpFactor=8
 	def Shoot(self):
@@ -600,6 +780,8 @@ class Sphere:
 			self.activated=True
 
 	def update(self):
+		self.boxCollider.update(self.position.x-5*xscale,self.position.y-10*yscale,self.width*0.35,self.height*0.6)
+		self.boxCollider.display()
 		self.healthBar.update(0,self.position)
 		if not self.activated:
 			self.checkActivation()
@@ -666,7 +848,7 @@ class Sphere:
 			self.approachStarted=True
 		self.Shoot()
 		self.position.add(self.approachVelocity.copy().mult(self.dir))
-		for x in roadBlocksList:
+		for x in gameManager.roadBlocksList:
 			if x.onScreen:
 				if boxCollision(self,x.leftCollider) or boxCollision(self,x.rightCollider):
 					self.dir*=-1
@@ -690,7 +872,7 @@ class Sphere:
 		else:
 			self.plungeTimer+=1/FRAME_RATE
 			self.position.add(self.plungeVelocity.copy().mult(self.dir))
-			for x in roadBlocksList:
+			for x in gameManager.roadBlocksList:
 				if x.onScreen:
 					if boxCollision(self,x.leftCollider) or boxCollision(self,x.rightCollider):
 						self.hitTargetWhilePlunging=True
@@ -759,6 +941,7 @@ class Sphere:
 		
 ##########################Sphere ends #############################
 
+
 #################### Bomb starts #########################################
 class Bomb:
 	def __init__(self,x,y,wid,hei):
@@ -790,7 +973,7 @@ class Bomb:
 		self.CheckAge()
 
 	def CheckCollisions(self):
-		for x in roadBlocksList:
+		for x in gameManager.roadBlocksList:
 			if boxCollision(self,x):
 				self.onScreen=False
 				rockSmash.play()
@@ -804,11 +987,533 @@ class Bomb:
 	def CheckAge(self):
 		if time.time()-self.birthDay > self.lifeTime:
 			self.onScreen=False
-
-
 #################### Bomb ends   #########################################
 
+#################Thorny Ball starts######################################
+class Tball:
+	def __init__(self,x,y,wid,hei,dirx):
+		self.onScreen=True
+		self.position=CreateVector(x,y)
+		self.width=wid*xscale
+		self.height=hei*yscale
+		self.imagexOrig=THORNYBALL
+		self.imagex=pygame.transform.scale(self.imagexOrig,(self.width,self.height))
+		self.angle=0
+		self.rotSpeed=2
+		self.initVertVelocity=-20*yscale
+		self.velocity=CreateVector(dirx*10*xscale,self.initVertVelocity)
+		self.acceleration=CreateVector(0,0)
+		self.gravityScale=2*yscale
+		self.maxVelocityMag=20*yscale
 
+	def rotateMe(self):
+		self.angle+=self.rotSpeed
+		if self.angle > 360:
+			self.angle-=360
+
+	def display(self):
+		myrect=self.imagex.get_rect()
+		myrect.centerx,myrect.centery=self.position.x-camera.position.x,self.position.y-camera.position.y
+		win.blit(pygame.transform.rotate(self.imagex,-self.angle),myrect)
+
+	def update(self):
+		self.rotateMe()
+		self.ApplyGravity()		
+		self.velocity.add(self.acceleration)
+		self.RestrictVerticalVelocity()
+		self.position.add(self.velocity)
+		self.checkCollisionWithRoadBlocks()
+		self.checkCollisionWithFightGates()
+		self.checkCollisionWithPlayer()
+		self.acceleration.set(0,0)
+
+	def ApplyGravity(self):
+		self.acceleration.y+=self.gravityScale
+
+	def checkCollisionWithPlayer(self):
+		if boxCollision(self,player.boxCollider):
+			self.onScreen=False
+			SpawnCloudGroup(self.position)
+			rockSmash.play()
+			player.TakeDamage(10)
+
+	def RestrictVerticalVelocity(self):
+		if self.velocity.y > self.maxVelocityMag:
+			self.velocity.y=self.maxVelocityMag*self.velocity.y/abs(self.velocity.y)
+
+	def checkCollisionWithRoadBlocks(self):		
+		for elem in gameManager.roadBlocksList:
+			if not elem.onScreen:
+				continue
+			if boxCollision(self,elem.topCollider):				
+				self.position.y-=abs(self.velocity.y)
+				self.initVertVelocity*=0.8
+				self.velocity=CreateVector(self.velocity.x,self.initVertVelocity)
+			if boxCollision(self,elem.bottomCollider):
+				self.position.y+=abs(self.velocity.y)
+			if boxCollision(self,elem.rightCollider):
+				self.position.x+=abs(self.velocity.x)
+			if boxCollision(self,elem.leftCollider):
+				self.position.x-=abs(self.velocity.x)
+
+	def checkCollisionWithFightGates(self):
+		for elem in fightGatesList:
+			if boxCollision(elem,self):
+				self.onScreen=False
+				SpawnCloudGroup(self.position)
+				self.onScreen=False
+
+
+#################Thorny Ball ends########################################
+
+################## Bandit starts ########################################
+class Bandit:
+	def __init__(self,x,y,wid,hei,gate1,gate2,itemToDestroy):
+		self.onScreen=True
+		self.bossGates=[gate1,gate2]		
+		self.itemToDestroy=itemToDestroy
+		self.position=CreateVector(x,y)
+		self.folderNames=['Attack','FallDown','Hurt','Idle','JumpUP','Walk']
+		self.attackImages,self.fallImages,self.hurtImages,self.idleImages,self.jumpImages,self.walkImages=[],[],[],[],[],[]
+		self.animations=[self.attackImages,self.fallImages,self.hurtImages,self.idleImages,self.jumpImages,self.walkImages]
+		self.imCounter=0
+		self.width=wid*xscale
+		self.height=hei*yscale
+		self.imagexOrig=SPHERE_IMAGE
+		self.imagex=pygame.transform.scale(self.imagexOrig,(self.width,self.height))
+		self.flipped=False
+		self.dir=-1
+		for ind,folder in enumerate(self.folderNames):
+			for i in range(8):
+				imagex=pygame.transform.scale(pygame.image.load(f'./sprites/swordsman/{folder}/__Bandit02_{folder}_00{i}.png'),(self.width,self.height))
+				self.animations[ind].append(imagex)
+		self.animFrame=3
+		self.frame=0
+		self.animInQueue=None		
+		self.animTimers=[0]*6
+		self.animTimersMax=[1,1,1,1,1,1]
+		self.boxCollider=collisionBox(self.position.x,self.position.y,self.width*0.55,self.height*0.55)
+
+
+		self.velocity=CreateVector(0,0)
+		self.acceleration=CreateVector(0,0)
+		self.gravityScale=2*yscale
+		self.maxVelocityMag=20*yscale
+		self.state="attack"
+		self.enemyWaitTimer=0
+
+		self.castLength=800*xscale
+		self.target=player
+		self.maxHealth=100
+		self.health=self.maxHealth
+		self.healthBar=HealthBar(self.position.x,self.position.y,0,-100*yscale,0,100*xscale,20*yscale,self.maxHealth,False)
+		self.showHealth=False
+		self.maxHealthBarGap=2
+		self.lastHitTime=0
+		self.lastHackTime=0
+		self.maxHackGap=1
+		self.enemyProximity=120*xscale
+		# self.swordReady=True
+		self.lastAttackTime=0
+		self.maxAttackGap=2
+		self.attacks=["Lunge","jumpfire","SmackBullets","ThrowBalls"]
+		self.lungeVelocity=CreateVector(25*xscale,0)
+		self.lungeStarted=False
+		self.lungeStartTimer=0
+		self.maxWarningPeriod=2
+		self.numSmokes=0
+
+		self.jumpTimer=0
+		self.jumpTimerMax=0.35
+		self.jumpVelocity=CreateVector(0,-50*yscale)
+		self.maxAltitudeReached=False
+		self.soundPlayed=False
+		self.fountainSpawned=False
+
+		self.attackStartTime=0
+		self.smackBulletsGap=4
+		self.bullets=[]
+		self.tBalls=[]
+		self.bulletHeights=[-0.4*self.height,0,0.2*self.height]
+
+	def HealthVisibility(self):
+		if not self.showHealth:
+			return
+		if time.time()-self.lastHitTime > self.maxHealthBarGap:
+			self.showHealth=False
+
+	def RevealHealthBar(self):
+		self.lastHitTime=time.time()
+		self.showHealth=True
+
+	def TakeDamage(self,dmg):
+		self.RevealHealthBar()
+		self.health-=dmg
+		self.healthBar.reduceHealth(dmg)
+		if self.health <= 0:
+			fogGateSound.play()
+			self.onScreen=False
+			self.bossGates[0].onScreen=False
+			self.bossGates[1].onScreen=False			
+			self.itemToDestroy.onScreen=False
+			camera.target=player
+			camera.lerpFactor=8
+
+	def CheckIfOnFloor(self):
+		for elem in gameManager.collidableObjects:		
+			if Raycast(self.position,VECTORDOWN,100*yscale,elem):
+				# w2screen(win,"In Touch with Ground",600,100)
+				return True
+		return False
+
+	def ApplyGravity(self):
+		self.acceleration.y+=self.gravityScale
+
+	def RestrictVerticalVelocity(self):
+		if self.velocity.y > self.maxVelocityMag:
+			self.velocity.y=self.maxVelocityMag*self.velocity.y/abs(self.velocity.y)
+
+	def checkCollisionWithRoadBlocks(self):
+		self.boxCollider.update(self.position.x-5*xscale,self.position.y-10*yscale,self.width*0.35,self.height*0.6)
+		for elem in gameManager.roadBlocksList:
+			if not elem.onScreen:
+				continue
+			if boxCollision(self.boxCollider,elem.topCollider):				
+				self.position.y-=abs(self.velocity.y)
+				self.velocity.y/=2
+			if boxCollision(self.boxCollider,elem.bottomCollider):
+				self.position.y+=abs(self.velocity.y)
+			if boxCollision(self.boxCollider,elem.rightCollider):
+				self.position.x+=abs(self.velocity.x)
+			if boxCollision(self.boxCollider,elem.leftCollider):
+				self.position.x-=abs(self.velocity.x)
+		# self.boxCollider.update(self.position.x-5*xscale,self.position.y-10*yscale,self.width*0.35,self.height*0.6)
+
+	def MoveIfSafe(self):
+		prevX=self.position.x
+		prevY=self.position.y
+		self.position.add(self.velocity)
+		for elem in gameManager.roadBlocksList:
+			if not elem.onScreen:
+				continue
+			if boxCollision(self.boxCollider,elem.topCollider):				
+				self.position.y=prevY
+				self.velocity.y/=2
+			if boxCollision(self.boxCollider,elem.bottomCollider):
+				self.position.y=prevY
+			if boxCollision(self.boxCollider,elem.rightCollider) or boxCollision(self.boxCollider,elem.leftCollider):
+				self.position.x=prevX
+		self.boxCollider.update(self.position.x-5*xscale,self.position.y-10*yscale,self.width*0.35,self.height*0.6)
+
+	def allowedToChange(self):
+		self.animTimers[self.animFrame]+=1
+		if self.animTimers[self.animFrame] >= self.animTimersMax[self.animFrame]:
+			self.animTimers[self.animFrame] = 0
+			return True
+		return False
+
+	def updateAnimations(self):
+		if not self.allowedToChange():
+			return
+		self.frame+=1		
+		if self.frame >= len(self.animations[self.animFrame]):
+			if self.animInQueue==None:
+				self.frame=0
+			else:
+				self.changeAnimation(self.animInQueue)
+				self.animInQueue=None
+
+	def InflictHackDamage(self):				
+		if self.animFrame!=0:
+			# self.swordReady=True
+			return
+		if (self.dir==1 and self.target.position.x-self.position.x < self.enemyProximity) or (self.dir==-1 and self.position.x-self.target.position.x < self.enemyProximity):
+			if self.frame==5:
+				self.target.TakeDamage(10)
+
+
+	def changeAnimation(self,anim):
+		if anim=="attack" and self.animFrame!=0:
+			self.animFrame=0
+			self.frame=0
+		elif anim=="falldown" and self.animFrame!=1:
+			self.animFrame=1
+			self.frame=0
+		elif anim=="hurt" and self.animFrame!=2:
+			self.animFrame=2
+			self.frame=0
+		elif anim=="idle" and self.animFrame!=3:
+			self.animFrame=3
+			self.frame=0
+		elif anim=="jump" and self.animFrame!=4:
+			self.animFrame=4
+			self.frame=0
+		elif anim=="walk" and self.animFrame!=5:
+			self.animFrame=5
+			self.frame=0
+
+	def StateMachine(self):
+		if self.state=="attack":
+			self.attack()
+		elif self.state=="hackaway":
+			self.hackaway()
+		elif self.state=="Lunge":
+			self.Lunge()
+		elif self.state=="jumpfire":
+			self.JumpFire()
+		elif self.state=="SmackBullets":
+			self.SmackBullets()
+		elif self.state=="ThrowBalls":
+			self.ThrowBalls()
+
+	def JumpFire(self):
+		if not self.soundPlayed:
+			self.soundPlayed=True
+			lossBuzz.play()
+		self.changeAnimation('jump')
+		if not self.maxAltitudeReached:
+			self.velocity.set(0,-20*xscale)
+			# self.position.add(self.jumpVelocity)
+			self.jumpTimer+=1/FRAME_RATE
+			if self.jumpTimer > self.jumpTimerMax:
+				self.jumpTimer=0
+				self.maxAltitudeReached=True
+		else:
+			if not self.fountainSpawned:
+				SpawnProjectileFountain(self.position,self.dir)
+				self.fountainSpawned=True
+			if self.CheckIfOnFloor():		
+				self.ComeOutOfJumpFire()
+
+	def ComeOutOfJumpFire(self):
+		self.changeAnimation('idle')
+		self.maxAltitudeReached=False
+		self.state="attack"	
+		self.lastAttackTime=time.time()	
+		self.soundPlayed=False
+		self.fountainSpawned=False
+
+	def Lunge(self):
+		if not self.lungeStarted:
+			if self.numSmokes < 2:
+				SpawnCloudGroup(self.position)
+				self.numSmokes+=1			
+			self.lungeStartTimer+=1/FRAME_RATE
+			if self.lungeStartTimer > self.maxWarningPeriod:
+				self.lungeStartTimer=0
+				self.lungeStarted=True
+			if not self.enemyInFront():
+				self.enemyWaitTimer+=1/FRAME_RATE
+				if self.enemyWaitTimer > 1:
+					self.enemyWaitTimer=0
+					self.dir*=-1			
+				return
+			elif self.enemyWaitTimer!=0:
+				self.enemyWaitTimer=0
+		else:
+			if not self.soundPlayed:
+				self.soundPlayed=True
+				whoosh.play()
+			self.position.add(self.lungeVelocity.copy().mult(self.dir))
+			self.changeAnimation("walk")
+			for n in self.bossGates:
+				if boxCollision(self.boxCollider,n):
+					self.changeAnimation("idle")
+					self.position.add(self.lungeVelocity.copy().mult(-2*self.dir))
+					self.ComeOutOfLunge()
+					return
+			if boxCollision(self.target.boxCollider,self.boxCollider):
+				self.changeAnimation("idle")
+				self.position.add(self.lungeVelocity.copy().mult(-self.dir))
+				self.target.TakeDamage(30)
+				self.target.InflictShock(self.dir)
+				self.ComeOutOfLunge()
+
+
+	def ComeOutOfLunge(self):
+		self.lastAttackTime=time.time()
+		self.state="attack"
+		self.lungeStarted=False
+		self.numSmokes=0
+		self.soundPlayed=False
+
+	def hackaway(self):
+		goAhead=True
+		if not self.enemyInFront():
+			self.enemyWaitTimer+=1/FRAME_RATE
+			if goAhead:
+				goAhead=False
+			if self.enemyWaitTimer > 1:
+				if not goAhead:
+					goAhead=True
+				self.enemyWaitTimer=0
+				self.dir*=-1
+		elif self.enemyWaitTimer!=0:
+			self.enemyWaitTimer=0
+		self.InflictHackDamage()		
+		if time.time()-self.lastHackTime > self.maxHackGap:
+			self.lastHackTime=time.time()
+			self.animInQueue='idle'
+			self.changeAnimation('attack') 
+		if abs(self.position.x-self.target.position.x) >= self.enemyProximity:
+			self.state="attack"
+
+########Shooting bullets at random height starts######################
+	def SmackBullets(self):
+		if self.attackStartTime==0:
+			self.attackStartTime=time.time()
+		if time.time()-self.attackStartTime > self.smackBulletsGap:			
+			self.state="attack"
+			self.attackStartTime=0
+			return
+		self.ShootInAttackAnimation()
+		if time.time()-self.lastHackTime > self.maxHackGap*1.5:
+			self.lastHackTime=time.time()
+			self.animInQueue="idle"
+			self.changeAnimation('attack') 
+
+	def ShootInAttackAnimation(self):				
+		if self.animFrame!=0:			
+			return		
+		randomHeight=self.bulletHeights[random.randint(0,len(self.bulletHeights)-1)]
+		if self.frame==5:
+			self.bullets.append(Bullet(self.position.x,self.position.y+randomHeight,self.dir,self))
+########Shooting bullets at random height ends######################
+
+##################### throw balls starts ###########################
+	def ThrowBalls(self):
+		if self.attackStartTime==0:
+			self.attackStartTime=time.time()
+		if time.time()-self.attackStartTime > 3:			
+			self.state="attack"
+			self.attackStartTime=0
+			return
+		self.ThrowBallsInAttackAnimation()
+		if time.time()-self.lastHackTime > self.maxHackGap*1.5:
+			self.lastHackTime=time.time()
+			self.animInQueue="idle"
+			self.changeAnimation('attack') 
+
+	def ThrowBallsInAttackAnimation(self):				
+		if self.animFrame!=0:			
+			return		
+		if self.frame==5:
+			self.tBalls.append(Tball(self.position.x,self.position.y,50,50,self.dir))
+##################### throw balls ends###########################
+
+	def RunBullets(self):
+		for b in self.bullets:
+			if b.onScreen:
+				b.update()
+				b.display()
+		flushList(self.bullets)
+
+	def RunTBalls(self):
+		for b in self.tBalls:
+			if b.onScreen:
+				b.update()
+				b.display()
+
+	def attack(self):		
+		if not self.enemyInFront():
+			self.enemyWaitTimer+=1/FRAME_RATE
+			if self.enemyWaitTimer > 1:
+				self.enemyWaitTimer=0
+				self.dir*=-1
+		elif self.enemyWaitTimer!=0:
+			self.enemyWaitTimer=0
+
+		if abs(self.position.x-self.target.position.x) < self.enemyProximity:
+			self.state="hackaway"
+		else:
+			if time.time()-self.lastAttackTime > self.maxAttackGap:
+				self.state=self.attacks[random.randint(0,len(self.attacks)-1)]
+
+	def enemyInFront(self):
+		# return Raycast(self.position,VECTORRIGHT.copy().mult(self.dir),self.castLength,self.target)
+		return (self.target.position.x > self.position.x and self.dir==1) or (self.target.position.x < self.position.x and self.dir==-1)
+
+
+	def update(self):	
+		self.HealthVisibility()		
+		self.RunBullets()
+		self.RunTBalls()
+		self.healthBar.update(0,self.position)		
+		# self.boxCollider.update(self.position.x+10*xscale,self.position.y-15*yscale,self.width*0.45,self.height*0.63)	
+		# self.boxCollider.update(self.position.x+self.width/30,self.position.y-self.height/20,self.width*0.45,self.height*0.63)	
+		self.ApplyGravity()
+		self.velocity.add(self.acceleration)
+		self.RestrictVerticalVelocity()
+		self.position.add(self.velocity)		
+		self.checkCollisionWithRoadBlocks()
+		# self.MoveIfSafe()
+		self.acceleration.set(0,0)
+		self.StateMachine()
+
+	def display(self):		
+		myrect=self.animations[self.animFrame][self.frame].get_rect()
+		myrect.centerx,myrect.centery=self.position.x-camera.position.x,self.position.y-camera.position.y
+		win.blit(pygame.transform.flip(self.animations[self.animFrame][self.frame],True if self.dir==-1 else False ,False),myrect)
+		self.updateAnimations()
+		if self.showHealth:
+			self.healthBar.display()
+		# self.boxCollider.display()	
+
+
+##################Bandit ends ###############################################
+
+####################Bandit Projectile Starts #############################
+class Projectilex:
+	def __init__(self,x,y,wid,hei,angle):
+		self.imagexOrig=DOT
+		self.position=CreateVector(x,y)
+		self.width=wid*xscale
+		self.height=hei*yscale
+		self.angle=angle
+		self.onScreen=True
+		self.imagex=pygame.transform.scale(self.imagexOrig,(self.width,self.height))
+		self.velocityMax=20*xscale
+		self.velocity=CreateVector(self.velocityMax*math.cos(d2r(self.angle)),self.velocityMax*math.sin(d2r(self.angle)))
+		self.birthDay=time.time()
+
+	def display(self):
+		myrect=self.imagex.get_rect()
+		myrect.centerx,myrect.centery=self.position.x-camera.position.x,self.position.y-camera.position.y
+		win.blit(self.imagex,myrect)
+
+	def update(self):
+		self.position.add(self.velocity)
+		if time.time()-self.birthDay > 8:
+			self.onScreen=False
+		self.CheckCollisions()
+
+	def CheckCollisions(self):
+		for elem in gameManager.roadBlocksList:
+			if elem.onScreen:
+				if boxCollision(elem,self):
+					SpawnCloudGroup(self.position)
+					self.onScreen=False
+					SpawnCloudGroup(self.position)
+					rockSmash.play()
+					return					
+		if boxCollision(self,player.boxCollider):
+			player.TakeDamage(5)
+			self.onScreen=False
+			SpawnCloudGroup(self.position)
+			rockSmash.play()
+####################Bandit Projectile Ends #############################
+
+##############Function to Spawn projectiles starts ###################
+def SpawnProjectileFountain(position,dirx):
+	if dirx > 0:
+		rangeLimits=[10,45]
+	else:
+		rangeLimits=[135,170]
+	for i in range(4):
+		gameManager.projectiles.append(Projectilex(position.x,position.y,30,30,random.random()*(rangeLimits[1]-rangeLimits[0])+rangeLimits[0]))
+
+
+##############Function to Spawn projectiles ends #####################
 
 ################## Player starts #########################################
 class Player:
@@ -858,11 +1563,20 @@ class Player:
 		self.allowedToDash=True
 		self.immovable=False
 
+		self.lastDepleteTime=0
+		self.maxDepleteGap=0.25
+		self.reloadCommandGiven=False
 
 		self.animTimers=[0,0,0]
 		self.animTimersMax=[1,1,3]
 
-	def TakeDamage(self,dmg):
+		self.shockVelocityMag=40
+		self.shockPeriod=0.15
+		self.shockTimer=0
+		self.inShock=False
+		self.shockDir=1
+
+	def TakeDamage(self,dmg):		
 		if not self.invincible:
 			if self.RunningAnimation()=="run":
 				self.changeAnimation("idle")
@@ -872,9 +1586,32 @@ class Player:
 			self.immovable=True
 			self.invincible=True
 			self.invincibleStartTime=time.time()
-			self.velocity.set(0,0)
+			self.velocity.set(0,self.velocity.y)
+			if self.health <=0:
+				self.health=0
+				self.onScreen=False
+				if not self.reloadCommandGiven:
+					gameManager.SetText("You Died............")
+					gameManager.reloadLevel()
+					self.reloadCommandGiven=True
+					SpawnCloudGroup(self.position)
 			
 
+	def DrainHealthOnFall(self):
+		if self.position.y < 1.5*WIN_HEIGHT:
+			return False
+		if time.time()- self.lastDepleteTime > self.maxDepleteGap:
+			self.lastDepleteTime=time.time()			
+			self.health=0 if self.health-15 <= 0 else self.health-15
+			self.healthBar.reduceHealth(15)
+			if self.health <= 0:
+				self.health=0
+				if not self.reloadCommandGiven:
+					self.reloadCommandGiven=True
+					SpawnCloudGroup(self.position)
+					self.onScreen=False
+					gameManager.SetText("You Died............")
+					gameManager.reloadLevel()
 	def CanDisplay(self):
 		if not self.invincible:
 			return True
@@ -898,6 +1635,27 @@ class Player:
 			x.update()
 			x.display()
 		flushList(self.bullets)
+
+
+	def InflictShock(self,dirx):
+		self.inShock=True
+		self.shockDir=dirx
+	def SufferShock(self):
+		self.changeAnimation('idle')
+		locVel=0
+		increment=self.shockVelocityMag
+		while locVel < self.shockVelocityMag:		
+			locVel+=increment
+			self.position.add(VECTORRIGHT.copy().mult(self.shockDir*increment))
+			for elem in fightGatesList:
+				if boxCollision(self,elem):
+					self.position.add(VECTORRIGHT.copy().mult(-self.shockDir*self.shockVelocityMag))
+					self.inShock=False
+					return
+		self.shockTimer+=1/FRAME_RATE
+		if self.shockTimer > self.shockPeriod:
+			self.shockTimer=0
+			self.inShock=False
 
 	def FollowInput(self):
 		if self.RunningAnimation()=="slash":
@@ -958,7 +1716,7 @@ class Player:
 			# self.bullets.append(Bullet(self.position.x,self.position.y,self.dir,self))
 		
 	def CheckIfOnFloor(self):
-		for elem in collidableObjects:		
+		for elem in gameManager.collidableObjects:		
 			if Raycast(self.position,VECTORDOWN,60*yscale,elem):
 				# w2screen(win,"In Touch with Ground",600,100)
 				return True
@@ -1027,7 +1785,7 @@ class Player:
 
 	def Dash(self):
 		self.dashTime+=1/FRAME_RATE
-		if self.dashTime > self.maxDashTime or self.invincible:
+		if self.dashTime > self.maxDashTime or self.immovable:
 			self.RecoverFromDash()
 		self.position.add(self.dashVelocity.copy().mult(self.dir))
 
@@ -1043,9 +1801,14 @@ class Player:
 		self.isDashing=False
 
 	def update(self):
+		if self.inShock:
+			self.SufferShock()
+			
+		self.DrainHealthOnFall()
 		self.checkCollisionWithRoadBlocks()
 		# self.boxCollider.updateP(self.position)
-		self.boxCollider.update(self.position.x-10*xscale,self.position.y+10*yscale,self.width*0.55,self.height*0.55)		
+		self.boxCollider.update(self.position.x-10*xscale,self.position.y+10*yscale,self.width*0.55,self.height*0.55)	
+
 		if self.isDashing:
 			self.Dash()
 			return
@@ -1066,7 +1829,7 @@ class Player:
 			self.velocity.y=self.maxVelocityMag*self.velocity.y/abs(self.velocity.y)
 
 	def checkCollisionWithRoadBlocks(self):
-		for elem in roadBlocksList:
+		for elem in gameManager.roadBlocksList:
 			if not elem.onScreen:
 				continue
 			if boxCollision(self,elem.topCollider):
@@ -1095,26 +1858,71 @@ class Player:
 ################## Game Manager starts ###################################
 class GameManager:
 	def __init__(self):
-		self.scenesLoaded=[False,False,False,False,False,False,False,False]
-		self.scenesReady=[True,False,False,False,False,False,False,False]
+		self.scenesLoaded=[False,False,False,False,False,False,False,False,False]
+		self.scenesReady=[True,False,False,False,False,False,False,False,False]
 		self.loadingObjects=False
 		self.loadingType=None
 		self.currentScene=-1
 		self.reloading=False
 		self.gameStopTime=0
-		self.maxReloadGap=3
+		self.maxReloadGap=1.5
 		self.readyForNextLevel=False
+		self.platformList=[]
+		self.roadBlocksList=[]
+		self.collidableObjects=[]
+		self.movingPlatforms=[]
+		self.padsList=[]
+		self.banditsList=[]
+		self.projectiles=[]
+		self.soulmasterList=[]
+		self.textToBeDisplayed=""
+		self.basicFont=pygame.font.Font("freesansbold.ttf",32)
+
+	def SetText(self,tex):
+		self.textToBeDisplayed=tex
+
+	def ClearText(self):
+		self.textToBeDisplayed=""
+
+	def DisplayStuffOnScreen(self):
+		if self.textToBeDisplayed=="":
+			return
+		fontSurface=self.basicFont.render(self.textToBeDisplayed,1,(255,255,255))
+		fontRect=fontSurface.get_rect()
+		fontRect.centerx,fontRect.centery=WIN_WIDTH/2,WIN_HEIGHT/2
+		win.blit(fontSurface,fontRect)
 
 	def InformAboutGate(self,bossID,btrigger):
+		global pChanger
 		if bossID==0 and self.currentScene==0:
 			print("sphere boss fight will be initiated")
-			fightGatesList.append(FightGate(1468,392,40,300))
-			roadBlocksList.append(fightGatesList[-1])
-			fightGatesList.append(FightGate(2610,392,40,300))
-			roadBlocksList.append(fightGatesList[-1])
+			fightGatesList.append(FightGate(1468*xscale,392*yscale,40,300))
+			self.roadBlocksList.append(fightGatesList[-1])
+			fightGatesList.append(FightGate(2610*xscale,392*yscale,40,300))
+			self.roadBlocksList.append(fightGatesList[-1])
 			spheresList.append(Sphere(2200*xscale,480*yscale,fightGatesList[-2],fightGatesList[-1],btrigger))
 			enemiesList.append(spheresList[-1])
-
+		elif bossID==1:
+			fogGateSound.play()
+			print("bandit boss will be spawned shortly")
+			fightGatesList.append(FightGate(2276,348,40,532))
+			# pChanger=posChanger(fightGatesList[-1])
+			self.roadBlocksList.append(fightGatesList[-1])
+			fightGatesList.append(FightGate(3424,348,40,532))
+			self.roadBlocksList.append(fightGatesList[-1])
+			self.banditsList.append(Bandit(3070*xscale,452*yscale,200,200,fightGatesList[-1],fightGatesList[-2],btrigger))
+			enemiesList.append(self.banditsList[-1])
+			# pChanger=posChanger(self.banditsList[-1])	
+		elif bossID==2:
+			fogGateSound.play()
+			print("trigger acknowledged enemy will spawn soon")	
+			fightGatesList.append(FightGate(2276,348,40,532))
+			self.roadBlocksList.append(fightGatesList[-1])
+			fightGatesList.append(FightGate(3424,348,40,532))
+			self.roadBlocksList.append(fightGatesList[-1])
+			self.soulmasterList.append(Soulmaster(3322*xscale,522*yscale,200,200,fightGatesList[-1],fightGatesList[-2],btrigger))
+			enemiesList.append(self.soulmasterList[-1])
+			# pChanger=posChanger(self.soulmasterList[-1])
 
 
 	def checkScenes(self):
@@ -1123,6 +1931,7 @@ class GameManager:
 				self.loadScene(i)
 
 	def reloadLevel(self):
+		# self.loadingObjects=False #already done at sceneend
 		self.reloading=True	
 		self.gameStopTime=time.time()	
 	def LoadNextLevel(self):
@@ -1155,20 +1964,33 @@ class GameManager:
 		else:
 			nums=re.findall(r'[0-9\-]+',line)
 			if self.loadingType=='platform':
-				platformList.append(Platform(int(nums[0])*xscale,
+				# print('loading:platform')
+				self.platformList.append(Platform(int(nums[0])*xscale,
 					                    int(nums[1])*yscale,
 					                    int(nums[2])*xscale,
 					                    int(nums[3])*yscale,
 					                    True if int(nums[4])==1 else False					                    
 					               ))
-				collidableObjects.append(platformList[-1])
-				roadBlocksList.append(platformList[-1])
+				self.collidableObjects.append(self.platformList[-1])
+				self.roadBlocksList.append(self.platformList[-1])
+				# pChanger=posChanger(platformList[-1])
+			if self.loadingType=='movingplatform':
+				# print('loading:Mplatform')
+				self.movingPlatforms.append(MovingPlatform(int(nums[0])*xscale,
+					                    int(nums[1])*yscale,
+					                    int(nums[2])*xscale,
+					                    int(nums[3])*yscale,
+					                    True if int(nums[4])==1 else False					                    
+					               ))
+				self.collidableObjects.append(self.movingPlatforms[-1])
+				self.roadBlocksList.append(self.movingPlatforms[-1])
 				# pChanger=posChanger(platformList[-1])	
 			if self.loadingType=='player':
 				player=Player(int(nums[0])*xscale,int(nums[1])*yscale,int(nums[2]),int(nums[3]))
 				camera.target=player
 				# pChanger=posChanger(player,False)
 			if self.loadingType=='trigger':
+				# print('loading trigger')
 				triggersList.append(BattleTrigger(
 					                    int(nums[0])*xscale,
 					                    int(nums[1])*yscale,
@@ -1177,27 +1999,212 @@ class GameManager:
 					                    int(nums[4])					                   
 												  )
 								   )	
-				# pChanger=posChanger(triggersList[-1])		
+				# pChanger=posChanger(triggersList[-1])	
+			if self.loadingType=='pad':
+				# print('loading pad')
+				self.padsList.append(Pad(int(nums[0])*xscale,
+					                    int(nums[1])*yscale,
+					                    int(nums[2])*xscale,
+					                    int(nums[3])*yscale,
+					                    int(nums[4])					                    				                    
+					                )
+							   )
+				self.roadBlocksList.append(self.padsList[-1])	
+				self.collidableObjects.append(self.padsList[-1])			
+				# pChanger=posChanger(self.padsList[-1])	
 
 	def update(self):
+		self.DisplayStuffOnScreen()
 		self.checkScenes()
 		if self.reloading:
 			if time.time()-self.gameStopTime > self.maxReloadGap:
 				self.reloading=False
+				# player.reloadCommandGiven=False #required if player is reused				
+				self.ClearText()
 				self.unloadComponents()
 				self.scenesLoaded[self.currentScene]=False
 		elif self.readyForNextLevel:
 			if time.time()-self.gameStopTime > self.maxReloadGap:
 				self.readyForNextLevel=False
+				# self.loadingObjects=False #already done at scene end				
 				self.unloadComponents()
 				self.scenesReady[self.currentScene+1]=True
 
 
 	def unloadComponents(self):
-		platformList=[]
+		self.platformList,self.movingPlatforms,self.padsList,self.banditsList=[],[],[],[]	
+		triggersList,spheresList,fightGatesList,enemiesList,cloudsList,padsList,self.collidableObjects,self.roadBlocksList,self.soulmasterList=[],[],[],[],[],[],[],[],[]
 
 
 ################## Game Manager ends ###################################
+
+################### Soulmaster starts ########################
+class Soulmaster:
+	def __init__(self,x,y,wid,hei,gate1,gate2,itemToDestroy):
+		self.onScreen=True
+		self.bossGates=[gate1,gate2]
+		self.itemToDestroy=itemToDestroy
+		self.position=CreateVector(x,y)
+		self.width=wid*xscale
+		self.height=hei*yscale
+		self.imagexOrig=SOULMASTER
+		self.imagex=pygame.transform.scale(self.imagexOrig,(self.width,self.height))
+		self.dir=-1
+		self.shiftDistance=958*xscale
+		self.target=player
+		self.boxCollider=collisionBox(self.position.x,self.position.y,self.width*0.5,self.height*0.7)
+		self.maxHealth=100
+		self.health=self.maxHealth
+		self.healthBar=HealthBar(self.position.x,self.position.y,0,-100*yscale,0,100*xscale,20*yscale,self.maxHealth,False)
+		self.showHealth=False
+		self.healthBarClock=0
+		self.maxHealthBarGap=2
+		self.state="idle"
+		self.lastShootTime=0
+		self.shootGap=1.5
+		self.attackStartTime=0
+		self.lastAttackTime=0
+		self.shootRegularAtkTimeFixed=4
+		self.shootRegularAtkTime=4
+		self.maxAttackGap=2
+		self.attacks=["ShootRegular","BombShower","ShootWaves"]
+		self.bullets,self.bombs,self.wbullets=[],[],[]
+		self.bombsSpawned=False
+		self.bombXsep=250*xscale
+		self.bombXoffset=0
+		self.bombYheight=500*yscale
+		self.bombShowerTime=3
+		self.waveShootGap=2
+		self.shootWaveAtkTime=5
+		self.shootWaveAtkTimeFixed=5
+
+	def RunBullets(self):
+		for elem in self.bullets:
+			if elem.onScreen:
+				elem.update()
+				elem.display()
+		flushList(self.bullets)
+
+	def RunWBullets(self):
+		for elem in self.wbullets:
+			if elem.onScreen:
+				elem.update()
+				elem.display()
+		flushList(self.wbullets)
+
+	def RunBombs(self):
+		for elem in self.bombs:
+			if elem.onScreen:
+				elem.update()
+				elem.display()
+		flushList(self.bombs)
+
+	def TakeDamage(self,dmg):
+		self.health-=dmg
+		self.healthBar.reduceHealth(dmg)
+		self.ShowHealthBar()
+		if self.health <=0:
+			for i in range(4):
+				SpawnCloudGroup(self.position)
+			self.onScreen=False
+			fogGateSound.play()
+			self.bossGates[0].onScreen=False
+			self.bossGates[1].onScreen=False			
+			self.itemToDestroy.onScreen=False
+			camera.target=player
+			camera.lerpFactor=8
+
+	def ShowHealthBar(self):
+		self.showHealth=True
+		self.healthBarClock=time.time()
+
+	def ControlHealthBarVisibility(self):
+		if not self.showHealth:
+			return
+		if time.time()-self.healthBarClock > self.maxHealthBarGap:
+			self.showHealth=False
+
+	def display(self):
+		myrect=self.imagex.get_rect()
+		myrect.centerx,myrect.centery=self.position.x-camera.position.x,self.position.y-camera.position.y
+		win.blit(self.imagex,myrect)
+		# self.boxCollider.display()
+		if self.showHealth:
+			self.healthBar.display()
+
+	def update(self):
+		self.ControlHealthBarVisibility()
+		if abs(self.position.x-self.target.position.x) < self.shiftDistance*0.45:
+			self.teleport()
+		self.boxCollider.updateP(self.position)
+		self.healthBar.update(0,self.position)
+		self.StateMachine()
+		self.RunBullets()
+		self.RunBombs()
+		self.RunWBullets()
+
+	def StateMachine(self):
+		if self.state=="ShootRegular":			
+			self.ShootRegular()
+		elif self.state=="idle":
+			self.DoIdleStuff()
+		elif self.state=="BombShower":
+			self.BombShower()
+		elif self.state=="ShootWaves":
+			self.ShootWaves()
+
+	def BombShower(self):
+		if not self.bombsSpawned:
+			self.attackStartTime=time.time()
+			self.bombsSpawned=True
+			wallBloop.play()
+			for i in range(4):
+				self.bombs.append(Bomb(self.position.x+self.bombXoffset+self.dir*self.bombXsep*(i+1),self.position.y-self.bombYheight,40,40))
+		if time.time()-self.attackStartTime > self.bombShowerTime:
+			self.state="idle"
+			self.lastAttackTime=time.time()
+			self.attackStartTime=0
+			self.bombsSpawned=False
+			self.bombXoffset=random.random()*400*xscale
+
+	def ShootRegular(self):
+		if self.attackStartTime==0:
+			self.attackStartTime=time.time()
+		if time.time()- self.lastShootTime > self.shootGap:
+			self.bullets.append(Bullet(self.position.x,self.position.y+random.random()*60*yscale,self.dir,self))
+			wallBloop.play()
+			self.lastShootTime=time.time()
+		if time.time()-self.attackStartTime > self.shootRegularAtkTime:
+			self.state="idle"
+			self.lastAttackTime=time.time()
+			self.attackStartTime=0
+			self.shootRegularAtkTime=self.shootRegularAtkTimeFixed+2*random.random()-1
+
+	def ShootWaves(self):
+		if self.attackStartTime==0:
+			self.attackStartTime=time.time()
+		if time.time()- self.lastShootTime > self.waveShootGap:
+			self.wbullets.append(WaveBullet(self.position.x,self.position.y+60*yscale,self.dir,self))
+			wallBloop.play()
+			self.lastShootTime=time.time()
+		if time.time()-self.attackStartTime > self.shootWaveAtkTime:
+			self.state="idle"
+			self.lastAttackTime=time.time()
+			self.attackStartTime=0
+			self.shootWaveAtkTime=self.shootWaveAtkTimeFixed+2*random.random()-1
+
+	def DoIdleStuff(self):
+		if time.time()-self.lastAttackTime > self.maxAttackGap:
+			self.state=self.attacks[random.randint(0,len(self.attacks)-1)]
+
+	def teleport(self): #teleport by x=958
+		parry.play()
+		if self.dir==-1:
+			self.position.x-=self.shiftDistance			
+		else:
+			self.position.x+=self.shiftDistance
+		self.dir*=-1
+################### Soulmaster ends ##########################
 
 ################### Collision Box Starts #################################
 class collisionBox:
@@ -1257,14 +2264,26 @@ VECTORLEFT =CreateVector(-1,0)
 VECTORDOWN =CreateVector(0,1)
 VECTORUP   =CreateVector(0,-1)
 def RunGame():
+	w2screen(win,f'{MOUSEX+int(camera.position.x)},{MOUSEY+int(camera.position.y)}',100*xscale,100*yscale)
 	gameManager.update()
 	camera.followTarget()
-	for x in platformList:
-		x.display()
+	for x in gameManager.platformList:
+		if not FarOut(x):
+			x.display()
+	for x in gameManager.projectiles:
+		if x.onScreen:
+			x.display()
+			x.update()
+	flushList(gameManager.projectiles)
+	for x in gameManager.movingPlatforms:
+		if not FarOut(x):
+			x.update()
+			x.display()
 	for x in triggersList:
 		if x.onScreen:
-			x.display()			
-			x.update()
+			if not FarOut(x):
+				x.display()			
+			x.update()			
 	flushList(triggersList)
 	for x in spheresList:
 		if x.onScreen:
@@ -1275,7 +2294,7 @@ def RunGame():
 		if x.onScreen:
 			x.display()
 	flushList(fightGatesList)
-	if player:
+	if player and player.onScreen:		
 		player.update()
 		player.display()
 	for x in cloudsList:
@@ -1283,11 +2302,22 @@ def RunGame():
 			x.update()
 			x.display()
 	flushList(cloudsList)
-
+	for x in gameManager.padsList:
+		if x.onScreen:
+			x.update()
+			x.display()
+	for x in gameManager.banditsList:
+		if x.onScreen:
+			x.update()
+			x.display()
+	flushList(gameManager.banditsList)
+	for x in gameManager.soulmasterList:
+		if x.onScreen:
+			x.update()
+			x.display()
+	flushList(gameManager.soulmasterList)
 	if pChanger:		
-		pChanger.update(win)
-
-	
+		pChanger.update(win)	
 
 ########################## sound functions starts ##################################
 def playRunningSound():
@@ -1314,9 +2344,9 @@ WIN_WIDTH,WIN_HEIGHT=1400,800
 xscale,yscale=int(WIN_WIDTH/1400),int(WIN_HEIGHT/800)
 camera=Camera()
 gameManager=GameManager()
-platformList,roadBlocksList=[],[]
-collidableObjects=[]
-triggersList,spheresList,fightGatesList,enemiesList,cloudsList=[],[],[],[],[]
+# platformList,gameManager.roadBlocksList=[],[]
+# gameManager.collidableObjects=[]
+triggersList,spheresList,fightGatesList,enemiesList,cloudsList,padsList=[],[],[],[],[],[]
 
 
 ######################## Stuff that handles running sounds ##################
@@ -1328,6 +2358,7 @@ runningTimeDuration=4
 fogGateSound=pygame.mixer.Sound('./sounds/fogGate.wav')
 rockSmash=pygame.mixer.Sound('./sounds/RockSmash.wav')
 goalBloop=pygame.mixer.Sound('./sounds/GoalBloop.wav')
+wallBloop=pygame.mixer.Sound('./sounds/WallBloop.wav')
 lossBuzz=pygame.mixer.Sound('./sounds/LossBuzz.wav')
 whoosh=pygame.mixer.Sound('./sounds/whoosh.wav')
 parry=pygame.mixer.Sound('./sounds/parry.wav')

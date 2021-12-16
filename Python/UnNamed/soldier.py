@@ -212,7 +212,7 @@ class cloudBurst:
 		self.image=pygame.transform.scale(CLOUDIMAGE,(self.width,self.height))
 		self.startTime=time.time()
 		self.age=0.2
-		self.velocity=CreateVector(random.randint(0,4),random.randint(0,4))
+		self.velocity=CreateVector(random.randint(-4,4),random.randint(-4,4))
 	def display(self,win):		
 		draw_translate_rotate(self.image,
 							  0,self.position.x-self.width/2-v.camera.position.x,
@@ -638,8 +638,8 @@ class beetle:
 	def __init__(self,x,y,gateIndex):
 		self.onScreen=True
 		self.active=False	
-		self.maxHealth=5
-		self.health=5
+		self.maxHealth=100
+		self.health=100
 		self.healthBar=healthBar(x,y,0,-80*v.yscale,-40*v.xscale,200*v.xscale,10*v.yscale,self.health)	
 		v.gatesList[gateIndex].enterBug(self)
 		self.width=300*v.xscale
@@ -1383,14 +1383,14 @@ class pipe:
 		self.imagex=pygame.transform.scale(self.imagexOrig,(self.width,self.height))
 
 		if hori:
-			self.leftCollider= collisionBox(x-self.width*0.49,y                 ,0.02*self.width,self.height)
-			self.rightCollider=collisionBox(x+self.width*0.49,y                 ,0.02*self.width,self.height)
+			self.leftCollider= collisionBox(x-self.width*0.495,y                 ,0.01*self.width,self.height)
+			self.rightCollider=collisionBox(x+self.width*0.495,y                 ,0.01*self.width,self.height)
 			self.topCollider =collisionBox(x                 ,y-self.height*0.4,self.width ,0.2*self.height,'green')
 			self.bottomCollider =collisionBox(x              ,y+self.height*0.4,self.width ,0.2*self.height,'green')
 			self.colliders=[self.leftCollider,self.rightCollider,self.bottomCollider,self.topCollider]
 		else:
-			self.leftCollider= collisionBox(x-self.width*0.4,y       ,0.2*self.width,self.height)
-			self.rightCollider=collisionBox(x+self.width*0.4,y       ,0.2*self.width,self.height)
+			self.leftCollider= collisionBox(x-self.width*0.495,y       ,0.01*self.width,self.height)
+			self.rightCollider=collisionBox(x+self.width*0.495,y       ,0.01*self.width,self.height)
 			self.topCollider =collisionBox(x                 ,y-self.height*0.49,self.width ,0.02*self.height,'green')
 			self.bottomCollider =collisionBox(x              ,y+self.height*0.49,self.width ,0.02*self.height,'green')
 			self.colliders=[self.leftCollider,self.rightCollider,self.bottomCollider,self.topCollider]
