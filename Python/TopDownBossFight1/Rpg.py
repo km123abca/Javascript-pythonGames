@@ -336,6 +336,68 @@ class positionBlock:
 									 self.position.y-self.height/2-gameManager.camera.position.y,self.width,self.height))
 ################## Position Block Ends   ###################################
 
+##Gate Starts ##
+class Gate:
+	def __init__(self,x,y,width,height,hori=True):
+		self.onScreen=True
+		self.position=CreateVector(x,y)
+		self.width=int(width*xscale)
+		self.height=int(height*yscale)
+		self.hori=hori
+		self.imagexOrig=LADDER
+		self.imagex=pygame.transform.scale(self.imagexOrig,(self.width,self.height))
+		self.slideVelocity=CreateVector(2.5*xscale,0) if hori else CreateVector(0,2.5*yscale)
+		self.slideStartTime=0
+		self.maxSlideTime=1.5
+		self.slidingDone=False
+		self.sliding=False
+		if hori:
+			self.leftCollider=positionBlock(x,y,-0.495*width,0,0,0.01*width,0.8*height,(0,0,255))
+			self.rightCollider=positionBlock(x,y,0.495*width,0,0,0.01*width,0.8*height,(0,0,255))
+			self.topCollider=positionBlock(x,y,0,-0.45*height,0,width,0.1*height)
+			self.bottomCollider=positionBlock(x,y,0,0.45*height,0,width,0.1*height)
+		else:
+			self.leftCollider=positionBlock(x,y,-0.48*width,0,0,0.04*width,height,(0,0,255))
+			self.rightCollider=positionBlock(x,y,0.48*width,0,0,0.04*width,height,(0,0,255))
+			self.topCollider=positionBlock(x,y,0,-0.495*height,0,0.99*width,0.01*height)
+			self.bottomCollider=positionBlock(x,y,0,0.495*height,0,0.99*width,0.01*height)
+		self.colliders=[self.leftCollider,self.rightCollider,self.topCollider,self.bottomCollider]
+	def display(self):
+		myrect=self.imagex.get_rect()
+		myrect.centerx,myrect.centery=self.position.x-gameManager.camera.position.x,self.position.y-gameManager.camera.position.y
+		win.blit(self.imagex,myrect)
+		# for x in self.colliders:
+		# 	x.display()
+
+	def updateColliderPositions(self):		
+		self.leftCollider.update(0,self.position)
+		self.rightCollider.update(0,self.position)
+		self.topCollider.update(0,self.position)
+		self.bottomCollider.update(0,self.position)
+		
+
+	def update(self):
+		# if SPACEPRESSED:
+		# 	self.CloseGate()
+		self.Slide()
+
+	def CloseGate(self):
+		if not self.sliding and not self.slidingDone:
+			self.sliding=True
+			self.slideStartTime=time.time()
+	def Slide(self):
+		if self.slidingDone or not self.sliding:
+			return
+		self.position.add(self.slideVelocity)
+		self.updateColliderPositions()
+		if time.time()- self.slideStartTime > self.maxSlideTime:
+			self.slidingDone=True
+			self.sliding= False 
+
+
+
+##Gate Ends ##
+
 ################## BrickWall Starts ######################################
 class BrickWall:
 	def __init__(self,x,y,width,height,hori=True):
@@ -1354,7 +1416,7 @@ class GameManager:
 		self.readyForPrevLevel=False		
 		self.basicFont=pygame.font.Font('freesansbold.ttf',32)
 		self.textToBeDisplayed=''
-		self.roadBlocksList,self.cloudsList,self.wallsList,self.enemiesList,self.grabables,self.rocks,self.camStoppers,self.nsobjs=[],[],[],[],[],[],[],[]
+		self.roadBlocksList,self.cloudsList,self.wallsList,self.enemiesList,self.grabables,self.rocks,self.camStoppers,self.nsobjs,self.gatesList=[],[],[],[],[],[],[],[],[]
 		self.allGameObjects=[]
 		self.player=None
 		self.pChanger=None
@@ -1462,7 +1524,16 @@ class GameManager:
 							                    True if int(nums[4])==1 else False					                    
 					                ))
 				self.allGameObjects.append(self.wallsList[-1])
-				self.roadBlocksList.append(self.wallsList[-1])				
+				self.roadBlocksList.append(self.wallsList[-1])		
+			elif self.loadingType=='gate':
+				self.gatesList.append(Gate(int(nums[0])*xscale,
+					                            int(nums[1])*yscale,
+							                    int(nums[2]),
+							                    int(nums[3]),
+							                    True if int(nums[4])==1 else False					                    
+					                ))
+				self.allGameObjects.append(self.gatesList[-1])
+				self.roadBlocksList.append(self.gatesList[-1])			
 
 			elif self.loadingType=='player':
 				self.player=Player(int(nums[0]),int(nums[1]),int(nums[2]),int(nums[3]))
@@ -1547,6 +1618,10 @@ class GameManager:
 			if x.onScreen:
 				x.update()
 				x.display()
+		for x in self.gatesList:
+			if x.onScreen:
+				x.update()
+				x.display()
 		
 
 
@@ -1569,6 +1644,7 @@ VERTICAL_PIPE=pygame.image.load('./sprites/Pipes/pipe.png')
 HAZE=pygame.image.load('./sprites/haze.png')
 GATE=pygame.image.load('./sprites/gate.png')
 SHRUB=pygame.image.load('./sprites/TreeShrub.png')
+LADDER=pygame.image.load('./sprites/gate.png')
 global BULLETIMAGE,BULLETSIZEFAC
 BULLETIMAGE=REDSPHEREIMAGE
 BULLETIMAGE_PLAYER=BULLETIMAGE

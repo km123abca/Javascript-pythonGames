@@ -1541,8 +1541,8 @@ class Player:
 		self.jumping=False
 		self.readyForSpaceBar=True
 		self.jumpStartTime=0
-		self.gravityScale=2
-		self.jumpForce=8
+		self.gravityScale=5
+		self.jumpForce=12
 		self.maxJumpTime=0.15
 		self.lastShotTime=0
 		self.shootGap=1
@@ -1676,7 +1676,8 @@ class Player:
 		else:
 			stopRunningSound()
 			if self.velocity.x !=0:
-				self.acceleration.x+=-self.velocity.x/abs(self.velocity.x)*1
+				if self.CheckIfOnFloor():
+					self.acceleration.x+=-self.velocity.x/abs(self.velocity.x)*1
 			if self.RunningAnimation()=="run":
 				self.changeAnimation("idle") 
 
@@ -1778,6 +1779,7 @@ class Player:
 		# self.boxCollider.display()
 
 	def ApplyGravity(self):
+		# if not self.CheckIfOnFloor():
 		self.acceleration.y+=self.gravityScale*yscale
 	def ApplyJumpForce(self):
 		self.acceleration.y-=self.jumpForce*yscale
