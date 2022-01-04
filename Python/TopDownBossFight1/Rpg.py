@@ -1398,6 +1398,28 @@ class Grabable:
 
 ######################## Grabable ends############################################
 
+####### DisplayInformationScreen starts ##############################
+def DisplayInformationScreen(instructions):
+	BASICFONT = pygame.font.Font('freesansbold.ttf', 32)
+	imagex=pygame.transform.scale(SOLDIER_IMAGE,(400,400))
+	startImageRect=imagex.get_rect()
+	startImageRect.top=int(50*yscale)
+	startImageRect.centerx=int(WIN_WIDTH/2)
+	win.fill((183,204,223))
+	win.blit(imagex,startImageRect)
+	displayTop=startImageRect.top
+	displayTop+=startImageRect.height
+	for i in range(len(instructions)):
+		instSurf=BASICFONT.render(instructions[i].upper(),1,(0,0,0))
+		instRect=instSurf.get_rect()
+		displayTop+=int(10*yscale)
+		instRect.top=displayTop
+		instRect.centerx=int(WIN_WIDTH/2)
+		displayTop+=instRect.height
+		win.blit(instSurf,instRect)
+
+####### DisplayInformationScreen ends ################################ 
+
 
 
 
@@ -1427,10 +1449,18 @@ class GameManager:
 		self.gTrigger=False
 		self.indicatorDot=StaticDot(1,1,50,50)
 
+		self.infoScreenLive=False
+		self.startGameInstructions=['Press Left and Right Arrows to Turn','Up arrow to move','space to shoot']
+
 	def SetText(self,tex):
 		self.textToBeDisplayed=tex 
 	def ClearText(self):
 		self.textToBeDisplayed=''
+
+	def HandleInfoScreen(self,instructions):
+		if ANYKEYPRESSED:
+			DisplayInformationScreen(instructions)
+			self.infoScreenLive=False
 
 	def WithInAllStoppers(self):
 		for elem in self.camStoppers:
@@ -1562,8 +1592,11 @@ class GameManager:
 
 	def update(self):
 		self.DisplayStuffOnScreen()
+		if self.infoScreenLive:
+			self.HandleInfoScreen(self.startGameInstructions)
+			return
 		self.checkScenes()
-		self.runGame()
+		self.runGame()		
 		self.HandlePlacement()
 
 		followParam1,followParam2=self.WithInAllStoppers()
@@ -1641,6 +1674,7 @@ REDSPHEREIMAGE=pygame.image.load('./sprites/redSphere.png')
 FIREBALLIMAGE=pygame.image.load('./sprites/fireball.png')
 HORIZONTAL_PIPE=pygame.image.load('./sprites/Pipes/pipeHori.png')
 VERTICAL_PIPE=pygame.image.load('./sprites/Pipes/pipe.png')
+SOLDIER_IMAGE=pygame.image.load('./sprites/soldier/idle/survivor-idle_handgun_0.png')
 HAZE=pygame.image.load('./sprites/haze.png')
 GATE=pygame.image.load('./sprites/gate.png')
 SHRUB=pygame.image.load('./sprites/TreeShrub.png')
@@ -1692,6 +1726,7 @@ def changeBullet(gun):
 
 pygame.display.set_caption('Boss Fight1')
 MOUSEX,MOUSEY=0,0
+ANYKEYPRESSED=False
 LEFTPRESSED,RIGHTPRESSED,UPPRESSED,DOWNPRESSED=False,False,False,False
 IPRESSED,LPRESSED,MPRESSED,JPRESSED,ZPRESSED,CPRESSED=False,False,False,False,False,False
 GPRESSED,KPRESSED,YPRESSED,UPPRESSED,EPRESSED,RPRESSED=False,False,False,False,False,False
@@ -1718,6 +1753,7 @@ while run:
 			pygame.quit()
 			quit()
 		if event.type == KEYUP:
+			ANYKEYPRESSED=False
 			if event.key in (K_UP,K_w):
 				UPPRESSED=False
 			elif event.key in (K_DOWN,K_s):
@@ -1771,6 +1807,7 @@ while run:
 				sys.exit()
 
 		if event.type == KEYDOWN:
+			ANYKEYPRESSED=True
 			if event.key in (K_UP,K_w):
 				UPPRESSED=True
 			elif event.key in (K_DOWN,K_s):
@@ -1829,7 +1866,8 @@ while run:
 
 		if event.type == MOUSEMOTION:
 			MOUSEX,MOUSEY=event.pos
-	win.fill((42,19,5))
+	if not gameManager.infoScreenLive:
+		win.fill((42,19,5))
 	gameManager.update()
 	pygame.display.update()
 ############# Main Section Ends ##########################
