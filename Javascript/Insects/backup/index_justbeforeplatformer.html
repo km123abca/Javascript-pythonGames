@@ -1,0 +1,1617 @@
+<head>
+	<script>
+	let mouseX,mouseY;
+	let camX=0,camY=0;
+	let deltaTime=1000 / 60;
+	let pauseGame=false;
+	let upPress,leftPress,downPress,rightPress,fPress,gPress,enterPress,mousePressed,mouseDoubleTap,spacePress;
+	let backGroundColor="#16a1b3";
+	
+	function trackMouse(e)
+		{
+		mouseX=e.clientX;
+		mouseY=e.clientY;
+		};
+    function w2screen(strr = "", px = 20, py = 30) 
+    	{
+	      ctx.font = "40px Haettenschweiler";
+	      ctx.fillStyle = "#FFFFFF";
+	      ctx.fillText(strr, px, py);
+    	}
+//hfns starts
+	function constrain(x,min,max)
+		{
+			if(x < min) return min;
+			if(x > max) return max;
+			return x;
+		}
+	function NumToHex(num)
+		{
+			let refDict=["A","B","C","D","E","F"];
+			let hexval="";
+			let limiter=0;
+			while(num > 0)
+			{
+				let lastDigit=num % 16;
+				if(lastDigit > 9)
+					hexval=refDict[lastDigit-10]+hexval;
+				else
+					hexval=""+lastDigit+hexval;
+				num=parseInt(num/16);
+				limiter+=1;
+				if(limiter > 10)
+					{
+					console.log('error');
+					break;
+					}
+			}
+			return "#"+hexval;
+
+		}
+	function RandomColor()
+		{
+			return NumToHex(Math.floor(random(0,255))*16**4+Math.floor(random(0,255))*16**2+Math.floor(random(0,255)));
+		}
+
+	function GetRAVec(a,angle)
+		{
+			let t=d2r(angle);
+			let xval= a.x * Math.cos(t)+a.y * Math.sin(t);
+			let yval=-a.x * Math.sin(t)+a.y * Math.cos(t);
+			return new createVector(xval,yval);
+		}
+	function GetrRAVec(a,angle)
+		{
+			let t=d2r(angle);
+			let xval= a.x * Math.cos(t)-a.y * Math.sin(t);
+			let yval= a.x * Math.sin(t)+a.y * Math.cos(t);
+			return new createVector(xval,yval);
+		}
+	function CheckCollisionAdvanced(obj1,obj2)
+		{
+			return tiltedCollsion(obj1,obj2)||tiltedCollsion(obj2,obj1);
+		}
+	function tiltedCollision(obj1,obj2)
+		{
+			return false;//continue from here
+			obj2_clone={"width":obj2.width,
+			            "height":obj2.height,
+			            "position":0};
+			obj2_clone.position=GetrRAVec(obj2.position,obj2.rotangle);
+		}
+
+	function createdVec(x,y)
+		{
+			return new createVector(x,y);
+		}
+
+    function random(x,y)
+    	{
+    		if(y)
+    		{
+    			return Math.random()*(y-x)+x;
+    		}
+    		return Math.random()*x;
+    	}
+    function r2d(angle) 
+        {
+            return angle/Math.PI * 180;
+        }
+    function d2r(angle)
+        {
+            return angle/180*Math.PI;
+        }
+
+    function VecMult(vec,x)
+    	{
+    		let newVec=vec.copy();
+    		newVec.mult(x);
+    		return newVec;
+    	}
+    function VecDiv(vec,x)
+    	{
+    		let newVec=vec.copy();
+    		newVec.div(x);
+    		return newVec;
+    	}
+    function VecAdd(vec1,vec2)
+    	{
+    		let newVec=vec1.copy();
+    		newVec.set(vec1.x+vec2.x,vec1.y+vec2.y);
+    		return newVec;
+    	}
+    function VecSub(vec1,vec2)
+    	{
+    		let newVec=vec1.copy();
+    		newVec.set(vec1.x-vec2.x,vec1.y-vec2.y);
+    		return newVec;
+    	}
+    function VecDot(vec1,vec2)
+    	{
+    		return vec1.x*vec2.x+vec1.y*vec2.y;
+    	}
+    function VecDist(vec1,vec2)
+    	{
+    		let res=VecSub(vec1,vec2);
+    		return res.mag();
+    	}
+    function createVector(x,y)
+        {
+            this.x=x;
+            this.y=y;
+            
+            this.copy=()=>
+                {
+                    let newVec=new createVector(this.x,this.y);
+                    return newVec;
+                }
+            this.set=(x,y)=>
+                {
+                    this.x=x;
+                    this.y=y;
+                    return this;
+                }
+            this.add=(x)=>
+                {
+                    this.x+=x.x;
+                    this.y+=x.y;
+                    return this;
+                }
+            this.sub=(x)=>
+                {
+                    this.x-=x.x;
+                    this.y-=x.y;
+                    return this;
+                }
+            this.mult=(x)=>
+                {
+                    this.x*=x;
+                    this.y*=x;
+                    return this;
+                }
+            this.div=(x)=>
+                {
+                    this.x/=x;
+                    this.y/=x;
+                    return this;
+                }
+            this.normalize=()=>
+                {
+                    let mag=Math.sqrt(this.x**2+this.y**2);
+                    if(mag!=0)
+                    {
+                    this.x=this.x/mag;
+                    this.y=this.y/mag;
+                    }
+                    return this;
+                }
+            this.normalized=()=>
+                {
+                    let mag=Math.sqrt(this.x**2+this.y**2);
+                    let temp=this.copy();
+                    if(mag!=0)
+                    {
+                    temp.x=this.x/mag;
+                    temp.y=this.y/mag;
+                    }
+                    return temp;
+                }
+            this.mag=()=>
+                {
+                    return Math.sqrt(this.x**2+this.y**2);
+                }
+            this.heading=()=>
+                {
+                    let ang=Math.atan2(this.y,this.x)/Math.PI*180;
+                    if(ang < 0) ang+=360;
+                    return ang;
+                }
+        }
+    function flushArray(arr) 
+        {
+        var lis = [];
+        for (var i in arr) 
+            {
+            if (!arr[i].onScreen) lis.push(i);
+            }
+      for (var i in lis) 
+            {
+            arr.splice(lis[i], 1);
+            for (var j in lis) lis[j] -= 1;
+            }
+        }
+
+    let DistBween=(x1,y1,x2,y2)=>
+                                {
+                                    return Math.sqrt((x1-x2)**2+(y1-y2)**2);
+                                };
+    let Lerp=(startValue,endValue,lerpFac=2)=>
+    								{
+    									return startValue+(endValue-startValue)/lerpFac;
+    								};
+	function collisioncheckz(elem1,elem2)
+				{
+			return (inter_ects(elem1.posx-elem1.width/2,elem1.posy-elem1.height/2,
+							   elem1.width,elem1.height,
+					   		   elem2.posx-elem2.width/2,elem2.posy-elem2.height/2,
+					   		   elem2.width,elem2.height
+					  		  )
+				   );
+				}
+	function collisioncheckzVec(elem1,elem2)
+				{
+			return (inter_ects(elem1.position.x-elem1.width/2,elem1.position.y-elem1.height/2,
+							   elem1.width,elem1.height,
+					   		   elem2.position.x-elem2.width/2,elem2.position.y-elem2.height/2,
+					   		   elem2.width,elem2.height
+					  		  )
+				   );
+				}
+	function circularCollision(elem1,elem2)
+		{
+			let centerSeperation=elem1.position.copy();
+			centerSeperation.sub(elem2.position);
+			centerSeperation=centerSeperation.mag();
+			return centerSeperation < elem1.width/2+elem2.width/2;
+		}
+	function inter_ects(q1,q2,ql1,ql2,w1,w2,wl1,wl2)
+				{
+				if(w1>=q1)
+					{
+					if((w1-q1)<ql1)
+						{
+						if(w2>=q2)
+							{
+							if((w2-q2)<ql2) return true;
+							return false;
+							}
+						else
+							{
+							if((q2-w2)<wl2) return true;
+							return false;
+							}
+						}
+					}
+				else
+					{
+					if((q1-w1)<wl1)
+						{
+						if(w2>=q2)
+							{
+							if((w2-q2)<ql2) return true;
+							return false;
+							}
+						else
+							{
+							if((q2-w2)<wl2) return true;
+							return false;
+							}
+						}
+					}
+				}
+
+
+//hfns ends
+
+
+    
+	</script>
+</head>
+
+
+<body>
+	<canvas style='border:3px solid black;' onmousemove="trackMouse(event)">  
+	</canvas>
+	<script>	 	
+	var canvas = document.querySelector('canvas');
+   	ctx = canvas.getContext('2d');
+   	canvas.width = window.innerWidth-35;
+  	canvas.height = window.innerHeight-100;
+    let xscale=canvas.width/1501;
+    let yscale=canvas.height/654;
+	var resize = function () 
+		{
+  		canvas.width = window.innerWidth-35;
+  		canvas.height = window.innerHeight-100;
+		};			
+	window.addEventListener('resize', resize);
+
+	document.onkeypress=function (e)
+					{
+					// console.log(e.keyCode);			
+					if(e.keyCode==32) spacePress=true;
+					if(e.keyCode==119) upPress=true;
+					if(e.keyCode==100) rightPress=true;
+					if(e.keyCode==115) downPress=true;
+					if(e.keyCode==97) leftPress=true;
+					if(e.keyCode==103) gPress=true;
+					if(e.keyCode==102) fPress=true;
+					if(e.keyCode==13)  enterPress=true;				
+					};
+	document.onkeyup=function (e)
+					{	
+					// console.log(e.keyCode);
+					if(e.keyCode==32) spacePress=false;					
+					if(e.keyCode==87) upPress=false;
+					if(e.keyCode==68) rightPress=false;
+					if(e.keyCode==83) downPress=false;
+					if(e.keyCode==65) leftPress=false;
+					if(e.keyCode==71) gPress=false;
+					if(e.keyCode==70) fPress=false;
+					if(e.keyCode==13)  enterPress=false;
+					};
+
+	document.onmousedown=function(e)
+					{
+					mousePressed=true;													
+					};	
+	document.onmouseup=function(e)
+					{
+					mousePressed=false;												
+					};
+	let insects=[],dustCloudsList=[],flowers=[];
+	let fspawner=new FlowerSpawner();
+	for(let i=0;i<5;i++)
+		{
+		insects.push(new Insect(50*xscale+random(20,100),200*yscale+random(20,100),'red',true,'r1'));
+		insects.push(new Insect(1000*xscale+random(20,100),500*yscale+random(20,100),'green',true,'g2'));
+		}
+	/*
+	insects.push(new Insect(50*xscale,200*yscale,'red',true,'r1'));
+	insects.push(new Insect(100*xscale,300*yscale,'red',true,'r2'));
+	insects.push(new Insect(1200*xscale,500*yscale,'green',true,'g1'))
+	insects.push(new Insect(1000*xscale,500*yscale,'green',true,'g2'));
+	*/
+	RunGame=()=>
+		{
+
+			if(spacePress)
+				{
+					spacePress=false;
+					pauseGame=!pauseGame;
+				}
+			for(let x of insects)
+				{
+					if(!x.onScreen) continue;
+					if(!pauseGame)
+						{
+							applyFriction(x);
+							x.update();							
+						}
+					
+					
+					x.display();
+				}
+            for(let x of dustCloudsList)
+                {
+                    x.display();
+                    if(!pauseGame)
+                      x.update();  
+                }
+            flushArray(dustCloudsList);
+            fspawner.update();
+		};
+
+	window.addEventListener('load', 
+							function () 
+									{
+								 	resize();									
+							 		var loop = function () 
+													{										                    					
+													ctx.clearRect(0,0,canvas.width,canvas.height);	
+													ctx.fillStyle = backGroundColor;
+													ctx.fillRect(0,0,canvas.width, canvas.height);
+													RunGame();				
+				                                 	};
+					  	     		setInterval(loop, deltaTime);					  		
+									}
+							);
+	function applyFriction(obj)
+		{
+			let c=0.1;
+			let f=obj.getVelocity();			
+			f.normalize();
+			f.mult(-c);
+			// console.log(f);
+			obj.applyForce(f);
+		}
+
+	//flower starts
+	function FlowerSpawner()
+		{
+			this.spawnAllowed=true;
+			this.flowers=[];
+			flowers=this.flowers;
+			this.update=()=>
+				{
+					if(mousePressed && this.spawnAllowed)
+					{
+						this.spawnAllowed=false;
+						this.flowers.push(new Flower(mouseX,mouseY));
+					}
+					else if(!mousePressed)
+					{
+						this.spawnAllowed=true;
+					}
+
+					for(let x of this.flowers)
+						{
+							if(!x.onScreen) continue;
+							x.display();
+							if(!pauseGame) x.update();
+						}
+					flushArray(this.flowers);
+				}
+		}
+	function Flower(posx,posy)
+		{
+			this.position=new createVector(posx,posy);
+			this.rotangle=0;
+			this.onScreen=true;
+			this.width=40*xscale;
+			this.height=40*yscale;
+            this.imgx=new Image();
+            this.imgx.src='./Sprites/flowers/flower.png';          
+            this.maxVolume=100;
+            this.volume=this.maxVolume;
+            this.partialFlowers=[];
+            this.imageIndex=0;
+            this.frac=0.9;
+            this.pursuers=[];
+            for(let i=1;i<8;i++)
+            	{
+            		let imgx=new Image();
+            		imgx.src=`./Sprites/flowers/flowere${i}.png`; 
+            		this.partialFlowers.push(imgx);
+            	}
+
+            this.removeNonState=()=>
+            	{
+            	var lis = [];
+		        for (var i in this.pursuers) 
+		            {
+		            if (this.pursuers[i].state!="goafterfood" || !this.pursuers[i].onScreen) lis.push(i);
+		            }
+		      	for (var i in lis) 
+		            {
+		            this.pursuers.splice(lis[i], 1);
+		            for (var j in lis) lis[j] -= 1;
+		            }
+            	}
+            
+            this.adjustSize=()=>
+            	{
+            		if(this.volume < this.frac*this.maxVolume)
+            		{
+            			if(this.imageIndex < this.partialFlowers.length)
+            				this.imgx=this.partialFlowers[this.imageIndex];
+            			this.imageIndex+=1;
+            			this.frac-=0.12;
+            		}
+            	}
+
+            this.addPursuer=(obj)=>
+            	{
+            		this.pursuers.push(obj);
+            	}
+            this.canPursue=(obj)=>
+            	{            		
+            		
+            		for(let x of this.pursuers)
+            			if(x.clan==obj.clan && x!=this) 
+            				return false;
+            		return true;
+
+            	}
+            this.getEaten=(biteSize)=>
+            	{
+            		
+            		this.volume-=biteSize;
+            		if(this.volume < 0) this.onScreen=false;
+            	}
+
+            this.display=()=>
+                  {
+                    if(!this.onScreen) return false;                            
+                    ctx.save();
+                    ctx.translate(this.position.x-camX, this.position.y-camY);                            
+                    ctx.drawImage(
+                                  this.imgx,
+                                  -this.width / 2,
+                                  -this.height / 2,
+                                  this.width,
+                                  this.height
+                                 );                         
+                    ctx.restore();
+                  };  
+            this.update=()=>
+            	{
+            		this.adjustSize();
+            		this.removeNonState();
+            	}
+		}
+	//flower ends
+	//redblock starts
+	function Redblock(pposition,rposition,pRotangle,wid,hei)
+		{
+			this.pposition=pposition.copy();
+			this.rposition=rposition.copy();
+			this.pRotangle=pRotangle;
+			this.pRotangleOld=this.pRotangle;
+			this.onScreen=true;
+			this.width=wid;
+			this.height=hei;
+            this.imgx=new Image();
+            this.imgx.src='./Sprites/redcube.png';
+
+            this.position=this.pposition.add(GetrRAVec(this.rposition,this.pRotangle));
+
+            this.changeParams=(position,angle)=>
+            	{
+            		if(position.x==this.pposition.x && position.y==this.pposition.y && angle == this.pRotangle)
+            			return;            		
+            		this.pRotangle=angle;
+            		this.pposition=position.copy();
+					this.position=VecAdd(this.pposition,GetrRAVec(this.rposition,this.pRotangle));            		
+            	}
+
+            this.display=()=>
+                  {
+                    if(!this.onScreen) return false;                            
+                    ctx.save();
+                    ctx.translate(this.position.x-camX, this.position.y-camY);                            
+                    ctx.drawImage(
+                                  this.imgx,
+                                  -this.width / 2,
+                                  -this.height / 2,
+                                  this.width,
+                                  this.height
+                                 );                         
+                    ctx.restore();
+                  };  
+		}
+	//redblock ends
+
+    //DustCloud starts
+    function DustCloud(posx,posy,dark=false)
+        {           
+            this.position=new createVector(posx,posy);
+            this.dirAngle=Math.random()*360; 
+            this.vel=3.5;            
+            this.velocity=new createVector(this.vel * Math.cos(this.dirAngle/180*Math.PI),
+            							   this.vel * Math.sin(this.dirAngle/180*Math.PI)
+            							  );
+            this.onScreen=true; 
+            this.width=50*xscale;
+            this.height=50*yscale;
+            this.imgx=new Image();
+            if(!dark)
+                this.imgx.src='./Sprites/cloud-1.png';
+            else
+                this.imgx.src='./Sprites/cloud-1dark.png';  
+            this.update=()=>
+                {
+                    if(!this.onScreen) return false; 
+                    this.position.add(this.velocity);
+                    this.width-=1;
+                    this.height-=1;
+                    if(this.width<=0 || this.height<=0)
+                        {
+                            this.onScreen=false;
+                        }
+                }
+            this.display=()=>
+                          {
+                            if(!this.onScreen) return false;                            
+                            ctx.save();
+                            ctx.translate(this.position.x-camX, this.position.y-camY);                            
+                            ctx.drawImage(
+                                          this.imgx,
+                                          -this.width / 2,
+                                          -this.height / 2,
+                                          this.width,
+                                          this.height
+                                         );                         
+                            ctx.restore();                          
+
+                          };  
+            this.checkDamage=(parentInsect)=>
+            			{
+            				for(let x of insects)
+            					{
+            						if(!x.onScreen || x==parentInsect || x.clan==parentInsect.clan)
+            							continue;
+            						if(collisioncheckzVec(this,x))
+            						{
+            							this.onScreen=false;
+            							x.takeDamage(1);
+            						}
+            					}
+            			}
+
+        }
+    //DustCloud ends
+    let spawnDustClouds=(posx,posy,n,dark=false)=>
+        {
+            for(let i=0;i < n;i++)
+                dustCloudsList.push(new DustCloud(posx,posy,dark));
+        }
+	//Insect starts
+	function Insect(posx,posy,clan,startIdle=false,nm="bob")
+		{
+			this.nm=nm;
+			this.position=new createVector(posx,posy);
+			this.home=this.position.copy();
+			this.roamingPos=[VecAdd(this.position,createdVec(600,0)),
+							 VecAdd(this.position,createdVec(300,300)),
+							 this.position.copy()
+							];
+			//life and healthbar starts
+			this.debugInfo='';
+			this.maxHealth=100;
+			this.split=2;
+			this.health=this.maxHealth;
+			this.hBar=new HealthBar(0,60*yscale,50*xscale,10*yscale,this.maxHealth,2);
+			//life and healthbar ends		
+			this.clan=clan;					
+			this.roamingIndex=0;
+			if(startIdle) this.state="idle";
+			else this.state="roaming";
+			this.velocity=new createVector(0,0);
+			this.acceleration=new createVector(0,0);
+			this.extVelocity=new createVector(0,0);
+			this.maxSpeed=5*xscale;
+			this.speed=2*xscale;
+			this.roamingSpeed=2*xscale;
+			this.followSpeed=random(3,4)*xscale;
+			this.escapeSpeed=random(4,5)*xscale;
+			this.onScreen=true;
+			this.rotangle=0;
+			this.prevRotangle=1;
+			this.presentAnimationState=2;
+			this.animationCounter=0;
+			this.animInQueue="none";
+			this.width=20*xscale;
+			this.height=25*yscale;
+			this.targetx=false;
+			this.mass=1;
+			this.moving=false;
+			this.doubleEngaged=false;
+			this.noseC=new Redblock(this.position,new createVector(0,-this.height*0.4),
+				                  this.rotangle+90,this.width*0.2,this.height*0.2);
+			this.bodyC=new Redblock(this.position,new createVector(0,0),
+				                  this.rotangle+90,this.width*0.4,this.height*0.4);
+
+			this.dustCloudsList=[];
+			
+			this.proximDist=this.width*xscale;
+			
+			this.idle_images=[];
+			this.f=clan=="red"?'':'g';
+			for(let i=0;i<2;i++)
+				{
+				let imgx=new Image();
+
+				imgx.src=`./Sprites/idle${i+this.f}.png`;
+				this.idle_images.push(imgx);
+				}
+			this.run_images=[];
+			for(let i=0;i<2;i++)
+				{
+				let imgx=new Image();
+				imgx.src=`./Sprites/run${i+this.f}.png`;
+				this.run_images.push(imgx);
+				}
+			this.attack_images=[];
+			for(let i=0;i<2;i++)
+				{
+				let imgx=new Image();
+				imgx.src=`./Sprites/attack${i+this.f}.png`;
+				this.attack_images.push(imgx);
+				}
+			this.animationStates=[this.idle_images,this.run_images,this.attack_images];
+			this.animationT=[0,0,0];
+			this.animationTMax=[5,10,5];
+
+			this.controlAnimationSpeed=()=>
+				{
+					this.animationT[this.presentAnimationState]+=1;
+					if(this.animationT[this.presentAnimationState] > this.animationTMax[this.presentAnimationState])
+						{	
+							this.animationT[this.presentAnimationState]=0;
+							return true;
+						}
+					return false;
+				}
+			this.updateAnimationFrame=()=>
+				{
+					if(!this.controlAnimationSpeed()) return;
+					this.animationCounter+=1;
+                    if(this.animationCounter >= this.animationStates[this.presentAnimationState].length)
+                        {
+                        if(this.animInQueue=="none")
+                           this.animationCounter=0;
+                        else
+                            {
+                              this.changeAnimation(this.animInQueue);
+                              this.animInQueue="none";
+                            }
+                        }
+				}
+
+			this.turnTowardsTarget=(targetPos)=>
+				{
+					
+				    let targetDir=VecSub(targetPos,this.position);
+				    
+                    let rawAngle=targetDir.heading();                  
+                    
+                    if(Math.abs(rawAngle-this.rotangle)>Math.abs(360+rawAngle-this.rotangle))
+                        {
+                            rawAngle+=360;
+                        }
+                    else if(Math.abs(rawAngle-this.rotangle)>Math.abs(360+this.rotangle-rawAngle))
+                        {
+                            this.rotangle+=360;
+                        }
+                    this.rotangle=Lerp(this.rotangle,rawAngle,9); 
+                    
+                    if(this.rotangle > 360) this.rotangle-=360;
+
+                    if(this.rotangle !=this.prevRotangle)
+                    	{
+                    	this.prevRotangle=this.rotangle;
+                    	this.calculateVelocity();
+                    	}
+				}
+			this.localAcceleration=new createVector(0,0);
+			this.calculateVelocity=()=>
+				{
+					this.velocity.x=this.speed*Math.cos(d2r(this.rotangle));
+					this.velocity.y=this.speed*Math.sin(d2r(this.rotangle));
+
+				    //this.localAcceleration.x=this.speed*Math.cos(d2r(this.rotangle));
+					//this.localAcceleration.y=this.speed*Math.sin(d2r(this.rotangle));
+				}
+			this.moveForward=()=>
+				{
+					this.position.add(this.velocity);
+					//this.extVelocity.add(this.localAcceleration);
+				}
+			this.reachedTarget=(dest)=>
+				{
+					return VecDist(this.position,dest) < this.proximDist;
+
+				}
+			this.enemyRange=10*this.height;
+			this.troubleRange=10*this.height;
+			this.enemy=false;
+			this.watchOutForEnemies=()=>
+				{
+
+					for(let x of insects)
+						{
+							if(!x.onScreen || x==this || x.state=="escape" ) continue;
+
+							if(x.clan!=this.clan && x.enemy && x.enemy!=this) continue;
+							
+							if(x.clan==this.clan) 
+								{
+									if(this.state!="givingA" && x.state=="gettingA" && !x.helpAcquired )
+										{
+											
+											if(VecDist(this.position,x.position) < this.troubleRange)
+												{
+													this.state="givingA";
+													x.helpAcquired=true;
+													this.friend=x;
+												}
+										}
+								continue;
+								}
+							else if(x.state=="gettingA")
+								continue;
+							if(VecDist(this.position,x.position) < this.enemyRange)
+								{
+									this.enemy=x;
+									this.state="enemypursue";
+									if(this.friend)
+										{
+										this.friend.helpAcquired=false;
+										this.friend=false;
+										}
+									break;
+								}
+						}
+					//if yet no enemy gangsquad on someone
+					if(!this.enemy)
+						{
+						for(let x of insects)
+							{
+								if(!x.onScreen || x==this || x.state=="escape" || x.state=="gettingA" ) 
+									continue;					
+								if(x.clan==this.clan) continue;
+								if(VecDist(this.position,x.position) < this.enemyRange)
+									{
+										this.enemy=x;
+										this.state="enemypursue";
+										x.doubleEngaged=true;
+										break;
+									}
+							}
+						}
+				}
+			//going after flowers starts
+			this.flowerRange=10*this.height;
+			this.flowerToEat=false;
+			this.flowerProximDist=this.width*xscale;
+			this.watchOutForFlowers=()=>
+				{
+					for(let x of flowers)
+						{
+							if(!x.onScreen) continue;				
+							if(x.canPursue(this) && VecDist(this.position,x.position) < this.flowerRange )
+								{
+									x.addPursuer(this);
+									this.flowerToEat=x;									
+									this.state="goafterfood";
+									break;
+								}
+						}
+				}
+			this.pursueFood=()=>
+				{
+					if(this.speed!=this.followSpeed) this.speed=this.followSpeed;
+					this.watchOutForEnemies();
+					this.turnTowardsTarget(this.flowerToEat.position);
+					if(!this.flowerToEat) this.state="idle";
+					if(VecDist(this.position,this.flowerToEat.position) > this.flowerProximDist)
+						{
+						this.changeAnimation("move");
+						this.moveForward();
+						this.moving=true;
+						}
+					else
+						{
+						this.changeAnimation("idle");
+						this.moving=false;
+						this.eatFlower();
+						}
+				}
+			this.eatFlower=()=>
+				{
+					if(!this.flowerToEat || !this.flowerToEat.onScreen) 
+						{	
+						this.state="idle";
+						this.flowerToEat=false;
+						return;
+						}
+						
+					this.flowerToEat.getEaten(1);
+				}
+
+			//going after flowers ends
+			//this.attacktimer starts
+			this.attackTimer=0;
+			this.attackTimerMax=3;
+			this.runAttackTimers=()=>
+				{
+					if(this.attackTimer!=0)
+					{
+					this.attackTimer+=deltaTime;
+					if(this.attackTimer > this.attackTimerMax *1000)
+						this.attackTimer=0;
+					}
+				}
+			//this.attacktimer ends
+			//escape starts
+			this.homeProximDist=this.width*xscale;
+			this.stayHomeTimer=0;
+			this.stayHomeMax=3;
+			this.doEscape=()=>
+				{
+					if(this.speed!=this.escapeSpeed) this.speed=this.escapeSpeed;
+					//this.enemy=null;
+					this.turnTowardsTarget(this.home);
+					this.Heal(0.0001);
+					if(VecDist(this.position,this.home) > this.homeProximDist)
+						{
+						this.moveForward();
+						this.moving=true;
+						}
+					else
+						{
+						//console.log("changed back to idle");
+						this.stayHomeTimer+=deltaTime;
+						this.changeAnimation("idle");
+						if(this.stayHomeTimer >  this.stayHomeMax *1000)
+							{
+								if(this.enemy && this.enemy.onScreen )
+									this.state="enemypursue";
+								else
+									{
+									this.enemy=false;
+									this.state="idle";
+									}
+								this.stayHomeTimer=0;
+							}
+						
+						
+						}
+				}
+			//escape ends
+
+			//givingA starts
+			//watchoutfor Runners included in watchout for enemies
+			this.friend=false;
+			this.runInForAssistance=()=>
+				{
+					
+					this.turnTowardsTarget(this.friend.position);
+
+					if(!this.metAlly && VecDist(this.position,this.friend.position) > this.homeProximDist)
+						{
+						this.moveForward();
+						this.moving=true;	
+						}
+						/* deletable since metally can be set by the one seeking assistance
+					else if(!this.metAlly && VecDist(this.position,this.friend.position) < this.homeProximDist)
+						{
+						this.metAlly=true;
+						}
+						*/
+					else if(this.metAlly)
+						{
+							this.state='goToFixedSpot';
+							this.callInEveryBody(this.friend.spot);
+							this.goingTowardsIdlePos=false;
+							this.spot=this.friend.spot;
+							this.metAlly=false;
+							this.friend=false;
+						}
+					this.watchOutForEnemies();
+				}
+			this.callInEveryBody=(spot)=>
+				{
+					for(let x of insects)
+						{
+							if(!x.onScreen || 
+								x.clan!=this.clan ||
+								x.state=="goToFixedSpot"								
+								 ) continue;
+							if(x.state=="idle" ||
+							   x.state=="roaming" ||
+							   x.state=="goafterfood"
+								)
+							{
+								x.state="goToFixedSpot";
+								x.spot=spot;
+							}
+
+						}
+				}
+
+			//givingA ends
+
+
+
+			//geting reinforcements starts
+			this.spot=false;
+			this.metAlly=false;
+			this.helpAcquired=false;
+			this.getReinforcements=()=>
+				{
+					if(this.doubleEngaged) 
+						{
+						this.enemy=false;
+						this.doubleEngaged=false;
+						this.spot=this.position.copy();
+						}
+						this.turnTowardsTarget(this.home);						
+						if(!this.metAlly && VecDist(this.position,this.home) > this.homeProximDist)
+							{
+							this.moveForward();
+							this.moving=true;
+							this.watchOutForAllies();
+							}
+						else
+							{
+								this.state='goToFixedSpot';
+								this.goingTowardsIdlePos=false;
+								this.metAlly=false;
+								this.helpAcquired=false;
+							}
+						
+				}
+			this.allyProximDistance=2*this.width;
+			this.watchOutForAllies=()=>
+				{
+					for(let x of insects)
+						{
+							if(!x.onScreen || x.clan!=this.clan || x.state!="givingA") continue;
+							if(VecDist(this.position,x.position)< this.allyProximDistance)
+								{
+									this.metAlly=true;
+									x.metAlly=true;
+								}
+						}
+				}
+			this.menAvailable=()=>
+				{
+					for(let x of insects)
+						{
+							if(!x.onScreen || x.clan!=this.clan) continue;
+							if(!x.enemy)
+								return true;
+						}
+					return false;
+				}
+
+			//getting reinforcements ends
+
+			//bulk retreat starts
+			this.rsplit=2;
+			this.checkCombinedHealth=()=>
+				{
+					let a=0,ma=0;
+					for(let x of insects)
+						{
+							if(!x.onScreen) continue;
+							a+=x.health;
+							ma+=x.maxHealth;
+
+						}
+					if(a < ma/this.rsplit && this.rsplit<4)
+						{
+
+							console.log('combined health fallen');
+							this.rsplit+=2;
+							if(this.state=="enemypursue")
+							{
+							this.spot=this.home;
+							this.goingTowardsIdlePos=true;
+							this.state="goToFixedSpot";
+							}
+
+						}
+				}
+			//bulk retreat ends
+
+			//goToFixedSpot starts
+			this.goingTowardsIdlePos=false;
+			this.goToFixedSpot=()=>
+				{
+					this.turnTowardsTarget(this.spot);
+					if(VecDist(this.position,this.spot) > this.homeProximDist)
+						{
+							this.moveForward();
+							this.moving=true;							
+						}
+					else if(this.goingTowardsIdlePos)
+						{
+							this.goingTowardsIdlePos=false;
+							this.spot=false;
+							this.state="idle";
+						}
+					else
+						{
+							this.spot=this.home;
+							this.goingTowardsIdlePos=true;
+						}
+					this.watchOutForEnemies();
+					this.watchOutForFlowers();
+				}
+			//goToFixedSpot ends
+
+
+
+			//enemy pursue starts
+			this.enemyProximDist=2*this.width*xscale;
+			this.attackTimerMaxAPlunge=5;
+			// this.escapable=false;
+			this.doubleEngageTimer=0;
+			this.doEnemyPursue=()=>
+				{
+					
+					if(this.doubleEngaged && this.doubleEngageTimer < 1000)
+						{
+							this.doubleEngageTimer+=deltaTime;
+						}
+					else if(this.doubleEngaged && this.menAvailable())
+						{
+							this.state="gettingA";
+							this.doubleEngageTimer=0;
+						}
+					else if(this.doubleEngageTimer!=0)
+						{
+							this.doubleEngageTimer=0;
+						}
+						
+					// if(!this.escapable) this.escapable=true;
+					if(this.speed!=this.followSpeed) this.speed=this.followSpeed;
+					this.turnTowardsTarget(this.enemy.position);
+					if(!this.enemy || !this.enemy.onScreen || this.enemy.state=="escape" || this.enemy.state=="gettingA")
+						{
+							console.log(this.nm+" turned idle");
+							this.state="idle";
+							this.enemy=false;
+						}
+					else if(VecDist(this.position,this.enemy.position) > this.enemyProximDist)
+						{
+						this.moveForward();
+						this.moving=true;
+						}
+					else
+						{
+						
+						if(this.health < this.maxHealth/this.split  && this.split <8)
+							{
+								
+								this.split+=2;								
+								this.state="escape";
+							}
+
+						this.moving=false;						
+						if(this.attackTimer==0) 
+							if(random(2)<1)
+								this.state="plungeattack";
+							else
+								{
+								this.state="rotateattack";
+								//console.log("state changed to rotate");
+								}
+
+						}
+				}
+
+			this.takeDamage=(x)=>
+				{
+					this.health-=x;
+					this.hBar.reduceHealth(x);
+					if(this.health < 0)
+					{
+						this.health=0;
+						this.onScreen=false;
+						spawnDustClouds(this.position.x,this.position.y,100,true);
+					}
+				}
+
+			this.Heal=(x)=>
+				{
+					this.health+=x;
+					this.hBar.reduceHealth(-x);
+					if(this.health > this.maxLife)
+					{
+						this.health=this.maxLife;
+					}
+				}
+
+			//rotate attack starts
+			this.rotateAttackSpeed=10;
+			this.rotateAttackTimer=0;
+			this.rotateAttackTimerMax=5;
+			this.attackTimerMaxARotate=3;
+			this.rotateForwardSpeed=2;
+			this.hasSetPlungeFSpeed=false;
+			this.shots=0;
+			this.cloudInstances=[0.25,0.75];
+			this.cloudI=0;
+			this.doRotateAttack=()=>
+				{
+
+					if(this.state!="rotateattack") return;
+					/*
+					if(!this.hasSetPlungeFSpeed)
+						{
+						this.hasSetPlungeFSpeed=true;
+						this.plungeVelocity.x=this.rotateForwardSpeed * Math.cos(d2r(this.rotangle));
+						this.plungeVelocity.y=this.rotateForwardSpeed * Math.sin(d2r(this.rotangle));
+						}
+					this.position.add(this.plungeVelocity);
+					*/
+					this.rotangle+=this.rotateAttackSpeed;
+					this.rotateAttackTimer+=deltaTime;
+					if(this.rotateAttackTimer > this.rotateAttackTimerMax*1000 )
+						{						   
+						   this.breakRotateAttack();
+						}
+					else if(this.cloudI<this.cloudInstances.length &&   
+						this.rotateAttackTimer > this.rotateAttackTimerMax*1000*this.cloudInstances[this.cloudI])
+						{								
+							this.spawnDustClouds();
+							this.cloudI+=1;
+						}
+
+					//this.hasCollidedWhileR();
+					this.breakRotateWhenHit();
+
+				}
+			this.breakRotateWhenHit=()=>
+				{
+				for(let x of insects)
+						{
+							if(!x.onScreen || x==this) continue;
+							
+							if(collisioncheckzVec(this.noseC,x.noseC) || collisioncheckzVec(this.noseC,x.bodyC) ||
+								collisioncheckzVec(x.noseC,this.noseC) || collisioncheckzVec(x.noseC,this.bodyC)
+								)
+								{				
+								    if(x.Attacking())
+								    	{ 
+								    	this.breakRotateAttack();
+
+								    	}
+								}
+						}	
+				}
+			this.hasCollidedWhileR=()=>
+				{
+					for(let x of insects)
+						{
+							if(!x.onScreen || x==this) continue;
+							
+							if(collisioncheckzVec(this.noseC,x.noseC) || collisioncheckzVec(this.noseC,x.bodyC) ||
+								collisioncheckzVec(x.noseC,this.noseC) || collisioncheckzVec(x.noseC,this.bodyC)
+								)
+								{									
+									this.shots+=1;
+									if(this.shots < 20 && !x.Attacking())
+								    	x.takeDamage(1);
+								    if(x.Attacking()) this.breakRotateAttack(); 
+									
+									//this.position.sub(this.plungeVelocity);
+									
+									
+								}
+						}
+					
+				}
+			this.breakRotateAttack=()=>
+				{
+					//console.log("state changed to pursue");
+					this.rotateAttackTimer=0;
+					this.state="enemypursue";
+					this.attackTimerMax=this.attackTimerMaxARotate;
+					this.attackTimer=deltaTime;
+					this.hasSetPlungeFSpeed=false;
+					this.shots=0;
+					this.cloudI=0;
+				}
+			//rotate attack ends
+
+		    this.spawnDustClouds=()=>
+		        {
+		            for(let i=0;i < 50;i++)
+		                this.dustCloudsList.push(new DustCloud(this.position.x,this.position.y,false));
+		        }
+		    this.workDustClouds=()=>
+		    	{
+		    		for(let x of this.dustCloudsList)
+		    			{
+		    				if(!x.onScreen) continue;
+		    				x.display();
+		    				if(!pauseGame)
+		    				{
+		    					x.checkDamage(this);
+		    					x.update();
+		    				}
+		    			}
+		    	}
+
+			//plunge attack starts
+			this.phase1plungedone=false;
+			this.plungeVelocitySet=false;
+			this.plungeVelocity=new createVector(0,0);			
+			this.plungeSpeed=10;
+			this.plungePTimer=0;this.plungeP1TimerMax=0.1;this.plungeP2TimerMax=0.5;
+			this.plungeForce=6;
+			this.setPlungeVelocity=()=>
+				{
+					this.plungeVelocity.x=-this.plungeSpeed * Math.cos(d2r(this.rotangle));
+					this.plungeVelocity.y=-this.plungeSpeed * Math.sin(d2r(this.rotangle));
+				}
+			this.doPlungeAttack=()=>
+				{
+				if(!this.phase1plungedone)
+					{
+					if(!this.plungeVelocitySet)
+						{
+						this.setPlungeVelocity();
+						this.plungeVelocitySet=true;
+						}
+					this.position.add(this.plungeVelocity);
+					this.plungePTimer+=deltaTime;
+					if(this.plungePTimer > this.plungeP1TimerMax *1000)
+						{
+						this.plungePTimer=0;
+						this.phase1plungedone=true;
+						this.plungeVelocity.mult(-1);
+						}
+					
+					}
+				else
+					{
+					this.plungePTimer+=deltaTime;
+					this.position.add(this.plungeVelocity);
+					if(this.plungePTimer > this.plungeP2TimerMax *1000 || this.hasCollidedWhileP(true))
+						{
+						this.plungePTimer=0;
+						this.breakPlunge();
+						}
+					
+					}
+				}
+			this.hasCollidedWhileP=(causeDamage)=>
+				{
+					for(let x of insects)
+						{
+							if(!x.onScreen || x==this || x.clan==this.clan) continue;
+							
+							if(collisioncheckzVec(this.noseC,x.noseC) || collisioncheckzVec(this.noseC,x.bodyC))
+								{
+								   if(causeDamage) x.takeDamage(10);
+									x.applyForce(this.plungeVelocity.normalized().mult(this.plungeForce));
+									this.position.sub(this.plungeVelocity);
+									return true;
+								}
+						}
+					return false;
+				}
+			this.breakPlunge=()=>
+				{
+					
+					this.state="enemypursue";
+					this.phase1plungedone=false;
+					this.plungeVelocitySet=false;
+					this.attackTimerMax=this.attackTimerMaxAPlunge;
+					this.attackTimer=deltaTime;
+				}
+			//plunge attack ends
+
+            this.changeAnimation=(anim)=>
+                  {                    
+                    if ((anim=="idle") && this.presentAnimationState!=0)
+                        {
+                        this.animationCounter=0;
+                        this.presentAnimationState=0;
+                        }
+                    else if ((anim=="move") && this.presentAnimationState!=1)
+                        {
+                        this.animationCounter=0;
+                        this.presentAnimationState=1;
+                        }
+                    else if ((anim=="attack") && this.presentAnimationState!=2)
+                        {
+                        this.animationCounter=0;
+                        this.presentAnimationState=2;
+                        }
+                  }
+            this.applyForce=(f)=>
+            	{            	    		
+            		this.acceleration.add(f.div(this.mass));
+            	}
+            this.applyExtForces=()=>
+            	{
+            		this.extVelocity.add(this.acceleration);
+            		this.position.add(this.extVelocity);
+            		this.acceleration.set(0,0);
+            	}
+            this.getVelocity=()=>
+            	{
+            		/*
+            		if(!this.moving) return this.extVelocity.copy();
+            		else return VecAdd(this.extVelocity,this.velocity);
+            		*/
+
+            		return this.extVelocity.copy();
+            	}
+            this.Attacking=()=>
+            	{
+            		return this.state=="plungeattack";
+            	}
+            this.drawDebugCircle=()=>
+            	{
+            	ctx.save();
+                ctx.translate(this.position.x-camX,this.position.y-camY);              
+                //ctx.fillStyle="#00FF00";
+                ctx.strokeStyle="#00FF00";
+                ctx.beginPath();
+            	ctx.arc(0,0,this.enemyRange,0,2*Math.PI);
+            	ctx.closePath();
+                //ctx.fill();
+                ctx.stroke();               
+                ctx.restore();
+
+            	 
+            	}
+			this.display=()=>
+				{		            
+                if(!this.onScreen) return false;
+                ctx.save();
+                ctx.translate(this.position.x-camX, this.position.y-camY);
+                ctx.rotate(d2r(this.rotangle+90));		                            
+                ctx.drawImage(
+                              this.animationStates[this.presentAnimationState][this.animationCounter],
+                              -this.width / 2,
+                              -this.height / 2,
+                              this.width,
+                              this.height
+                             );                 
+                this.hBar.dr_w();
+
+                ctx.restore(); 
+                this.updateAnimationFrame();
+                //this.controlHealthBarVisibility();	                            
+                //this.boxCollider.dr_w(); 
+
+                //this.noseC.display();      
+                //this.bodyC.display();
+
+                //this.drawDebugCircle();      
+                //w2screen(this.nm+':'+this.state+(this.enemy?"y":"n"),this.position.x,this.position.y-50);
+                //w2screen(this.debugInfo,this.position.x-50,this.position.y-50);
+				}
+
+			this.update=()=>
+				{
+				  if(!this.onScreen) return;
+				  this.checkCombinedHealth();
+				  this.noseC.changeParams(this.position,this.rotangle+90);
+				  this.bodyC.changeParams(this.position,this.rotangle+90);
+				  this.runAttackTimers();
+				  this.applyExtForces();
+				  this.workDustClouds();
+				  if(this.state=="roaming")
+				  		{
+				  		this.moving=true;
+				  		if(this.speed!=this.roamingSpeed) this.speed=this.roamingSpeed;
+				  		this.changeAnimation("move");
+				  		this.turnTowardsTarget(this.roamingPos[this.roamingIndex]);
+				  		this.moveForward();
+				  		if(this.reachedTarget(this.roamingPos[this.roamingIndex]))
+				  			{
+				  			this.roamingIndex+=1;
+				  			if(this.roamingIndex >= this.roamingPos.length)
+				  				this.roamingIndex=0;
+				  			}
+				  		this.watchOutForEnemies();
+				  		this.watchOutForFlowers();
+				  		}
+				  	else if(this.state=="idle")
+				  		{	
+				  			this.moving=false;
+				  			this.changeAnimation("idle");
+				  			this.watchOutForEnemies();
+				  			this.watchOutForFlowers();
+				  		}
+				  	else if(this.state=="enemypursue")
+				  		{
+				  			this.changeAnimation("move");
+				  			this.doEnemyPursue();
+				  		}
+				  	else if(this.state=="plungeattack")
+				  		{	
+				  			this.changeAnimation("idle");
+				  			this.doPlungeAttack();
+				  		}
+				  	else if(this.state=="rotateattack")
+				  		{	
+				  			this.changeAnimation("idle");
+				  			this.doRotateAttack();
+				  		}
+				  	else if(this.state=="escape")
+				  		{
+				  			this.changeAnimation("move");
+				  			this.doEscape();
+				  		}
+				  	else if(this.state=="goafterfood")
+				  		{
+				  		    this.pursueFood();
+				  		}
+				  	else if(this.state=="gettingA")
+				  		{
+				  			this.changeAnimation("move");
+				  		    this.getReinforcements();
+				  		}
+				  	else if(this.state=="givingA")
+				  		{
+				  			this.changeAnimation("move");
+				  		    this.runInForAssistance();
+				  		}
+				  	else if(this.state=="goToFixedSpot")
+				  		{
+				  			this.changeAnimation("move");
+				  			this.goToFixedSpot();
+				  		}
+				}
+
+		}
+	//Insect ends
+
+    //Health Bar and HealthBar Child starts
+    function HealthBar(posx,posy,wd,ht,maxLife,visibleTime)
+        {
+            this.posx=posx;
+            this.posy=posy;
+            this.onScreen=true;            
+            this.redBar=new HealthBarChild(0,0,"#94b8b8",wd,ht,"redbar",maxLife);
+            this.greenBar=new HealthBarChild(0,0,"#FF0000",wd,ht,"greenbar",maxLife);
+            this.visibleTime=visibleTime;
+            this.visible=true;
+            this.visibleTimer=deltaTime;
+            this.runVisibleTimer=()=>
+            	{
+            		if(this.visibleTimer==0) return;
+            		this.visibleTimer+=deltaTime;
+            		if(this.visibleTimer > this.visibleTime *1000)
+            			{
+            				this.visible=false;
+            				this.visibleTimer=0;
+            			}
+            	}
+
+            this.dr_w=()=>
+                {
+                  if(!this.onScreen || !this.visible) return false;
+                  this.runVisibleTimer(); 
+                  ctx.save();
+                  ctx.translate(this.posx,this.posy);
+                  this.redBar.dr_w();
+                  this.greenBar.dr_w();
+                  ctx.restore();  
+                }
+            this.reduceHealth=(x)=>
+                {
+                    this.greenBar.reduceHealth(x);
+                    this.visible=true;
+                    this.visibleTimer=deltaTime;
+                }
+        }
+
+    function HealthBarChild(posx,posy,colorCode,wd,ht,namex,maxLife)
+        {
+            this.onScreen=true;
+            this.posx=posx;
+            this.posy=posy;
+            this.height=yscale*ht;
+            this.width=xscale*wd;
+            this.maxWidth=this.width;            
+            this.xptsOrig=[   0,   1,  1,   0];
+            this.yptsOrig=[-0.5,-0.5,0.5, 0.5];
+            this.xpts=this.xptsOrig.map(x=>x*this.width);
+            this.ypts=this.yptsOrig.map(x=>x*this.height);
+            this.colorCode=colorCode;
+            this.namex=namex;
+            this.maxLife=maxLife;
+            this.life=maxLife;
+        this.dr_w= function()
+                {
+                if(!this.onScreen) return false;                
+                ctx.save();
+                ctx.translate(this.posx,this.posy);              
+                ctx.fillStyle=this.colorCode;
+                ctx.strokeStyle=this.colorCode;
+                ctx.beginPath();
+                ctx.moveTo(this.xpts[0],this.ypts[0]);
+                for(var g=1;g<this.xpts.length;g++)
+                    ctx.lineTo(this.xpts[g],this.ypts[g]);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                ctx.restore();    
+
+                };
+        this.reduceHealth=(x)=>
+            {
+                this.life=constrain(this.life-x,0,this.maxLife);
+
+                this.width=this.maxWidth * this.life/this.maxLife;                
+                this.xpts=this.xptsOrig.map(x=>x*this.width);
+            }
+        }
+    //Health Bar and HealthBar Child ends
+
+	</script>
+
+	
+</body>

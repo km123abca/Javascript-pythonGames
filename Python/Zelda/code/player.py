@@ -2,8 +2,9 @@ import pygame
 from settings import *
 from debug import debug
 from support import import_folder
+from entity import Entity
 
-class Player(pygame.sprite.Sprite):
+class Player(Entity):
 	def __init__(self,pos,groups,obstacle_sprites,create_attack,destroy_attack,create_magic):
 		super().__init__(groups)
 		self.image = pygame.image.load('../graphics/test/player.png').convert_alpha()
@@ -13,15 +14,18 @@ class Player(pygame.sprite.Sprite):
 		self.import_player_assets()
 		self.status ='down'
 
-		self.direction= pygame.math.Vector2()		
+		# self.direction= pygame.math.Vector2()	 #in super class	
 		self.attacking=False
 		self.attack_cooldown= 400
 		self.attack_time = None
 
 		self.obstacle_sprites = obstacle_sprites
 
+		'''
 		self.frame_index = 0
 		self.animation_speed = 0.15
+		#These are in superclass, entity
+		'''
 
 		self.create_attack=create_attack
 		self.weapon_index=0
@@ -43,6 +47,11 @@ class Player(pygame.sprite.Sprite):
 		self.energy= self.stats['energy']
 		self.exp= 123
 		self.speed=self.stats['speed']
+
+		#damage timer
+		self.vulnerable=True
+		self.hurt_time=None
+		self.invulnerability_duration = 500
 
 
 
@@ -108,6 +117,14 @@ class Player(pygame.sprite.Sprite):
 				cost=list(magic_data.values())[self.magic_index]['cost']
 				self.create_magic(style,strength,cost)
 
+			if keys[pygame.K_e] and self.can_switch_magic:
+				self.magic_index+=1
+				self.can_switch_magic=False
+				self.magic_switch_time=pygame.time.get_ticks()				
+				if self.magic_index >= len(list(magic_data.keys())):					
+					self.magic_index=0
+				self.magic = list(magic_data.keys())[self.magic_index]
+
 			if keys[pygame.K_q] and self.can_switch_weapon:
 				self.weapon_index+=1
 				self.can_switch_weapon=False
@@ -123,7 +140,7 @@ class Player(pygame.sprite.Sprite):
 	def cooldowns(self):
 		current_time = pygame.time.get_ticks()
 		if self.attacking:
-			if current_time - self.attack_time >= self.attack_cooldown:
+			if current_time - self.attack_time >= self.attack_cooldown + weapon_data[self.weapon]['cooldown']:
 				self.attacking=False
 				self.destroy_attack()
 
@@ -131,6 +148,14 @@ class Player(pygame.sprite.Sprite):
 		if not self.can_switch_weapon:
 			if current_time - self.weapon_switch_time > self.switch_duration_cooldown:
 				self.can_switch_weapon=True	
+
+		if not self.can_switch_magic:
+			if current_time - self.magic_switch_time > self.switch_duration_cooldown:
+				self.can_switch_magic=True	
+
+		if not self.vulnerable:
+			if current_time - self.hurt_time > self.invulnerability_duration:
+				self.vulnerable=True
 
 	def animate(self):
 		animation = self.animations[self.status]
@@ -140,6 +165,41 @@ class Player(pygame.sprite.Sprite):
 		self.image= animation[int(self.frame_index)]
 		self.rect = self.image.get_rect(center=self.hitbox.center)
 
+		if not self.vulnerable:
+			alpha=self.wave_value()
+			self.image.set_alpha(alpha)
+		else:
+			self.image.set_alpha(255)
+
+	def update(self):
+		self.input()
+		self.get_status()
+		self.animate()
+		self.cooldowns()		
+		self.move(self.speed)
+		# debug(self.status)
+		self.energy_recovery()
+
+	def get_full_weapon_damage(self):
+		base_damage=self.stats['attack']
+		weapon_damage=weapon_data[self.weapon]['damage']
+		return base_damage + weapon_damage
+
+	def get_full_magic_damage(self):
+		base_damage=self.stats['magic']
+		spell_damage=magic_data[self.magic]['strength']
+		return base_damage + spell_damage
+
+	def energy_recovery(self):
+		if self.energy < self.stats['energy']:
+			self.energy+=0.1 * self.stats['magic']
+		else:
+			self.energy=self.stats['energy']
+
+
+
+
+'''
 	def move(self,speed):
 		if self.direction.magnitude() != 0:
 			self.direction = self.direction.normalize()
@@ -165,13 +225,9 @@ class Player(pygame.sprite.Sprite):
 						self.hitbox.bottom = sprite.hitbox.top
 					if self.direction.y < 0:
 						self.hitbox.top =sprite.hitbox.bottom
+#These methods exist in the superclass, Entity
+'''
 
-	def update(self):
-		self.input()
-		self.get_status()
-		self.animate()
-		self.cooldowns()		
-		self.move(self.speed)
-		debug(self.status)
+
 
 		

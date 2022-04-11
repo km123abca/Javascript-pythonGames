@@ -1,0 +1,251 @@
+<head>
+  
+	
+ 
+</head>
+
+
+<body>
+
+  <canvas style='border:3px solid black;' onmousemove="trackMouse(event)">  
+  </canvas>
+
+
+  <script src='scripts/lineDrawer.js'></script>
+
+  <script>
+    function dblClickDetector(tlimit=20)
+         {
+           this.timer=0;
+           this.timerLimit=tlimit;
+           this.clickedOnce=false;
+           this.trigger=true;
+           this.run=()=>
+                        {
+                         if(!mousePress) 
+                         {
+                          this.trigger=true;
+
+                          if(this.timer!=0)
+                             {
+                              this.timer+=1;
+                              if(this.timer>this.timerLimit)
+                                  {
+                                   this.timer=0;
+                                   this.clickedOnce=false;
+                                  }
+                             }
+                          }
+                         if((mousePress)&&(this.trigger))
+                            {
+                              this.trigger=false;
+                              if(!this.clickedOnce)
+                                 {
+                                  this.clickedOnce=true;
+                                  this.timer=1;
+                                  return false;
+                                 }
+                              else
+                                 {
+                                   this.clickedOnce=false;
+                                   this.timer=0;
+                                   return true;
+                                 }
+                            }
+                         return false;
+                       
+                        };
+         }
+   </script>
+ 
+  
+  
+
+  <script>
+  var mouseX=0,mouseY=0;
+  function w2screen(strr="",px=20,py=30)
+   {
+    ctx.font="25px Arial";
+    ctx.fillStyle='#FF0000';
+    ctx.fillText(strr,px,py);
+   }
+  </script>
+
+
+  <script>
+  function trackMouse(e)
+   {
+   mouseX=e.clientX-5;
+   mouseY=e.clientY-10;
+   };
+  function announceMouse()
+   {
+    str2print='mousePosition:'+(mouseX/xx).toFixed(0)+','+(mouseY/yy).toFixed(0);					
+   } 
+  </script>
+
+	
+
+	<script>
+		
+	var canvas = document.querySelector('canvas');
+    	ctx = canvas.getContext('2d');
+   	canvas.width = window.innerWidth-35;
+  	canvas.height = window.innerHeight-50;
+        var xx=canvas.width/1331;
+        var yy=canvas.height/588;
+        var dd=Math.sqrt(xx**2+yy**2);
+        var camx=0,camy=0;
+        var mode="dev";
+
+        
+
+	var pauseSc=false,upPress=false,downPress=false,leftPress=false,rightPress=false,spacePress=false;
+	var gPress=false;
+	var fPress=false;
+	var enterPress=false;
+        var mousePress=false;
+	    
+
+	//##########program specific variables#############
+	
+	var str2print="";
+	var str2print2="";
+	var str2print3="";
+	var str2print4="";
+	
+        var screenFreeze=false;
+        var a=new lineDrawer(200*xx,200*yy); 
+        var dd=new dblClickDetector(20); 
+     	camTarget=camx;
+        camDelta=5*xx;
+
+
+       //############Functions for this script#############################
+
+	function toggle_screenFreeze()
+           {
+              screenFreeze=!screenFreeze;
+           }
+        function moveCamera(targ)
+           {
+              if(targ>camx)
+                {
+                  camTarget=targ;
+                  camDelta=Math.abs(camDelta);
+                }
+              else
+                {
+		  camTarget=targ;
+                  camDelta=-Math.abs(camDelta);
+                }
+           }
+        function runCam()
+           {
+             if(camx==camTarget)
+                 return false;
+             camx+=camDelta;
+             if ( ((camx>=camTarget)&&(camDelta>0)) || ((camx<=camTarget)&&(camDelta<0)) )
+               {
+                 camx=camTarget;
+               }           
+      
+           }
+       //##########################################
+
+	var resize = function () 
+		{
+  		canvas.width = window.innerWidth-35;
+  		canvas.height = window.innerHeight-50;
+		};
+			
+	window.addEventListener('resize', resize);
+
+	document.onkeypress=function (e)
+					{			
+					//console.log(e.keyCode+' pressed');
+					if(e.keyCode==32) spacePress=true;
+					
+					if(e.keyCode==119) upPress=true;
+					if(e.keyCode==100) rightPress=true;
+					if(e.keyCode==115) downPress=true;
+					if(e.keyCode==97) leftPress=true;
+					if(e.keyCode==103) gPress=true;
+					if(e.keyCode==102) fPress=true;
+					if(e.keyCode==13)  enterPress=true;				
+					};
+	document.onkeyup=function (e)
+					{
+					//console.log(e.keyCode+' released');
+					if(e.keyCode==32) spacePress=false;					
+					if(e.keyCode==87) upPress=false;
+					if(e.keyCode==68) rightPress=false;
+					if(e.keyCode==83) downPress=false;
+					if(e.keyCode==65) leftPress=false;
+					if(e.keyCode==71) gPress=false;
+					if(e.keyCode==70) fPress=false;
+					if(e.keyCode==13)  enterPress=false;
+					};
+        document.onmouseup=function(e) 
+                                        {
+                                         mousePress=false;
+                                        }
+	document.onmousedown=function(e)
+					{
+                                        mousePress=true;
+					
+					};
+
+	window.addEventListener('load', function () 
+					{
+				 	resize();							
+
+						
+					
+			 		var loop = function () 
+							{              
+							ctx.clearRect(0,0,canvas.width,canvas.height);
+							ctx.fillStyle = '#000000';
+							ctx.fillRect(0,0,canvas.width, canvas.height);				
+							if(spacePress)
+                                                          {
+                                                            spacePress=false;
+                                                            toggle_screenFreeze();
+                                                          }
+
+							if(!screenFreeze)
+							{                                                         
+							                                                         
+                                                         a.dr_w();                                                          		
+							}
+	                                                runCam();
+                                                        if(dd.run())
+                                                          a.shift();
+                                                       
+                                                        w2screen(str2print,20,30);
+                                                        w2screen(str2print2,300,30);
+                                                        w2screen(str2print3,300,130);
+                                                        w2screen(str2print4,20,130);
+						        announceMouse();
+                                 			};
+	  	     			setInterval(loop, 1000 / 60);
+
+	  		
+					}
+				);
+
+
+      
+
+	</script>
+
+
+
+
+	
+        
+
+
+  
+
+</body>

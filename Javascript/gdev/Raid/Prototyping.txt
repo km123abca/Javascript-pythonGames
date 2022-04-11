@@ -1,0 +1,8 @@
+[x]A horizontal path
+[x]A rectangular hover craft with a rotating cannon fixed on top
+[x]Enemy aircrafts flying overhead at non frequent variable intervals.
+[x]Non interacting houses (with the hc) on the path which the hovercraft has to defend.
+[ ] HC acquires tracking missiles as reward. (this info is displayed on the upper right along with score)
+[x]HC can fire bullets and missiles. 
+   bullets: short reload time less damage
+   missiles: long reload time more damage

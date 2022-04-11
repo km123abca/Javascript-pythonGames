@@ -384,26 +384,28 @@ class positionBlock:
 
 ##Gate Starts ##
 class Gate:
-	def __init__(self,x,y,width,height,hori=True):
+	def __init__(self,x,y,width,height,hori,defDown,t1,t2):
 		self.onScreen=True
 		self.position=CreateVector(x,y)
 		self.width=int(width*xscale)
-		self.height=int(height*yscale)
-		self.hori=hori
+		self.height=int(height*yscale)		
 		self.imagexOrig=LADDER
 		self.imagex=pygame.transform.scale(self.imagexOrig,(self.width,self.height))
 		self.slideVelocity=CreateVector(5*xscale,0) if hori else CreateVector(0,5*yscale)
+		if not defDown:
+			self.slideVelocity.mult(-1)
 		self.slideStartTime=0
-		self.maxSlideTime=1.2
+		self.maxSlideTime=t1+0.1*t2
 		self.slidingDone=False
 		self.sliding=False
 		self.opening=False
+		
 		if hori:
 			self.leftCollider=positionBlock(x,y,-0.495*width,0,0,0.01*width,0.8*height,(0,0,255))
 			self.rightCollider=positionBlock(x,y,0.495*width,0,0,0.01*width,0.8*height,(0,0,255))
 			self.topCollider=positionBlock(x,y,0,-0.45*height,0,width,0.1*height)
 			self.bottomCollider=positionBlock(x,y,0,0.45*height,0,width,0.1*height)
-		else:
+		else:		
 			self.leftCollider=positionBlock(x,y,-0.48*width,0,0,0.04*width,height,(0,0,255))
 			self.rightCollider=positionBlock(x,y,0.48*width,0,0,0.04*width,height,(0,0,255))
 			self.topCollider=positionBlock(x,y,0,-0.495*height,0,0.99*width,0.01*height)
@@ -632,7 +634,7 @@ class Zombie:
 		self.healthBarClock=0
 		self.healthBarMaxTime=2
 		self.enemyDirection=CreateVector(0,0)
-		self.minEnemyDetectDistance=400*xscale
+		self.minEnemyDetectDistance=200*xscale
 		self.enemyLocked=False
 		self.target=gameManager.player
 		self.bugCount = 0
@@ -643,11 +645,11 @@ class Zombie:
 		self.dummyTimer = 0
 		
 		
-		# self.closeRangeAttacks=["GrabAttack"]		
-		# self.longRangeAttacks=["BeamAttack","ReleaseBug","Threeshots","Pursue","Pursue","Pursue"]
+		self.closeRangeAttacks=["GrabAttack"]		
+		self.longRangeAttacks=["BeamAttack","ReleaseBug","Threeshots","Pursue","Pursue","Pursue"]
 		self.longRangeAttacks_alter=["BeamAttack","ReleaseBug","Threeshots"]
 
-		self.longRangeAttacks=self.closeRangeAttacks=["ReleaseBug"];
+		# self.longRangeAttacks=self.closeRangeAttacks=["ReleaseBug"];
 
 		self.atkStartTime = 0
 
@@ -668,6 +670,8 @@ class Zombie:
 		self.laserSpawned=False
 		self.beamComplete=False
 		self.temp=1
+
+		self.friendly=False
 
 
 	def ShowHealthBar(self):
@@ -696,7 +700,7 @@ class Zombie:
 		#self,x,y,angle,parent,bulletType,lifeTime=0
 		self.bullets.append(TrackingBullet(self.boxCollider.position.x,self.boxCollider.position.y,self.angle,self,"enemy",self.enemy))
 
-	def update(self):	
+	def update(self):
 		self.BreakOutOfThreeshots()	
 		self.RunMyBullets()
 		self.updateAndDrawHealthBar()
@@ -733,7 +737,12 @@ class Zombie:
 			self.BeamAttack()
 
 	def DoIdleStuff(self):		
-		if self.enemyLocked:			
+		if self.enemyLocked:
+			if self.friendly:
+				enemyDirection=self.enemy.position.copy().sub(self.position)
+				enemyAngle=enemyDirection.heading()
+				self.angle=AngleLerp(self.angle,enemyAngle,8)
+				return			
 			if time.time() - self.atkStartTime < self.maxTimeBetweenAttacks:
 				# DisplayInGaps("waiting in idle")
 				return
@@ -806,10 +815,11 @@ class Zombie:
 		enemyDirection=self.enemy.position.copy().sub(self.position)
 		if enemyDirection.mag() < self.minEnemyDetectDistance:
 			self.enemyLocked=True
-			gameManager.ChangeMusic('ruin.mp3',0.3)
-			gameManager.camera.target = self.focusPoint
-			for gt in gameManager.gatesList:
-				gt.CloseGate()
+			if not self.friendly:
+				gameManager.ChangeMusic('ruin.mp3',0.3)
+				gameManager.camera.target = self.focusPoint				
+				for gt in gameManager.gatesList:
+					gt.CloseGate()
 
 	def OpenGates(self):
 		for gt in gameManager.gatesList:
@@ -904,6 +914,9 @@ class Zombie:
 
 
 	def ReleaseBug(self):
+		enemyDirection=self.enemy.position.copy().sub(self.position)
+		enemyAngle=enemyDirection.heading()
+		self.angle=AngleLerp(self.angle,enemyAngle,8)
 		if self.bugCount < 2 and time.time()-self.lastReleaseAt > self.maxBugGap:
 			if self.bugCount==0:
 				self.atkStartTime=time.time()
@@ -1518,13 +1531,13 @@ class Player:
 			return
 		if self.presentWeapon()=="knife" and self.runningAnimation()=="melee" and self.frame==9 and not self.meleeRegistered:
 			# SpawnCloudGroup(self.shootPosition.position)
-			for x in gameManager.rocks:
+			for x in gameManager.enemiesList:
 				if not x.onScreen:
 					continue
 				if boxCollision(self.shootPosition,x):
 					SpawnCloudGroup(self.shootPosition.position)
-					rockSmash.play()
-					x.onScreen=False
+					x.TakeDamage(10)
+					rockSmash.play()					
 			self.meleeRegistered=True
 		elif self.runningAnimation()!="melee" and self.meleeRegistered:
 			self.meleeRegistered=False
@@ -1681,8 +1694,7 @@ class Player:
 			dist=elem.position.copy().sub(self.position).mag()
 			if dist < distMax:
 				distMax=dist
-				chosenElem=elem
-		print(f'{count} enemies looked into')
+				chosenElem=elem		
 		return chosenElem
 
 
@@ -1936,6 +1948,7 @@ class TrackingBullet(bullet):
 ########################Tracking bullet ends####################################
 
 
+
 ##dummy object starts##  
 #type0=> right
 #type1=> left
@@ -1950,7 +1963,16 @@ class DummyObject:
 		self.type=typex
 		self.imagexOrig=SHRUB
 		self.imagex=pygame.transform.scale(self.imagexOrig,(self.width,self.height))
-		self.beginTrackRestriction=False
+		self.beginTrackRestriction=False #changing this to false disables tracking unless crossed
+
+	def ShiftCameraTarget(self,focusedOnPlayer,camera,player):
+		if focusedOnPlayer:
+			return
+		if camera.target!=self:
+			return
+		if self.type==0 and player.position.x < self.position.x or self.type==1 and player.position.x > self.position.x:
+			gameManager.focusedOnPlayer=True
+			camera.target=player
 
 
 	def DetectCrossOver(self,position):
@@ -2011,7 +2033,7 @@ class NextSceneObject:
 #playerplacer starts
 class PlayerPlacer:
 	def __init__(self,x,y,typex):
-		self.onScreen=False
+		self.onScreen=True
 		self.position=CreateVector(x,y)
 		self.type="entry" if typex==0 else "exit"
 		if self.type=="entry":			
@@ -2255,13 +2277,229 @@ class MacroBeam:
 
 ############### macrobeam ends ####################################
 
+## Beetle starts ###############
+class Beetle:
+	def __init__(self,x,y):
+		self.onScreen=True
+		self.maxHealth=100
+		self.health=self.maxHealth
+		self.healthBar=HealthBar(x,y,0,-80*yscale,-40*xscale,200*xscale,10*yscale,self.health,False)		
+		self.width=300*xscale
+		self.height=300*yscale
+		self.boxCollider=collisionBox(x,y,self.width*0.8,self.height*0.8)
+		self.hornCollider=positionBlock(x,y,90*xscale,0,0,30*xscale,30*xscale)
+		self.position=CreateVector(x,y)
+		self.idle_images,self.move_images=[BEETLE_IDLE],[BEETLE_MOVE1,BEETLE_MOVE2]	
+		self.imagexOrig=BEETLE_IDLE
+		for i,x in enumerate(self.idle_images):			
+			self.idle_images[i]=pygame.transform.scale(self.idle_images[i],(self.width,self.height))
+		for i,x in enumerate(self.move_images):
+			self.move_images[i]=pygame.transform.scale(self.move_images[i],(self.width,self.height))
+		self.animations=[self.idle_images,self.move_images]
+		self.animTimers=[0,0]
+		self.animTimersMax=[1,5]
+		self.animFrame=0
+		self.anim=0
+		self.animInQueue=None
+		self.state="idle"
+		self.target=gameManager.player
+		self.healthBarHidden=False
+		self.healthBarClock=0
+		self.healthBarMaxTime=3
+		self.angle=30
+		self.atkStartTime=0
+		self.maxTimeBetweenAttacks=1
+
+		self.enemyProxim=400*xscale
+		self.minEnemyDetectDistance=500*xscale
+
+		self.enemyLocked=False
+		self.focusPoint=DummyFocus(self.position.x,self.position.y)
+		self.closeRangeAttacks=["bite"]
+		self.longRangeAttacks=["charge"]
+
+		self.maxWaitTimeBeforeBite=2
+		self.startedBite=False
+		self.beetleMoveDirection=CreateVector(1,1)
+		self.beetleBiteSpeed=25*xscale
+		self.beetleChargeSpeed=10
+		self.biteStartTimePoint=0
+		self.maxBiteTime=0.5
+		self.maxChargeTime=2
+
+		self.friendly=False
+
+	def ShowHealthBar(self):
+		self.healthBarHidden=False
+		self.healthBarClock=time.time()
+
+	def HideHealthBar(self):
+		if not self.healthBarHidden:			
+			if time.time()-self.healthBarClock > self.healthBarMaxTime:
+				self.healthBarHidden=True
+	def updateAndDrawHealthBar(self):
+		self.HideHealthBar()
+		self.healthBar.update(-self.angle,self.position)
+		if not self.healthBarHidden:
+			self.healthBar.display()
+
+	def clearToShowNextImg(self):
+		self.animTimers[self.animFrame]+=1
+		if self.animTimers[self.animFrame] >= self.animTimersMax[self.animFrame]:
+			self.animTimers[self.animFrame]=0
+			return True
+		return False
+
+	def changeAnimation(self,animName):
+		if animName=="idle" and self.anim!=0:
+			self.anim=0
+			self.animFrame=0
+		elif animName=="move" and self.anim!=1:
+			self.anim=1
+			self.animFrame=0
+	def getRunningAnimation(self):
+		if self.anim==0:
+			return "idle"
+		elif self.anim==1:
+			return "move"
+		return "unknown"
+
+	def display(self):		
+		if self.clearToShowNextImg():
+			self.animFrame+=1
+			if self.animFrame >= len(self.animations[self.anim]):
+				self.animFrame=0
+		rotated_image=pygame.transform.rotate(self.animations[self.anim][self.animFrame],-self.angle-90)
+		myrect=rotated_image.get_rect()	
+		myrect.centerx=self.position.x-gameManager.camera.position.x
+		myrect.centery=self.position.y-gameManager.camera.position.y
+		win.blit(rotated_image,myrect)
+
+
+		
+		'''
+		pygame.draw.line(win,(255,0,255),
+			(self.hornCollider.position.x-camera.position.x,self.hornCollider.position.y-camera.position.y),
+			(self.hornCollider.position.x+self.vicinity-camera.position.x,self.hornCollider.position.y-camera.position.y))
+		'''
+		self.updateAndDisplayHC(win)
+
+	def updateAndDisplayHC(self,win):
+		self.hornCollider.update(self.angle,self.position)
+		self.hornCollider.display()
+
+	def StartMusic(self):
+		pygame.mixer.music.load('./sounds/DungDefender.mp3')
+		pygame.mixer.music.set_volume(0.2)
+		pygame.mixer.music.play(-1,0.0)
+
+	def update(self):		
+		self.HideHealthBar()		
+		# self.updateRunBullets()
+		self.updateAndDrawHealthBar()
+		self.boxCollider.updateP(self.position)	
+		self.StateMachine()
+
+	def AttemptEnemyLock(self):
+		enemyDirection=self.target.position.copy().sub(self.position)
+		if enemyDirection.mag() < self.minEnemyDetectDistance:
+			self.enemyLocked=True
+			if not self.friendly:
+				print('Music on')
+				gameManager.ChangeMusic('Capra.mp3',0.3)
+				gameManager.camera.target = self.focusPoint				
+				for gt in gameManager.gatesList:
+					gt.CloseGate()
+
+
+	def BeetleIdleFn(self):
+		self.changeAnimation("idle")
+		if not self.enemyLocked:
+			self.AttemptEnemyLock()
+		else:	
+			if self.friendly:
+				return		
+			enemyDirection=self.target.position.copy().sub(self.position)
+			enemyAngle=enemyDirection.heading()
+			self.angle=AngleLerp(self.angle,enemyAngle,8)
+			if time.time() - self.atkStartTime < self.maxTimeBetweenAttacks:
+				# DisplayInGaps("waiting in idle"
+				return
+			if self.TargetProximity() == "near":
+				print('near attack')
+				self.atkStartTime = time.time()				
+				self.state=random.choice(self.closeRangeAttacks)
+			else:
+				print('far attack')
+				self.atkStartTime = time.time()
+				self.state=random.choice(self.longRangeAttacks)
+
+
+
+
+	def Bite(self,chargeTime):
+		self.changeAnimation('move')
+		if time.time() - self.atkStartTime < self.maxWaitTimeBeforeBite:
+			self.beetleMoveDirection=self.target.position.copy().sub(self.position).normalized()			
+			self.angle = AngleLerp(self.angle,self.beetleMoveDirection.heading(),3)
+			if not self.startedBite:
+				self.startedBite = True
+				SpawnCloudGroup(self.position)
+			return
+
+		if self.startedBite:
+			self.startedBite= False
+			self.biteStartTimePoint=time.time()
+		self.position.add(self.beetleMoveDirection.copy().mult(self.beetleBiteSpeed))
+		hitPlayer=False
+		if boxCollision(self.boxCollider,self.target):
+			SpawnCloudGroup(self.boxCollider.position)
+			self.target.TakeDamage(10,self.beetleMoveDirection.copy())
+			hitPlayer=True
+		for elem in gameManager.roadBlocksList:
+			if boxCollision(self.boxCollider,elem):
+				self.position.add(self.beetleMoveDirection.copy().mult(-self.beetleBiteSpeed))
+				# hitPlayer=True
+		if hitPlayer or (time.time() - self.biteStartTimePoint > chargeTime):
+			self.atkStartTime = time.time()
+			self.state="idle"
+
+
+	def StateMachine(self):
+		if self.state=="idle":
+			self.BeetleIdleFn() 
+		elif self.state=="bite":			
+			self.Bite(self.maxBiteTime)
+		elif self.state=="charge":
+			self.Bite(self.maxChargeTime)
+		'''
+		if self.state=="pursue":
+			self.pursueEnemy()
+		elif self.state=="attack":
+			self.attackEnemy()
+		elif self.state=="doingShootAttack":
+			self.DoShootingAttack()
+		elif self.state=="plungingAttack":
+			self.plungeOnEnemy()
+		elif self.state=="rainingBullets":
+			self.RainBullets()
+		'''
+	def TargetProximity(self):
+		enemyDirection=self.target.position.copy().sub(self.position)
+		if enemyDirection.mag() < self.enemyProxim:
+			return "near"
+		return "far"
+		
+
+## Beetle ends #################
+
 
 
 ################## Game Manager starts ###################################
 class GameManager:
 	def __init__(self):
-		self.scenesLoaded=[False,False,False,False,False,False,False,False,False]
-		self.scenesReady=[True,False,False,False,False,False,False,False,False]
+		self.scenesLoaded=[True,True,True,False,False,False,False,False,False]
+		self.scenesReady=[True,True,True,True,False,False,False,False,False]
 		self.loadingObjects=False
 		self.loadingType=None
 		self.currentScene=-1
@@ -2273,20 +2511,20 @@ class GameManager:
 		self.basicFont=pygame.font.Font('freesansbold.ttf',32)
 		self.textToBeDisplayed=''
 		self.roadBlocksList,self.cloudsList,self.wallsList,self.enemiesList,self.grabables,self.rocks,self.camStoppers,self.nsobjs,self.gatesList=[],[],[],[],[],[],[],[],[]
-		
+		self.beetlesList=[]
 		self.playerPlacers=[]
 		self.lasersList=[]
 		self.volatiles,self.nonvolatiles=[],[]
 		self.smallBugs=[]
 		self.zombiesList=[]
-		self.allGameObjects=[]
-		self.listsToBeFlushed=[self.cloudsList,self.enemiesList,self.grabables,self.zombiesList]
+		self.allGameObjects=[]		
 		self.comingFromPreviousScene=True
-		self.killedElems={0:[],1:[]}
+		self.killedElems={0:[],1:[],2:[],3:[],4:[]}
 
 		self.camera=Camera()
 		self.player=Player(358*xscale,310*yscale,100*xscale,100*yscale)
-		self.camera.target=self.player
+		# self.camera.target=self.player
+		self.focusedOnPlayer=False
 
 		self.pChanger=None
 		self.sceneChanging=False		
@@ -2301,16 +2539,32 @@ class GameManager:
 
 		self.counterx=0 #This variable continuosly gets inc each frame and is used to display stuff in long gaps
 
-		self.presentMusic='nothing'		
+		self.presentMusic='nothing'
+		self.musicOn=True		
 		self.ChangeMusic('majula.mp3',0.3)
+
+		
 
 
 	def ChangeMusic(self,track,vol=1):
+		if not self.musicOn:
+			return False
 		if self.presentMusic!=track:			
 			self.presentMusic=track
 			pygame.mixer.music.load(f'./sounds/{track}')
 			pygame.mixer.music.set_volume(vol)
 			pygame.mixer.music.play(-1,0.0)
+
+	def GetSpecificCamStopper(self,lr):
+		for elem in self.camStoppers:
+			if elem.type==1 and lr=='left':
+				return elem
+			if elem.type==0 and lr=='right':
+				return elem
+
+	def CheckAllStoppers(self):
+		for elem in self.camStoppers:
+			elem.ShiftCameraTarget(self.focusedOnPlayer,self.camera,self.player)
 
 	def PlacePlayer(self):		
 		if self.comingFromPreviousScene:
@@ -2416,6 +2670,13 @@ class GameManager:
 				self.loadingObjects=False
 				# self.currentScene=i		
 				print('loading complete')	
+				if len(self.camStoppers)>0:
+					if self.comingFromPreviousScene:
+						self.focusedOnPlayer=False
+						self.camera.target=self.GetSpecificCamStopper('left')
+					else:
+						self.focusedOnPlayer=False
+						self.camera.target=self.GetSpecificCamStopper('right')
 				filex.close()	
 				self.PlacePlayer()	
 				return
@@ -2445,7 +2706,10 @@ class GameManager:
 					                            int(nums[1])*yscale,
 							                    int(nums[2]),
 							                    int(nums[3]),
-							                    True if int(nums[4])==1 else False					                    
+							                    True if int(nums[4])==1 else False,
+							                    True if int(nums[5])==1 else False,
+							                    int(nums[6]),
+							                    int(nums[7])					                    
 					                ))
 				self.allGameObjects.append(self.gatesList[-1])
 				self.roadBlocksList.append(self.gatesList[-1])	
@@ -2491,6 +2755,11 @@ class GameManager:
 									)
 				self.allGameObjects.append(self.nsobjs[-1])
 				self.nonvolatiles.append(self.nsobjs[-1])
+			elif self.loadingType=='beetle' and 'beetle' not in self.killedElems[self.currentScene]:
+				self.beetlesList.append(Beetle(int(nums[0])*xscale,int(nums[1])*yscale))
+				self.volatiles.append(self.beetlesList[-1])
+				self.enemiesList.append(self.beetlesList[-1])
+				self.allGameObjects.append(self.beetlesList[-1])
 
 	def update(self):
 		self.RunCounter()
@@ -2555,13 +2824,13 @@ class GameManager:
 		for x in self.nonvolatiles:
 			if x.onScreen:
 				x.update()
-				x.display()	
-
-		for x in range(len(self.listsToBeFlushed)):
-			flushList(self.listsToBeFlushed[x])	
-
-
-
+				x.display()		
+		
+		flushList(self.enemiesList)	
+		flushList(self.cloudsList)
+		flushList(self.zombiesList)
+		flushList(self.beetlesList)
+		self.CheckAllStoppers()
 
 ################## Game Manager ends ###################################
 

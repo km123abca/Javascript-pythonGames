@@ -1,0 +1,271 @@
+<head> </head>
+
+<body>
+  <canvas style="border: 3px solid black;" onmousemove="trackMouse(event)">
+  </canvas>
+
+  <script src="scripts/hfns.js"></script>
+  <script src="scripts/path.js"></script>
+  <script src="scripts/vehi.js"></script>
+  <script src="scripts/cannonArm.js"></script>
+  <script src="scripts/bullet.js"></script>
+  <script src="scripts/hostile.js"></script>
+  <script src="scripts/house.js"></script>
+  <script src="scripts/bomb.js"></script>
+  <script src="scripts/maindestroblock.js"></script>
+  <script src="scripts/destro.js"></script>
+
+  <script>
+    var mouseX = 0,
+      mouseY = 0;
+    function w2screen(strr = "", px = 20, py = 30) {
+      ctx.font = "25px Arial";
+      ctx.fillStyle = "#FF0000";
+      ctx.fillText(strr, px, py);
+    }
+  </script>
+
+  <script>
+    function trackMouse(e) {
+      mouseX = e.clientX - 5 + camx;
+      mouseY = e.clientY - 10 + camy;
+    }
+    function announceMouse() {
+      str2print =
+        "mousePosition:" +
+        (mouseX / xx).toFixed(0) +
+        "," +
+        (mouseY / yy).toFixed(0);
+    }
+
+    function simulateDestruction(obj, col = "#de8848") {
+      dblocks.push(
+        new maindestroblock(obj.posx, obj.posy, obj.width, obj.height, col)
+      );
+    }
+    var getId = () => {
+      plane_id += 1;
+      return plane_id;
+    };
+  </script>
+
+  <script>
+    var canvas = document.querySelector("canvas");
+    ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth - 35;
+    canvas.height = window.innerHeight - 50;
+    var xx = canvas.width / 1331;
+    var yy = canvas.height / 588;
+    var dd = Math.sqrt(xx ** 2 + yy ** 2);
+    var camx = 0,
+      camy = 0;
+    var mode = "dev";
+
+    var pauseSc = false,
+      upPress = false,
+      downPress = false,
+      leftPress = false,
+      rightPress = false,
+      spacePress = false;
+    var gPress = false;
+    var fPress = false;
+    var enterPress = false;
+    var mousePress = false;
+
+    //##########program specific variables#############
+
+    var str2print = "";
+    var str2print2 = "Score:0";
+    var str2print3 = "";
+    var str2print4 = "";
+
+    var screenFreeze = false;
+    var paths = [],
+      hcs = [],
+      bullets = [],
+      hostiles = [],
+      houses = [],
+      bombs = [],
+      dblocks = [];
+    var smallblocksize = 10;
+    var plane_id = 0;
+
+    //dblocks.push(new maindestroblock(canvas.width/2,canvas.height/2,100,100,'#00FF00'));
+
+    paths.push(new path(662 * xx, 571 * yy, 1317 * xx, 25 * yy));
+    paths.push(new path(2143 * xx, 571 * yy, 1317 * xx, 25 * yy));
+    hcs.push(new vehi(219 * xx, 535 * yy, 80 * xx, 40 * yy));
+
+    houses.push(new house(227 * xx, 511 * yy, 90 * xx, 100 * yy));
+    houses.push(new house(518 * xx, 511 * yy, 90 * xx, 100 * yy));
+    houses.push(new house(818 * xx, 511 * yy, 90 * xx, 100 * yy));
+    houses.push(new house(1618 * xx, 511 * yy, 90 * xx, 100 * yy));
+    houses.push(new house(1818 * xx, 511 * yy, 90 * xx, 100 * yy));
+    houses.push(new house(2018 * xx, 511 * yy, 90 * xx, 100 * yy));
+
+    //hostiles.push(new hostile(canvas.width/2,canvas.height/2));
+
+    camTarget = camx;
+    camDelta = 15 * xx;
+
+    var hostile_timer = 0;
+    var hostile_limit = 100;
+
+    //############Functions for this script#############################
+
+    function toggle_screenFreeze() {
+      screenFreeze = !screenFreeze;
+    }
+    function moveCamera(targ) {
+      if (targ > camx) {
+        camTarget = targ;
+        camDelta = Math.abs(camDelta);
+      } else {
+        camTarget = targ;
+        camDelta = -Math.abs(camDelta);
+      }
+    }
+    function runCam() {
+      if (camx == camTarget) return false;
+      camx += camDelta;
+      if (
+        (camx >= camTarget && camDelta > 0) ||
+        (camx <= camTarget && camDelta < 0)
+      ) {
+        camx = camTarget;
+      }
+    }
+
+    function spawn_hostiles() {
+      if (hostiles.length > 4) return false;
+      this.hostile_timer += 1;
+      if (this.hostile_timer < this.hostile_limit) return false;
+      this.hostile_timer = 0;
+      if (Math.random() < 0.5) {
+        hostiles.push(
+          new hostile(
+            camx + canvas.width * 1.2,
+            0.2 * canvas.height,
+            5 * xx * -1
+          )
+        );
+      } else
+        hostiles.push(new hostile(camx - 100, 0.4 * canvas.height, 5 * xx));
+    }
+
+    /*
+    //testing hostiles kmhere
+
+    hostiles.push(
+      new hostile(
+        camx + canvas.width * 0.2,
+        0.2 * canvas.height,
+        5 * xx * -1,
+        true
+      )
+    );*/
+    //##########################################
+
+    var resize = function () {
+      canvas.width = window.innerWidth - 35;
+      canvas.height = window.innerHeight - 50;
+    };
+
+    window.addEventListener("resize", resize);
+
+    document.onkeypress = function (e) {
+      //console.log(e.keyCode+' pressed');
+      if (e.keyCode == 32) spacePress = true;
+
+      if (e.keyCode == 119) upPress = true;
+      if (e.keyCode == 100) rightPress = true;
+      if (e.keyCode == 115) downPress = true;
+      if (e.keyCode == 97) leftPress = true;
+      if (e.keyCode == 103) gPress = true;
+      if (e.keyCode == 102) fPress = true;
+      if (e.keyCode == 13) enterPress = true;
+    };
+    document.onkeyup = function (e) {
+      //console.log(e.keyCode+' released');
+      if (e.keyCode == 32) spacePress = false;
+      if (e.keyCode == 87) upPress = false;
+      if (e.keyCode == 68) rightPress = false;
+      if (e.keyCode == 83) downPress = false;
+      if (e.keyCode == 65) leftPress = false;
+      if (e.keyCode == 71) gPress = false;
+      if (e.keyCode == 70) fPress = false;
+      if (e.keyCode == 13) enterPress = false;
+    };
+    document.onmouseup = function (e) {
+      mousePress = false;
+    };
+    document.onmousedown = function (e) {
+      mousePress = true;
+    };
+
+    window.addEventListener("load", function () {
+      resize();
+
+      var loop = function () {
+        // ctx.clearRect(
+        //   -canvas.width,
+        //   -canvas.height,
+        //   2 * canvas.width,
+        //   2 * canvas.height
+        // );
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        if (spacePress) {
+          spacePress = false;
+          toggle_screenFreeze();
+        }
+
+        if (!screenFreeze) {
+          for (var pth of paths) {
+            pth.dr_w();
+          }
+          for (var h of hcs) {
+            h.dr_w();
+            h.move();
+          }
+          for (var bl of bullets) {
+            bl.dr_w();
+            bl.move();
+          }
+          flushArray(bullets);
+          // if (bullets.length == 0) console.log("bullets are empty");
+          for (var b of bombs) {
+            b.dr_w();
+            b.move();
+          }
+          flushArray(bombs);
+
+          for (var h of hostiles) {
+            h.dr_w();
+            h.move();
+          }
+          flushArray(hostiles);
+
+          for (var h of houses) {
+            h.dr_w();
+            h.move();
+          }
+          flushArray(houses);
+          for (var h of dblocks) {
+            h.dr_w();
+          }
+          flushArray(dblocks);
+        }
+        runCam();
+        spawn_hostiles();
+        w2screen(str2print, 20, 30);
+        w2screen(str2print2, 300, 30);
+        w2screen(str2print3, 300, 130);
+        w2screen(str2print4, 20, 130);
+        announceMouse();
+      };
+      setInterval(loop, 16);
+    });
+  </script>
+</body>
