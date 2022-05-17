@@ -6,6 +6,7 @@
 <script>	
 	let mouseX,mouseY;
 	let spacePress,upPress,rightPress,downPress,leftPress,gPress,fPress,enterPress;
+	let ipress,lpress,mpress,jpress,tpress,hpress,bpress;
 	let mousePressed;
 	// let backGroundColor="#16a1b3";
 	let backGroundColor='#000000';
@@ -130,10 +131,17 @@
     	}
     function Raycast(originx,direction,lenx,objToCheck)
     	{
+		//graphic		 	 
+	 	 // Draw_a_line(originx.copy().add(new CreateVector(0,0)),
+	 	 // 	 		 originx.copy().add(new CreateVector(0,0)).add(direction.copy().mult(lenx))
+	 	 // 	 		);	 	 
+	 	//graphic
+
 		let origin=originx.copy();
 		let destin=originx.copy().add(direction.copy().mult(lenx));	
 		let deltaz=2*xscale
 		let startLen=0
+
 		while (startLen < lenx)
 			{
 			if (PointInsideObject(objToCheck,origin.add(direction.copy().mult(deltaz))) )
@@ -247,7 +255,7 @@
 		}
 	function Lerp(startValue,endValue,LerpFac)
 		{
-		return startValue+(endValue-startValue)/lerpFac;
+		return startValue+(endValue-startValue)/LerpFac;
 		}
     function AngleLerp(startValue,endValue,lerpFac)
     	{
@@ -276,6 +284,47 @@
 			 return delta - (360 - startAngle);
 			}
 		}
+	function LoadImages(folderPath,imageNames)
+		{
+		let result=[];
+		for(let imgx of imageNames)
+			{
+			let createdImage=new Image();
+			// console.log('./'+folderPath+'/'+imgx);
+			try
+				{
+				createdImage.src='./'+folderPath+'/'+imgx;
+				}
+			catch(err)
+				{
+				console.log(err);				
+				}
+			result.push(createdImage);
+			}
+		return result;
+		}
+
+	
+	let tempTimer=0;
+	function DisplayInGaps(strx)
+		{
+		 if(gameManager.runningClock - tempTimer > 250)
+		 	{
+		 	  tempTimer=gameManager.runningClock;
+		 	  console.log(strx);
+		    }
+		}
+
+	function Draw_a_line(startPos,endPos,color='#FF0000')
+		{
+		ctx.strokeStyle=color;
+		ctx.beginPath();
+		ctx.moveTo(startPos.x - gameManager.camera.position.x,startPos.y - gameManager.camera.position.y);
+		ctx.lineTo(endPos.x - gameManager.camera.position.x,endPos.y - gameManager.camera.position.y);
+		ctx.stroke();
+		}
+
+
 	
 
     
@@ -297,6 +346,7 @@
 		};
 	window.addEventListener('resize', resize);
 	//keypresses start
+
 	document.onkeypress=function (e)
 					{
 					// console.log(e.keyCode);			
@@ -307,7 +357,16 @@
 					if(e.keyCode==97) leftPress=true;
 					if(e.keyCode==103) gPress=true;
 					if(e.keyCode==102) fPress=true;
-					if(e.keyCode==13)  enterPress=true;				
+					if(e.keyCode==13)  enterPress=true;	
+
+					if(e.keyCode==105) ipress=true;	
+					if(e.keyCode==108) lpress=true;	
+					if(e.keyCode==109) mpress=true;		
+					if(e.keyCode==106) jpress=true;
+
+					if(e.keyCode==116) tpress=true;	
+					if(e.keyCode==104) hpress=true;	
+					if(e.keyCode==98) bpress=true;	
 					};
 	document.onkeyup=function (e)
 					{	
@@ -320,6 +379,15 @@
 					if(e.keyCode==71) gPress=false;
 					if(e.keyCode==70) fPress=false;
 					if(e.keyCode==13)  enterPress=false;
+
+					if(e.keyCode==73) ipress=false;
+					if(e.keyCode==76) lpress=false;
+					if(e.keyCode==77) mpress=false;
+					if(e.keyCode==74) jpress=false;
+
+					if(e.keyCode==84) tpress=false;
+					if(e.keyCode==72) hpress=false;
+					if(e.keyCode==66) bpress=false;
 					};
 	document.onmousedown=function(e)
 					{
@@ -333,12 +401,117 @@
 
 	let checkVar=true;
 	//Game Classes Start
+
+	//positionAdjuster start
+	class PositionAdjuster
+		{
+		constructor(obj,spriteGroups)
+			{
+			 this.obj=obj;
+			 this.onScreen=true;
+			 this.rad=50*xscale;
+			 this.moveSpeed=0;
+			 this.moveSpeedMax=50*xscale;
+			 this.shapeSpeed=0;
+			 this.shapeSpeedMax=50;
+			 this.objIndex=0;
+			 this.last_gpress_time=0;	 
+			 for(let grp of spriteGroups)
+			 	{
+			 	 grp.push(this);
+			 	}
+			}
+		changeObject(obj)
+			{
+			 this.obj=obj;
+			}
+		display()
+			{	
+			if(!this.obj) return false;		 				
+			ctx.save();			
+			ctx.translate(this.obj.position.x - gameManager.camera.position.x,this.obj.position.y - gameManager.camera.position.y);	
+			ctx.fillStyle='#FFFF00';
+			ctx.strokeStyle='#FF0000';				
+			ctx.beginPath();
+			ctx.arc(0,0,this.rad,0,2*Math.PI);
+			ctx.fill();
+			ctx.stroke();
+			ctx.restore();
+			}
+		update()
+			{
+			 this.attractFocus();
+			 if(!this.obj) return false;
+			 this.adjustObjPosition();
+			 this.adjustObjShape();			 	
+			 this.showData();		 
+			}
+
+		showData()
+			{
+			 if(!this.obj) return false;
+			 w2screen(`sprite:${this.obj.sprite_type}`,300,100);
+			 w2screen(`x:${(this.obj.position.x/xscale).toFixed(0)},y:${(this.obj.position.y/yscale).toFixed(0)}`,300,150);
+			 w2screen(`width:${(this.obj.width/xscale).toFixed(0)},height:${(this.obj.height/yscale).toFixed(0)}`,300,200);
+			}	
+		attractFocus()
+			{
+			if(gPress)
+				{
+				  
+				  if(gameManager.runningClock - this.last_gpress_time > 1000)
+				  	{
+				  	  this.last_gpress_time=gameManager.runningClock;
+				  	  this.objIndex+=1;
+				  	  if(this.objIndex >= gameManager.visible_sprites.length) this.objIndex=0;
+				  	  if(gameManager.visible_sprites[this.objIndex]==this)
+				  	  	this.objIndex+=1;
+				  	  this.changeObject(gameManager.visible_sprites[this.objIndex]);
+				  	}
+				}
+			}
+		adjustObjPosition()
+			{
+			 if(ipress || jpress || mpress || lpress) 
+			 	this.moveSpeed=Lerp(this.moveSpeed,this.moveSpeedMax,16);
+			 else
+			 	this.moveSpeed=0;
+			 if(ipress)		 				 	 
+			 	this.obj.position.y=this.obj.position.y - this.moveSpeed;
+			 else if(mpress)
+			 	this.obj.position.y=this.obj.position.y + this.moveSpeed;
+
+			 if(lpress)
+			 	this.obj.position.x=this.obj.position.x + this.moveSpeed;
+			 else if(jpress)
+			 	this.obj.position.x=this.obj.position.x - this.moveSpeed;
+			}
+
+		adjustObjShape()
+			{
+			 if(tpress || hpress || bpress || fPress) 
+			 	this.moveSpeed=Lerp(this.moveSpeed,this.moveSpeedMax,16);
+			 else
+			 	this.moveSpeed=0;
+			 if(tpress)		 				 	 
+			 	this.obj.height=this.obj.height - this.moveSpeed;
+			 else if(bpress)
+			 	this.obj.height=this.obj.height + this.moveSpeed;
+
+			 if(hpress)
+			 	this.obj.width=this.obj.width + this.moveSpeed;
+			 else if(fPress)
+			 	this.obj.width=this.obj.width - this.moveSpeed;
+			}
+
+		}
+	//positionAdjuster ends
+
 	class Platform
 		{
 		 constructor(x,y,width,height,spriteGroups)
 		 	{
-		 	 console.log(`platform with width:${width} loaded`);
-
+		 	 // console.log(`platform with width:${width} loaded`);
 		 	 this.position=new CreateVector(x,y);
 		 	 this.width=width;
 		 	 this.height=height;
@@ -411,6 +584,230 @@
 		  		}		 
 		}
 
+	class Player
+		{
+		constructor(x,y,wid,hei,spriteGroups)
+			{
+			 this.position=new CreateVector(x,y);
+			 this.width=wid*xscale;
+			 this.height=hei*yscale;
+			 let idle_images=Array(10).fill(0).map((x,i)=>'E_E_Sword__Idle_00'+i+'.png');
+			 let run_images= Array(10).fill(0).map((x,i)=>'E_E_Sword__Run_00'+i+'.png');
+			 let slash_images=Array(10).fill(0).map((x,i)=>'E_E_Sword__Attack_00'+i+'.png');
+			 let folderPath='sprites/protagonist/';
+			 this.animations={'idle':LoadImages(folderPath+'Idle',idle_images),
+			 				  'run' :LoadImages(folderPath+'Run',run_images),
+			 				  'slash':LoadImages(folderPath+'Slash',slash_images)
+							 };
+			 this.animationFractions={'idle':0.8,'run':0.4,'slash':0.2};
+			 this.animation='idle';
+			 this.animationFrame=0;
+			 this.animInQueue=null;
+			 this.onScreen=true;
+			 this.sprite_type='player';
+			 for(let grp of spriteGroups)
+			 	grp.push(this);
+			 this.angle=0;
+			 this.acceleration=new CreateVector(0,0);
+			 this.velocity=new CreateVector(0,0);
+			 this.maxVelocity=new CreateVector(7*xscale,12*yscale);
+			 this.horiForce=new CreateVector(1*xscale,0);
+			 this.gravityScale=2*yscale;
+			 this.sx=1;
+			 this.sy=1;
+			 this.jumpingForce=4*this.gravityScale;
+			 this.spaceTrigger=true;
+			 this.jumping=false;
+			 this.jumpTimer=0;
+			 this.maxJumpTime=250;
+
+			 this.sideWaysShift=40*xscale;
+		 	 this.downCheckRaycast=80*yscale;
+		 	 gameManager.camera.tgt=this;
+			}
+		 runAnimation()
+		 	{
+	 		this.animationFrame+=this.animationFractions[this.animation];	 		
+	 		if(this.animationFrame >= this.animations[this.animation].length)
+	 			{
+	 			 this.animationFrame=0;
+	 			 if(this.animInQueue) this.animation=this.animInQueue;
+	 			}
+		 	}
+		 checkIfOnGround()
+		 	{
+		 	for(let x of gameManager.collission_sprites)
+		 		{
+		 		 if(!x.onScreen) continue;
+		 		 
+		 		 if(Raycast(this.position.copy(),new CreateVector(0,1),this.downCheckRaycast,x) )
+		 		 	{
+		 		 	return true;
+		 		 	}
+		 		}
+		 	return false;
+		 	}
+
+		 jumpingContols()
+		 	{
+		 	/*
+		 	 if(this.checkIfOnGround())
+		 		DisplayInGaps("player is on ground");
+		 	else
+		 		DisplayInGaps("player is in air");
+		 	*/
+		 	 if(spacePress)
+		 	 	{
+		 	 	 if(this.spaceTrigger && !this.jumping && this.checkIfOnGround())
+		 	 	 	{
+		 	 	 	this.spaceTrigger=false;
+		 	 	 	this.jumping=true;
+		 	 	 	this.jumpTimer=0;
+		 	 	 	}
+		 	 	 else if(this.jumping)
+		 	 	 	{
+		 	 	 	 this.acceleration.y-=this.jumpingForce;
+		 	 	 	 this.jumpTimer+=deltaTime;		 	 	 	 
+		 	 	 	 if(this.jumpTimer > this.maxJumpTime)
+		 	 	 	 	{		 	 	 	 	 
+		 	 	 	 	 this.jumping=false;
+		 	 	 	 	}
+		 	 	 	}
+		 	 	}
+		 	 else if(!this.spaceTrigger && this.checkIfOnGround()) this.spaceTrigger=true;
+		 	 if(!spacePress && this.jumping) this.jumping=false;
+		 	}
+		 applyGravity()
+		 	{
+		 	 this.acceleration.y+=this.gravityScale;
+		 	}
+		 changeAnimation(anim)
+		 	{
+		 		if(this.animation == anim) return false;
+		 		else
+		 			this.animation=anim;
+		 	}
+		 move()
+		 	{		 	 
+		 	 this.checkDeath();
+		 	 // this.applyGravity();
+		 	 this.manualControls();
+		 	 this.jumpingContols();
+		 	 this.velocity.add(this.acceleration);
+		 	 this.acceleration.set(0,0);
+		 	 this.applyVelocity();
+		 	 this.applyVelocityRestrictions();		 	 
+		 	}
+
+		 manualControls()
+		 	{
+	 		if(leftPress)
+	 			{
+	 			if(this.sx!=-1) this.sx=-1;
+	 			this.changeAnimation('run');
+	 			this.acceleration.sub(this.horiForce);
+	 			}
+	 		else if(rightPress)
+	 			{
+	 			if(this.sx!=1) this.sx=1;
+	 			this.changeAnimation('run');
+	 			this.acceleration.add(this.horiForce);
+	 			}
+	 		else
+	 			{
+	 			this.changeAnimation('idle');
+	 			this.velocity.x=Lerp(this.velocity.x,0,16);		 		
+	 			}
+		 	}
+
+		 checkDeath()
+		 	{
+		 	 if((this.position.x - gameManager.camera.position.x > 1.5*canvas.width)||
+		 	   (this.position.y - gameManager.camera.position.y > 1.5*canvas.height) )
+		 	 	{
+		 	 	 this.onScreen=false;
+		 	 	 console.log(`${this.sprite_type} has died`);
+		 	 	}
+		 	}
+
+		 collidedWith()
+		 	{
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(b_collision(this,x)) 
+		 	 	 	{
+		 	 	 	 return x;
+		 	 	 	}
+		 	 	}
+		 	 return false;
+		 	}
+
+		 applyVelocity()
+		 	{		 	 	 	 
+		 	 this.position.x+=this.velocity.x;		 	
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(b_collision(this,x)) 
+		 	 	 	{
+		 	 	 	 if(this.velocity.x > 0)
+		 	 	 	 	this.position.x=x.position.x-x.width/2-this.width/2-2;
+		 	 	 	 else 
+		 	 	 	 	this.position.x=x.position.x+x.width/2+this.width/2+2;
+		 	 	 	}
+		 	 	}
+
+		 	 this.position.y+=this.velocity.y;
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(b_collision(this,x)) 
+		 	 	 	{
+		 	 	 	if(this.velocity.y > 0)
+		 	 	 		this.position.y=x.position.y-x.height/2-this.height/2-2;
+		 	 	 	else
+		 	 	 		this.position.y=x.position.y+x.height/2+this.height/2+2;	
+		 	 	 	}
+		 	 	}
+		 	}
+		 applyVelocityRestrictions()
+		 	{
+		 	 let xdir=this.velocity.x/Math.abs(this.velocity.x);
+		 	 let ydir=this.velocity.y/Math.abs(this.velocity.y);
+		 	 if(Math.abs(this.velocity.y) > this.maxVelocity.y)
+		 	 	this.velocity.y=ydir*this.maxVelocity.y;
+		 	 if(Math.abs(this.velocity.x) > this.maxVelocity.x)
+		 	 	this.velocity.x=xdir*this.maxVelocity.x;
+		 	}
+		 update()
+		 	{
+		 	 if(!this.onScreen) return false;
+		 	 this.runAnimation();
+		 	 this.move();
+		 	}
+		 display()
+		 	{		 	 
+		 	 if(!this.onScreen) return false;
+		 	 ctx.save();
+		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
+		 	 	 		   this.position.y-gameManager.camera.position.y);
+		 	 ctx.rotate(d2r(this.angle));
+		 	 ctx.scale(this.sx,this.sy);
+		 	 ctx.drawImage(this.animations[this.animation][parseInt(this.animationFrame)],
+		 	 			   -this.width/2,
+		 	 			   -this.height/2,
+		 	 			   this.width,
+		 	 			   this.height
+		 	 			  );
+		 	 ctx.restore(); 
+
+
+		 	}
+
+
+		}
+
 	class Camera
 		{
 		  constructor()
@@ -447,7 +844,7 @@
 		  	 if(!this.tgt) return false;
 		  	 if(followH)
 		  	 	this.position.x=Lerp(this.position.x,this.tgt.position.x-canvas.width/2,this.lerpFactor);
-		  	 if(followY)
+		  	 if(followV)
 		  	 	this.position.y=Lerp(this.position.y,this.tgt.position.y-canvas.height/2,this.lerpFactor);
 		  	}
 
@@ -457,28 +854,37 @@
 		 constructor()
 		 	{
 		 	 this.visible_sprites=[];
+		 	 this.collission_sprites=[];
 		 	 this.camera=new Camera(0,0);
 		 	 this.scenesReady=[];
 		 	 this.scenesLoaded=[];
-		 	 // this.visible_sprites.push(new Platform(500,500,800,50,true));
-		 	 // this.visible_sprites.push(new Platform(500,800,800,50,false));
+		 	 this.runningClock=0;		 	 
+
 		 	 this.tempCounter=0;
+		 	 new PositionAdjuster(null,[this.visible_sprites]);
+
 		 	}
+
+		 runClock()
+		 	{
+		 		this.runningClock+=deltaTime;
+		 		if(this.runningClock > 300000) this.runningClock=0;
+		 	}
+
 		 update()
 		 	{
+		 	 this.runClock();
 		 	 this.runGame();
-		 	 this.checkScenes();
-		 	 
-		 
+		 	 this.checkScenes();		 
 		 	}
 		 runGame()
 		 	{
-		 	 this.camera.runWithMouse();
+		 	 // this.camera.runWithMouse();
+		 	 this.camera.smoothFocus(true,true);
 		 	 for(let sprite of this.visible_sprites)
-		 	 	{
+		 	 	{		 	 	
 		 	 	sprite.update();
 		 	 	sprite.display();
-
 		 	 	}
 		 	}
 		 checkScenes()
@@ -506,7 +912,19 @@
 		 	 for(let elem of scenes[n])
 		 	 	{
 		 	 	 if(elem['sprite']=='platform')
-		 	 	 	new Platform(elem['x']*xscale,elem['y']*yscale,elem['width']*xscale,elem['height']*yscale,[this.visible_sprites]);
+		 	 	 	new Platform(elem['x']*xscale,
+		 	 	 				 elem['y']*yscale,
+		 	 	 				 elem['width']*xscale,
+		 	 	 				 elem['height']*yscale,
+		 	 	 				 [this.visible_sprites,this.collission_sprites]
+		 	 	 				);
+		 	 	 else if(elem['sprite']=='player')
+		 	 	 	new Player(elem['x']*xscale,
+		 	 	 		   	   elem['y']*yscale,
+		 	 	 		   	   elem['width']*xscale,
+		 	 	 		   	   elem['height']*yscale,
+		 	 	 		   	   [this.visible_sprites]
+		 	 	 		   	   );
 		 	 	}
 		 	 this.scenesLoaded[n]=true;
 		 	 console.log('scene No'+n+' loaded');

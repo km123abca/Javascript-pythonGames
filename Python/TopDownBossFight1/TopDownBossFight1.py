@@ -1901,8 +1901,8 @@ class BrickWall:
 ################## Game Manager starts ###################################
 class GameManager:
 	def __init__(self):
-		self.scenesLoaded=[True,False,False,False,False,False,False,False,False]
-		self.scenesReady=[True,True,False,False,False,False,False,False,False]
+		self.scenesLoaded=[False,False,False,False,False,False,False,False,False]
+		self.scenesReady=[True,False,False,False,False,False,False,False,False]
 		self.loadingObjects=False
 		self.loadingType=None
 		self.currentScene=-1

@@ -1945,26 +1945,6 @@ class TrackingBullet(bullet):
 		super().update()
 		self.AllignTowardsTarget()
 
-class FireBomb(TrackingBullet):
-	def __init__(self,x,y,angle,parent,bulletType,target,lifeTime=0):
-		super().__init__(x,y,angle,parent,bulletType,target)
-		self.width=50*xscale
-		self.height=50*yscale
-		self.speed=10*xscale
-		self.image=pygame.transform.scale(FIREBALLIMAGE,(self.width,self.height))
-
-	def display(self):
-		super().display(win)
-
-	def update(self):
-		super().update()
-		self.angle=self.velocity.heading()
-
-	def AllignTowardsTarget(self):
-		if self.target.dashOn:
-			self.followTarget=False
-		super().AllignTowardsTarget()
-
 ########################Tracking bullet ends####################################
 
 
@@ -2297,47 +2277,6 @@ class MacroBeam:
 
 ############### macrobeam ends ####################################
 
-class GreenRim:
-	def __init__(self,x,y,parent,spriteGroups):
-		self.onScreen=True
-		self.position=CreateVector(x,y)
-		self.width=1600*xscale
-		self.height=1600*xscale
-		self.compressSpeed=10*xscale
-		self.minWidth=30*xscale
-		self.imagexOrig=GREENRIM
-		self.imagex = pygame.transform.scale(self.imagexOrig,(self.width,self.width))
-		for grp in spriteGroups:
-			grp.append(self)
-		self.parent=parent
-		self.damageDone=False
-	def display(self):
-		myrect= self.imagex.get_rect()
-		myrect.centerx,myrect.centery = self.position.x - gameManager.camera.position.x,self.position.y - gameManager.camera.position.y
-		''' debugcircle
-		pygame.draw.circle(win,
-				   (0,255,0),
-				    (self.position.x- gameManager.camera.position.x,
-				   	 self.position.y- gameManager.camera.position.y
-				   	),
-				    self.width/2,
-				    30)
-		'''
-		win.blit(self.imagex,myrect)
-
-	def dealDamageOnPlayer(self):
-		distFromRimCenter = gameManager.player.position.copy().sub(self.position).mag()
-		if distFromRimCenter > 0.3 * self.width and distFromRimCenter < 0.31 * self.width:
-			if not self.damageDone and not gameManager.player.dashOn:
-				self.damageDone = True
-				gameManager.player.TakeDamage(10)				
-	def update(self):
-		self.dealDamageOnPlayer()
-		self.width-=self.compressSpeed
-		self.imagex = pygame.transform.scale(self.imagexOrig,(self.width,self.width))
-		if self.width < self.minWidth:
-			self.onScreen = False
-			self.parent.recoverFromRingAttack()
 ## Beetle starts ###############
 class Beetle:
 	def __init__(self,x,y):
@@ -2377,7 +2316,7 @@ class Beetle:
 		self.enemyLocked=False
 		self.focusPoint=DummyFocus(self.position.x,self.position.y)
 		self.closeRangeAttacks=["bite"]
-		self.longRangeAttacks=["charge","converge","DropBombs"]		
+		self.longRangeAttacks=["charge"]
 
 		self.maxWaitTimeBeforeBite=2
 		self.startedBite=False
@@ -2387,11 +2326,6 @@ class Beetle:
 		self.biteStartTimePoint=0
 		self.maxBiteTime=0.5
 		self.maxChargeTime=2
-		self.ringSpawned = False
-
-		self.maxBombGap = 2.5
-		self.bombCount = 0
-		self.maxBombCount = 4
 
 		self.friendly=False
 
@@ -2415,9 +2349,6 @@ class Beetle:
 			self.animTimers[self.animFrame]=0
 			return True
 		return False
-
-	def ShootOnce(self):
-		gameManager.volatiles.append(FireBomb(self.boxCollider.position.x,self.boxCollider.position.y,self.angle,self,"enemy",self.target))
 
 	def changeAnimation(self,animName):
 		if animName=="idle" and self.anim!=0:
@@ -2444,21 +2375,20 @@ class Beetle:
 		myrect.centery=self.position.y-gameManager.camera.position.y
 		win.blit(rotated_image,myrect)
 
+		self.boxCollider.display()
 
-		#self.boxCollider.display()	
-		'''
-		#Drawing Debug Lines	
+
+		
 		endPoint=CreateVector(self.enemyProxim,0).pointToAngle(self.angle).add(self.hornCollider.position)
 		pygame.draw.line(win,(255,0,255),
 			(self.hornCollider.position.x-gameManager.camera.position.x,self.hornCollider.position.y-gameManager.camera.position.y),
 			(endPoint.x-gameManager.camera.position.x,endPoint.y-gameManager.camera.position.y))
-		'''
 		
 		self.updateAndDisplayHC(win)
 
 	def updateAndDisplayHC(self,win):
 		self.hornCollider.update(self.angle,self.position)
-		# self.hornCollider.display()
+		self.hornCollider.display()
 
 	def StartMusic(self):
 		pygame.mixer.music.load('./sounds/DungDefender.mp3')
@@ -2482,9 +2412,7 @@ class Beetle:
 				gameManager.camera.target = self.focusPoint				
 				for gt in gameManager.gatesList:
 					gt.CloseGate()
-	def OpenGates(self):
-		for gt in gameManager.gatesList:
-			gt.OpenGate()
+
 
 	def BeetleIdleFn(self):
 		self.changeAnimation("idle")
@@ -2492,26 +2420,20 @@ class Beetle:
 			self.AttemptEnemyLock()
 		else:	
 			if self.friendly:
-				return	
-			#focus on enemy while on idle start
-			'''	
+				return		
 			enemyDirection=self.target.position.copy().sub(self.position)
 			enemyAngle=enemyDirection.heading()
 			self.angle=AngleLerp(self.angle,enemyAngle,8)
-			'''
-			#focus on enemy while on idle end
 			if time.time() - self.atkStartTime < self.maxTimeBetweenAttacks:
 				# DisplayInGaps("waiting in idle"
 				return
 			if self.TargetProximity() == "near":
 				print('near attack')
-				self.atkStartTime = time.time()	
-				self.maxTimeBetweenAttacks = 1			
+				self.atkStartTime = time.time()				
 				self.state=random.choice(self.closeRangeAttacks)
 			else:
 				print('far attack')
 				self.atkStartTime = time.time()
-				self.maxTimeBetweenAttacks = 3
 				self.state=random.choice(self.longRangeAttacks)
 
 
@@ -2545,27 +2467,6 @@ class Beetle:
 			self.state="idle"
 
 
-
-	def DropBombs(self):
-		self.changeAnimation('idle')
-		self.beetleMoveDirection=self.target.position.copy().sub(self.position).normalized()			
-		self.angle = AngleLerp(self.angle,self.beetleMoveDirection.heading(),3)
-		if time.time() - self.atkStartTime < self.maxWaitTimeBeforeBite:
-			if not self.startedBite:
-				self.startedBite = True
-				SpawnCloudGroup(self.position)
-			return
-		if self.startedBite:
-			self.startedBite= False
-		if time.time() - self.biteStartTimePoint > self.maxBombGap:
-			self.biteStartTimePoint = time.time()
-			self.ShootOnce()
-			self.bombCount+=1
-		if self.bombCount > self.maxBombCount:
-			self.bombCount = 0
-			self.atkStartTime = time.time()
-			self.state="idle"			
-
 	def StateMachine(self):
 		if self.state=="idle":
 			self.BeetleIdleFn() 
@@ -2573,10 +2474,6 @@ class Beetle:
 			self.Bite(self.maxBiteTime)
 		elif self.state=="charge":
 			self.Bite(self.maxChargeTime)
-		elif self.state=="converge":
-			self.SpawnRim()
-		elif self.state=="DropBombs":
-			self.DropBombs()
 		'''
 		if self.state=="pursue":
 			self.pursueEnemy()
@@ -2589,43 +2486,11 @@ class Beetle:
 		elif self.state=="rainingBullets":
 			self.RainBullets()
 		'''
-	
-	def SpawnRim(self):
-		if not self.ringSpawned:
-			self.ringSpawned = True
-			GreenRim(self.position.x,self.position.y,self,[gameManager.volatiles])
-
-	def recoverFromRingAttack(self):
-		self.atkStartTime = time.time()
-		self.state="idle"
-		self.ringSpawned= False
-			
 	def TargetProximity(self):
 		enemyDirection=self.target.position.copy().sub(self.position)
 		if enemyDirection.mag() < self.enemyProxim:
 			return "near"
 		return "far"
-
-	def TakeDamage(self,dmg):
-		self.health-=dmg
-		self.healthBar.reduceHealth(dmg)
-		self.ShowHealthBar()
-		if self.health < 0:
-			'''
-			camera.target=player			
-			pygame.mixer.music.load('./sounds/majula.mp3')
-			pygame.mixer.music.play(-1,0.0)
-			gameManager.SetText("Zombie is dead please stay for next boss")
-			player.onScreen=False
-			gameManager.LoadNextLevel()
-			'''
-			gameManager.camera.target=gameManager.player
-			self.health=0
-			self.OpenGates()
-			gameManager.ChangeMusic('majula.mp3',0.3)
-			SpawnCloudGroup(self.position)
-			self.onScreen=False
-			gameManager.killedElems[gameManager.currentScene].append('beetle')
 		
 
 ## Beetle ends #################
@@ -2989,7 +2854,6 @@ GATE=pygame.image.load('./sprites/gate.png')
 SHRUB=pygame.image.load('./sprites/TreeShrub.png')
 LADDER=pygame.image.load('./sprites/gate.png')
 POINTEDBAR=pygame.image.load('./sprites/RedArrow.png')
-GREENRIM=pygame.image.load('./sprites/GreenRim.png')
 global BULLETIMAGE,BULLETSIZEFAC
 BULLETIMAGE=REDSPHEREIMAGE
 BULLETIMAGE_PLAYER=BULLETIMAGE

@@ -9,14 +9,15 @@ class Player(Entity):
 		super().__init__(groups)
 		self.image = pygame.image.load('../graphics/test/player.png').convert_alpha()
 		self.rect = self.image.get_rect(topleft=pos)
-		self.hitbox = self.rect.inflate(0,-26)
+		self.hitbox = self.rect.inflate(-6,HITBOX_OFFSET['player'])
 
 		self.import_player_assets()
 		self.status ='down'
 
 		# self.direction= pygame.math.Vector2()	 #in super class	
 		self.attacking=False
-		self.attack_cooldown= 400
+		self.attack_cooldown= 1000
+		self.swordOutFraction=0.2
 		self.attack_time = None
 
 		self.obstacle_sprites = obstacle_sprites
@@ -41,11 +42,14 @@ class Player(Entity):
 		self.magic_switch_time = None
 		self.create_magic= create_magic
 
-
+		self.stats_orig = {'health':100,'energy':60,'attack':10,'magic':4,'speed':6}
 		self.stats = {'health':100,'energy':60,'attack':10,'magic':4,'speed':6}
-		self.health= self.stats['health']/2
+		self.max_stats={'health':300,'energy':140,'attack':20,'magic':10,'speed':10}
+		self.upgrade_cost={'health':10,'energy':140,'attack':20,'magic':10,'speed':10}
+
+		self.health= self.stats['health']
 		self.energy= self.stats['energy']
-		self.exp= 123
+		self.exp= 5000
 		self.speed=self.stats['speed']
 
 		#damage timer
@@ -53,6 +57,8 @@ class Player(Entity):
 		self.hurt_time=None
 		self.invulnerability_duration = 500
 
+		self.weapon_attack_sound = pygame.mixer.Sound('../audio/sword.wav')
+		self.weapon_attack_sound.set_volume(0.4)
 
 
 	def get_status(self):
@@ -108,6 +114,7 @@ class Player(Entity):
 				self.attacking=True
 				self.attack_time=pygame.time.get_ticks()
 				self.create_attack()
+				self.weapon_attack_sound.play()
 
 			if keys[pygame.K_LCTRL]:
 				self.attacking=True		
@@ -140,9 +147,10 @@ class Player(Entity):
 	def cooldowns(self):
 		current_time = pygame.time.get_ticks()
 		if self.attacking:
-			if current_time - self.attack_time >= self.attack_cooldown + weapon_data[self.weapon]['cooldown']:
-				self.attacking=False
+			if current_time - self.attack_time >= self.swordOutFraction*(self.attack_cooldown + weapon_data[self.weapon]['cooldown']):
 				self.destroy_attack()
+			if current_time - self.attack_time >= self.attack_cooldown + weapon_data[self.weapon]['cooldown']:
+				self.attacking=False				
 
 		current_time = pygame.time.get_ticks()
 		if not self.can_switch_weapon:
@@ -176,7 +184,7 @@ class Player(Entity):
 		self.get_status()
 		self.animate()
 		self.cooldowns()		
-		self.move(self.speed)
+		self.move(self.stats['speed'])
 		# debug(self.status)
 		self.energy_recovery()
 
@@ -189,6 +197,12 @@ class Player(Entity):
 		base_damage=self.stats['magic']
 		spell_damage=magic_data[self.magic]['strength']
 		return base_damage + spell_damage
+
+	def get_value_by_index(self,index):
+		return list(self.stats.values())[index]
+
+	def get_cost_by_index(self,index):
+		return list(self.upgrade_cost.values())[index]
 
 	def energy_recovery(self):
 		if self.energy < self.stats['energy']:

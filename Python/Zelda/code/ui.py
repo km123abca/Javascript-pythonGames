@@ -22,6 +22,13 @@ class UI:
 	def display(self,player):
 		# pygame.draw.rect(self.display_surface,'black',self.health_bar_rect)
 		# pygame.draw.rect(self.display_surface,'black',self.energy_bar_rect)
+
+		if(player.stats_orig['health']!=player.stats['health']):
+			increase_ratio= player.stats['health'] / player.stats_orig['health']
+			self.health_bar_rect= pygame.Rect(10,10,HEALTH_BAR_WIDTH*increase_ratio,BAR_HEIGHT)
+		if(player.stats_orig['energy']!=player.stats['energy']):
+			increase_ratio= player.stats['energy'] / player.stats_orig['energy']
+			self.energy_bar_rect= pygame.Rect(10,34,ENERGY_BAR_WIDTH*increase_ratio,BAR_HEIGHT)
 		self.show_bar(player.health,player.stats['health'],self.health_bar_rect,HEALTH_COLOR)
 		self.show_bar(player.energy,player.stats['energy'],self.energy_bar_rect,ENERGY_COLOR)
 		self.show_exp(player.exp)
