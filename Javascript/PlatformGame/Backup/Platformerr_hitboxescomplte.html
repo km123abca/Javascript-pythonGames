@@ -8,7 +8,6 @@
 	let spacePress,upPress,rightPress,downPress,leftPress,gPress,fPress,enterPress;
 	let ipress,lpress,mpress,jpress,tpress,hpress,bpress,ppress;
 	let mousePressed;
-
 	// let backGroundColor="#16a1b3";
 	let backGroundColor='#051405';
 	let FPS=60;
@@ -333,9 +332,10 @@
 
 	function destroySelf(objx)
 		{
-		 
+		 console.log('destroy called');
 		 for(let i in objx.spriteGroups)
-		 {		  
+		 {
+		  console.log('338');
 	 	  for(let j in objx.spriteGroups[i])
 	 		{
 
@@ -346,12 +346,9 @@
 	 		 	}	
 	 		}
 		 }
-		 
 		}
 	
-let BLACKCLOUD= LoadImagex('sprites','cloud-1dark.png');
-let WHITECLOUD= LoadImagex('sprites','cloud-1.png');
-let THORNYBALL = LoadImagex('sprites','Thornyball.png');
+
     
 </script>
 </head>
@@ -846,11 +843,9 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 
 		}
 
-
-
 	class DamageHitBox extends HitBox
 		{
-		constructor(x,y,wid,hei,spriteGroups,hitboxName="unknown hitbox",parentx,xoffset,yoffset,dmg=10,dmghitback=0)
+		constructor(x,y,wid,hei,spriteGroups,hitboxName="unknown hitbox",parentx,xoffset,yoffset,dmg=10)
 			{
 			super(x,y,wid,hei,spriteGroups,hitboxName);
 			this.spriteGroups=spriteGroups;
@@ -858,17 +853,16 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			this.parentx=parentx;
 			this.offset=new CreateVector(xoffset,yoffset);
 			this.dmg=dmg;
-			this.hitback=dmghitback;
 			}
-		causeDamage(go,hitback)
+		causeDamage(go)
 			{
-			  go.takeDamage(this.dmg,this.hitback);
+			  go.takeDamage(this.dmg);
 			  this.destroySelf();
 
 			}
 		update()
 			{
-			 if(gameManager.runningClock - this.startTime > 50)
+			 if(gameManager.runningClock - this.startTime > 500)
 			 	this.destroySelf();
 			 this.updatePosition();
 			}
@@ -895,461 +889,6 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			}
 		}
 
-	function SpawnClouds(pos,n=60)
-		{
-		 for(let i=0;i<n;i++)
-		 	new CloudBurst(pos.x,pos.y,[gameManager.visible_sprites,gameManager.active_sprites]);
-		}
-
-	class CloudBurst
-		{
-		 constructor(x,y,spriteGroups)
-		 	{
-		 	 this.position = new CreateVector(x,y);
-		 	 this.width= 15 * xscale;
-		 	 this.height= 15 * yscale;
-		 	 this.imagex= WHITECLOUD;
-		 	 this.onScreen=true;
-		 	 this.isActive=true;
-		 	 this.spriteGroups=spriteGroups;
-		 	 for(let grp of spriteGroups)
-			 	grp.push(this);
-			 this.angle=0;	
-			 this.birthTime=gameManager.runningClock;	
-			 this.maxLife=1500;	
-			 this.velocity=new CreateVector((Math.random()-0.5)*4,(Math.random()-0.5)*4);
-
-		 	}
-		 display()
-		 	{
-			if(!this.onScreen) return false; 				
-			ctx.save();			
-			ctx.translate(this.position.x - gameManager.camera.position.x,this.position.y - gameManager.camera.position.y);	
-			ctx.drawImage(this.imagex,-this.width/2,-this.height/2,this.width,this.height);
-			ctx.restore();
-		 	}
-		 update()
-		 	{
-		 	 this.move();
-		 	 if(gameManager.runningClock - this.birthTime > this.maxLife)
-		 	 	{
-		 	 	 destroySelf(this);
-		 	 	}		 	 
-		 	}
-		 move()
-		 	{
-		 	 this.position.add(this.velocity);
-		 	}
-		}
-
-	class ThornyBall
-		{
-		 constructor(x,y,wid,hei,parentx,offsetx,offsety,spriteGroups)
-			{
-			 this.sprite_type='thornyball';
-			 this.position= new CreateVector(x,y);
-			 this.offsetpos=new CreateVector(parentx.sx*offsetx,parentx.sy*offsety);
-			 this.position.add(this.offsetpos);
-			 this.parentx=parentx;
-			 this.width = wid * xscale;
-			 this.height = hei * yscale;
-			 this.onScreen=true;
-			 this.isActive=true;
-			 this.angle=0;
-			 this.rotAngle=0;
-			 this.imagex=THORNYBALL;
-			 if(!parentx)	
-			 	this.velocity=new CreateVector(0,0);
-			 else		 
-			 	this.velocity=new CreateVector(parentx.sx*14*xscale,0);
-			 this.gravityScale=2*yscale;
-			 this.maxVelocity=new CreateVector(14*xscale,12*yscale);
-			 this.spriteGroups=spriteGroups;
-			 this.acceleration=new CreateVector(0,0);
-			 for(let x of this.spriteGroups)
-			 	x.push(this);
- 		 	 this.hit_box=new HitBox(this.position.x,this.position.y,this.width*0.5,this.height*0.5,
-		 	                         [ //gameManager.collission_sprites,
-		 	                          // gameManager.visible_sprites
-		 	                         ],
-		 	                         'tballhitbox');
-            this.birthTime=gameManager.runningClock;
-            this.lifeTime=3000;
-			}
-		 mindHealth()
-		 	{
-		 	 if(gameManager.runningClock - this.birthTime > this.lifeTime)
-		 	 	 {
-		 	 	 SpawnClouds(this.position);
-		 	  	 destroySelf(this.hit_box);
-		 	  	 destroySelf(this);
-		 	 	 }
-		 	}
-		 update_and_display_hitbox()
-		 	{	 		
-	 		this.position.setVec(this.hit_box.position);
-		 	}
-		 display()
-		 	{		 	 
-		 	 if(!this.onScreen) return false;
-		 	 ctx.save();
-		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
-		 	 	 		   this.position.y-gameManager.camera.position.y);
-		 	 ctx.rotate(d2r(this.rotAngle));
-		 	 // ctx.scale(this.sx,this.sy);
-		 	 // if(this.flickerControl())
-		 	 ctx.drawImage(this.imagex,-this.width/2,-this.height/2,this.width,this.height);		 	 
-		 	 ctx.restore();
-		 	}
-		 rotateself()
-		 	{
-		 	 this.rotAngle+=5;
-		 	 if(this.rotAngle > 360) this.rotAngle=0;
-		 	}
-
-		 update()
-		 	{
-		 	 this.applyGravity();
-		 	 this.velocity.add(this.acceleration);
-		 	 this.acceleration.set(0,0);
-		 	 this.applyVelocity();
-		 	 this.applyVelocityRestrictions();
-		 	 this.checkCollisions();
-		 	 this.rotateself();
-		 	 this.update_and_display_hitbox();
-		 	 this.mindHealth();
-		 	}
-		 applyGravity()
-		 	{
-		 	 this.acceleration.y+=this.gravityScale;
-		 	}
-		 applyVelocity()
-		 	{		 	 	 	 
-		 	 this.hit_box.position.x+=this.velocity.x;		 	
-		 	 for(let k in gameManager.collission_sprites)
-		 	 	{ 
-		 	 	 let x=gameManager.collission_sprites[k];
-		 	 	 if(!x.onScreen) continue;
-		 	 	 if(x==this.hit_box) continue;		 	 	 
-		 	 	 if(b_collision(this.hit_box,x)) 
-		 	 	 	{	 		 
-		 	 	 		 	 
-		 	 	 	 if(this.velocity.x > 0)
-		 	 	 	 	{		 	 	 	 
-		 	 	 	 	this.hit_box.position.x=x.position.x - x.width/2-this.hit_box.width/2-2;	
-
-		 	 	 	  	}
-		 	 	 	 else 
-		 	 	 	 	{
-		 	 	 	    this.hit_box.position.x=x.position.x + x.width/2 + this.hit_box.width/2+2;		 	 	 	    
-		 	 	 		}
-		 	 	 	}
-		 	 	}
-
-		 	 this.hit_box.position.y+=this.velocity.y;
-		 	 for(let x of gameManager.collission_sprites)
-		 	 	{
-		 	 	 if(!x.onScreen) continue;
-		 	 	 if(x==this) continue;		 	 	 
-		 	 	 if(b_collision(this.hit_box,x)) 
-		 	 	 	{
-		 	 	 	
-		 	 	    
-		 	 	 	if(this.velocity.y > 0)
-		 	 	 		{
-		 	 	 		this.hit_box.position.y=x.position.y-x.height/2-this.hit_box.height/2-2;	
-		 	 	 		this.acceleration.add(new CreateVector(0,2*-this.velocity.y));	 	 	 		
-		 	 	 		}
-		 	 	 	else
-		 	 	 		{
-		 	 	 		this.hit_box.position.y=x.position.y+x.height/2+this.hit_box.height/2+2;		
-		 	 	 		this.acceleration.add(new CreateVector(0,2*this.velocity.y)); 	 	 		
-		 	 	 		}
-		 	 	 	}
-		 	 	}
-		 	}
-		 applyVelocityRestrictions()
-		 	{
-		 	 let xdir=this.velocity.x/Math.abs(this.velocity.x);
-		 	 let ydir=this.velocity.y/Math.abs(this.velocity.y);
-		 	 if(Math.abs(this.velocity.y) > this.maxVelocity.y)
-		 	 	this.velocity.y=ydir*this.maxVelocity.y;
-		 	 if(Math.abs(this.velocity.x) > this.maxVelocity.x)
-		 	 	this.velocity.x=xdir*this.maxVelocity.x;
-		 	}
-
-		 checkCollisions()
-		 	{
-		 	  for(let sp of gameManager.collission_sprites) 
-		 	  	{		 	  	 
-		 	  	 if(sp.sprite_type=='playerhitbox' && b_collision(this,sp))
-		 	  	 	{
-		 	  	 	  SpawnClouds(this.position);
-		 	  	 	  destroySelf(this.hit_box);
-		 	  	 	  destroySelf(this);
-		 	  	 	  gameManager.player.takeDamage(10,this.parentx.sx);
-		 	  	 	}
-		 	  	}
-		 	}
-
-		}
-
-	class Lance
-		{
-		 constructor(x,y,wid,hei,spriteGroups)
-		    {
-		     this.position=new CreateVector(x,y);
-		     this.width = wid * xscale;
-		     this.height = hei * yscale;
-		     let folderPath='sprites/lanceSentry/';
-		     this.onScreen= true;
-			 this.isActive=true;
-			 this.angle=0;
-			 this.sx=1;
-			 this.sy=1;
-			 this.startx=0;
-			 this.starty=0;
-			 this.imgWidth=0;
-			 this.imgHeight=0;
-			 this.raycastLength=320*xscale;
-
-			 this.acceleration=new CreateVector(0,0);
-			 this.velocity=new CreateVector(0,0);
-			 this.maxVelocity=new CreateVector(2*xscale,12*yscale);		
-			 this.horiForce=new CreateVector(1*xscale,0);	 
-			 this.gravityScale=2*yscale;	
-			 this.longRangeAttacks=['throw','rush'];
-			 if(gameManager.player)
-			 	this.tgt= gameManager.player;
-			 //animations
-			 this.animations={
-			 	'anticipate':{'imgsheet':LoadImagex(folderPath,'Anticipate.png'),
-			  		    'width':1527,
-			  		    'height':310,			  		    
-			  		    'rows':1,
-			  		    'cols':4,
-			  		    'maxFrames':4,
-			  		    'width_extend':1,
-			  		    'height_extend':1,
-			  		    'anim_speed':0.2},
-			 	'charge':{'imgsheet':LoadImagex(folderPath,'Charge.png'),
-			  		    'width':1177,
-			  		    'height':156,			  		    
-			  		    'rows':1,
-			  		    'cols':3,
-			  		    'maxFrames':3,
-			  		    'width_extend':1,
-			  		    'height_extend':1,'anim_speed':0.2},
-			 	'death':{'imgsheet':LoadImagex(folderPath,'Death.png'),
-			  		    'width':749,
-			  		    'height':127,			  		    
-			  		    'rows':1,
-			  		    'cols':4,
-			  		    'maxFrames':4,
-			  		    'width_extend':1,
-			  		    'height_extend':1,'anim_speed':0.2},
-			 	'idle':{'imgsheet':LoadImagex(folderPath,'Idle.png'),
-			  		    'width':1653,
-			  		    'height':435,			  		    
-			  		    'rows':2,
-			  		    'cols':5,
-			  		    'maxFrames':7,
-			  		    'width_extend':1,
-			  		    'height_extend':1,'anim_speed':0.2},
-			 	'recover':{'imgsheet':LoadImagex(folderPath,'Recover.png'),
-			  		    'width':1119,
-			  		    'height':254,			  		    
-			  		    'rows':1,
-			  		    'cols':3,
-			  		    'maxFrames':3,
-			  		    'width_extend':1,
-			  		    'height_extend':1,'anim_speed':0.2},
-			 	'throw':{'imgsheet':LoadImagex(folderPath,'Throw.png'),
-			  		    'width':1916,
-			  		    'height':757,			  		    
-			  		    'rows':3,
-			  		    'cols':5,
-			  		    'maxFrames':13,
-			  		    'width_extend':1,
-			  		    'height_extend':1,'anim_speed':0.05}
-
-						 };
-						 //animations
-			 this.animation='idle';
-			 this.animInQueue=null;
-			 this.animationFrame=0;			 
-			 this.sprite_type='lance_sentry';
-			 this.state='idle';
-			 this.spriteGroups=spriteGroups;
-			 for(let grp of spriteGroups)
-			 	grp.push(this);
-			 this.hit_box=new HitBox(x,y,this.width*0.5,this.height*0.5,[
-			 	                                                        gameManager.collission_sprites
-			 	                                                        // gameManager.active_sprites
-			 	                                                        ],'lancehitbox');
-			 this.image_offset=new CreateVector(0,0*xscale);
-
-			 this.invincibleState=false;
-		 	 this.invin_count=0;
-		 	 this.max_invin_time=2000;
-		 	 this.flickerCount=0;
-			 this.maxFlickerTime=100;
-		    }
-		flickerControl()
-			{
-			  if(!this.invincibleState) return true;
-			  this.flickerCount+=deltaTime;
-			  if(this.flickerCount > this.maxFlickerTime)
-			  	{
-			  	 this.flickerCount=0;
-			  	 return true;
-			  	}
-			  return false;
-			}
-		switchAnimation(animx)
-			{
-			 if(this.animation != animx)
-			 	{
-			 	this.animationFrame=0;
-			 	this.animation=animx;			 	
-			 	}
-			}
-		runAnimation()
-			{
-			  this.animationFrame+=this.animations[this.animation]['anim_speed'];
-			  if(this.animationFrame >= this.animations[this.animation]['maxFrames'])
-			  	{
-		  		this.animationFrame=0;
-		  		if(this.animInQueue) 
-		  			{
-		  			this.animation=this.animInQueue;
-		  			//console.log('back to '+this.animation);
-		  			this.animInQueue=null;
-		  			}
-			  	}
-			  let rowIndex=parseInt(parseInt(this.animationFrame)/this.animations[this.animation]['cols']);
-			  let colIndex=parseInt(this.animationFrame)%this.animations[this.animation]['cols'];
-			  this.startx=colIndex * this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
-			  this.starty=rowIndex * this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
-			  this.imgWidth = this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
-			  this.imgHeight = this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
-			}
-		 stateMachine()
-		 	{
-		 	 switch(this.state)
-		 	 	{
-		 	 	 case 'idle':
-		 	 	 	this.idleActions();
-		 	 	 	break;
-		 	 	 default:
-		 	 	 	break;
-		 	 	}
-		 	}
-		PlayerDetected(n,dist=this.raycastLength)
-			{
-			  if(!this.tgt) return false;
-	          let offsets=[-40*yscale,0,40*yscale];
-	          let probeRay=new CreateVector(n,0);
-	          let angles=[0,60,90,120];
-	          for(let anglex of angles)
-	          	{	      		
-	      		if(Raycast(this.position.copy(),probeRay.pointToAngle(anglex),dist,this.tgt))
-	      			return true;
-	          	}
-	          return false;
-			}
-		 idleActions()
-		 	{
-		 	 this.PlayerDetected(1);
-		 	 return false;
-		 	}
-		 move()
-		 	{		 		 
-		 	 this.velocity.add(this.acceleration);
-		 	 this.acceleration.set(0,0);		 	
-		 	 this.applyVelocity();
-		 	 this.applyVelocityRestrictions();
-		 	 this.update_and_display_hitbox();
-		 	 // this.spawnHitBoxOnSlashHusk();
-		 	 // this.checkTarget();
-		 	 // this.manageInvincibility();
-		 	}
-		 applyVelocity()
-		 	{		 	 	 	 
-		 	 this.hit_box.position.x+=this.velocity.x;		 	
-		 	 for(let x of gameManager.collission_sprites)
-		 	 	{
-		 	 	 if(!x.onScreen) continue;
-		 	 	 if(x==this.hit_box) continue;
-		 	 	 
-		 	 	 if(b_collision(this.hit_box,x)) 
-		 	 	 	{
-		 	 	 	
-		 	 	 	 if(this.velocity.x > 0)
-		 	 	 	 	this.hit_box.position.x=x.position.x-x.width/2-this.hit_box.width/2-2;
-		 	 	 	 else 
-		 	 	 	 	this.hit_box.position.x=x.position.x+x.width/2+this.hit_box.width/2+2;
-		 	 	 	}		 	 	 
-		 	 	}
-
-		 	 this.hit_box.position.y+=this.velocity.y;
-		 	 for(let x of gameManager.collission_sprites)
-		 	 	{
-		 	 	 if(!x.onScreen) continue;
-		 	 	 if(x==this.hit_box) continue;
-		 	 	 if(b_collision(this.hit_box,x)) 
-		 	 	 	{
-		 	 	 	
-		 	 	 	if(this.velocity.y > 0)
-		 	 	 		this.hit_box.position.y=x.position.y-x.height/2-this.hit_box.height/2-2;
-		 	 	 	else
-		 	 	 		this.hit_box.position.y=x.position.y+x.height/2+this.hit_box.height/2+2;	
-		 	 	 	}
-		 	 	}
-		 	}
-		 applyVelocityRestrictions()
-		 	{
-		 	 let xdir=this.velocity.x/Math.abs(this.velocity.x);
-		 	 let ydir=this.velocity.y/Math.abs(this.velocity.y);
-		 	 if(Math.abs(this.velocity.y) > this.maxVelocity.y)
-		 	 	this.velocity.y=ydir*this.maxVelocity.y;
-		 	 if(Math.abs(this.velocity.x) > this.maxVelocity.x)
-		 	 	this.velocity.x=xdir*this.maxVelocity.x;
-		 	}
-		 update_and_display_hitbox()
-		 	{
-	 		// this.hit_box.updatePosition(this.position.copy().add(this.hit_box_offset));
-	 		this.position.setVec(this.hit_box.position.copy().add(this.image_offset));
-		 	}
-		  update()
-		  	{
-		 	  this.runAnimation();
-		 	  this.stateMachine();
-		 	  // this.move();
-		 	  // this.updateHealthBarPos();
-		 	  // this.fallDamage();
-		  	}
-		  display()
-		  	{
-		 	 if(!this.onScreen) return false;
-		 	 ctx.save();
-		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
-		 	 	 		   this.position.y-gameManager.camera.position.y);
-		 	 ctx.rotate(d2r(this.angle));
-		 	 ctx.scale(this.sx,this.sy);
-		 	 if(this.flickerControl())
-		 	 ctx.drawImage(this.animations[this.animation]['imgsheet'],
-		 	 				this.startx,this.starty,this.imgWidth,this.imgHeight,
-		 	 			   -this.width/2,
-		 	 			   -this.height/2,
-		 	 			   this.width*this.animations[this.animation]['width_extend'],
-		 	 			   this.height*this.animations[this.animation]['height_extend']
-		 	 			  );
-		 	 // context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
-		 	 ctx.restore();
-		  	}
-		}
-
 
 	class Husk
 		{
@@ -1360,7 +899,6 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 this.height= hei * yscale;
 			 let folderPath='sprites/husk/';
 			 this.onScreen= true;
-			 this.isActive=true;
 			 this.angle=0;
 			 this.sx=1;
 			 this.sy=1;
@@ -1373,9 +911,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 this.velocity=new CreateVector(0,0);
 			 this.maxVelocity=new CreateVector(2*xscale,12*yscale);		
 			 this.horiForce=new CreateVector(1*xscale,0);	 
-			 this.gravityScale=2*yscale;	
-			 this.longRangeAttacks=['throw','rush'];	
-			 	 
+			 this.gravityScale=2*yscale;			 
 
 			 this.animations={
 			 	'walking':{'imgsheet':LoadImagex(folderPath,'WalkingSheet.png'),
@@ -1436,7 +972,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 this.state='idle';
 			 this.raycastLength=320*xscale;
 			 this.attackProxim=150*xscale;
-			 this.playerOutDistance=1200*xscale;
+			 this.playerOutDistance=500*xscale;
 			 this.startled=false;
 			 this.lastAttackTime=0;
 			 this.maxAttackGap=1000;
@@ -1447,7 +983,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 	grp.push(this);
 			 this.hit_box=new HitBox(x,y,this.width*0.5,this.height*0.5,[
 			 	                                                        gameManager.collission_sprites
-			 	                                                        // gameManager.active_sprites
+			 	                                                        // gameManager.visible_sprites
 			 	                                                        ],'huskhitbox');
 			 this.image_offset=new CreateVector(0,-45*xscale);
 			 this.huskHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,'#222222','#FF0000',[gameManager.visible_sprites],false);
@@ -1456,47 +992,6 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 this.uiBarMaxTime=2000;
 			 this.healthBarOffset=new CreateVector(-30*xscale,-150*yscale);
 			 this.hitBoxSpawned=false;
-			 if(gameManager.player)
-			 	this.tgt= gameManager.player;	
-
-			 this.invincibleState=false;
-		 	 this.invin_count=0;
-		 	 this.max_invin_time=2000;
-		 	 this.flickerCount=0;
-			 this.maxFlickerTime=100;
-
-			 this.longAttackCount=0;
-			 this.maxLongAttackCount=2000;		
-			 this.meleeOver=false;
-			 this.waitTimerMeleeEnd=0;
-			 this.maxWaitTimeAfterMelee=2000; 
-
-			 this.initSetupDone=false;
-		 	 this.maxRushTime=1500;
-			}
-
-		manageInvincibility()
-			{
-			if(!this.invincibleState) return false;
-			this.invin_count+= deltaTime;
-			if(this.invin_count > this.max_invin_time)
-				{
-				 this.invin_count=0;
-				 this.invincibleState=false;
-				} 
-			}
-
-
-		flickerControl()
-			{
-			  if(!this.invincibleState) return true;
-			  this.flickerCount+=deltaTime;
-			  if(this.flickerCount > this.maxFlickerTime)
-			  	{
-			  	 this.flickerCount=0;
-			  	 return true;
-			  	}
-			  return false;
 			}
 		updateHealthBarPos()
 			{
@@ -1525,32 +1020,14 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 	 		// this.hit_box.updatePosition(this.position.copy().add(this.hit_box_offset));
 	 		this.position.setVec(this.hit_box.position.copy().add(this.image_offset));
 		 	}
-		 takeDamage(dmg,dir=0)
+		 takeDamage(dmg)
 		 	{
-		 	//this.acceleration.add(new CreateVector(dir,0));
-		 	if(this.invincibleState) return false;	
-		 	this.invincibleState=true;	
-	 		this.health-=dmg;
-	 		this.huskHealthBar.updateValue(this.health);
-	 		this.huskHealthBar.onScreen=true;
-	 		if(this.health<0)
-	 			{
-	 			SpawnClouds(this.position);
-	 			destroySelf(this);
-	 			this.isActive=false;
-	 			}	
+		 		this.health-=dmg;
+		 		this.huskHealthBar.updateValue(this.health);
+		 		this.huskHealthBar.onScreen=true;
+		 		if(this.health<0)
+		 			destroySelf(this);
 		 	}
-
-		fallDamage()
-			{
-			  if(Math.abs(this.position.y-gameManager.camera.position.y > canvas.height*5))
-			  	{
-	 			SpawnClouds(this.position);
-	 			destroySelf(this);
-	 			this.isActive=false;
-	 			console.log(this.sprite_type+' reports fall damage!!!');
-	 			}	
-			}
 
 		stateMachine()
 			{
@@ -1565,143 +1042,44 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
                	case 'attack':
                		this.Melee();
                		break;
-               	case 'throw':
-               		this.Throw();
-               		break;
-               	case 'rush':
-               	    this.Rush();
-               	    break;
                	default:
                		break;
                }
 			} 
 		 spawnHitBoxOnSlashHusk()
-		 	{		 	
+		 	{
+		 	
 	 		if(this.animation=="attack2" && parseInt(this.animationFrame)==1 && !this.hitBoxSpawned)
 	 			{
 	 			this.hitBoxSpawned=true;
-	 			let hbWidthRatio=0.2;
-	 			let hbHeightRatio=0.2;
-	 			if(this.state=="rush")
-	 				{
-	 				 hbWidthRatio=1;
-	 				 hbHeightRatio=0.5;
-	 				}
-	 			if(this.state=="attack" || this.state=="rush")
-		 			new DamageHitBox(this.position.x,
-		 							 this.position.y,
-		 							 this.width*hbWidthRatio,
-		 							 this.height*hbHeightRatio,
-		 							 [gameManager.active_sprites,gameManager.hitbox_sprites],
-		 							 'enemy_hitbox',
-		 							 this,
-		 							 70,0,10,this.sx*1.5);	
-		 		else if(this.state=='throw')
-		 			new ThornyBall(this.position.x,
-		 						   this.position.y,
-		 						   30*xscale,
-		 						   30*yscale,
-		 						   this,70*xscale,0,
-		 						   [gameManager.visible_sprites,gameManager.active_sprites]
-		 				          );
-
+	 			new DamageHitBox(this.position.x,
+	 							 this.position.y,
+	 							 this.width*0.2,
+	 							 this.height*0.2,
+	 							 [gameManager.visible_sprites,gameManager.hitbox_sprites],
+	 							 'enemy_hitbox',
+	 							 this,
+	 							 70,0);		
 	 			}
-	 		else if(this.animation!="attack2" && this.hitBoxSpawned)
+	 		else if(this.animation!="attack1" && this.hitBoxSpawned)
 	 			this.hitBoxSpawned=false;
 		 	}
-
-		SpawnAttackSequence()
-			{
-			if(this.animation!='attack0' && this.animation!='attack1' && this.animation!='attack2' && !this.meleeOver)
-			 	{
-			 	 this.animInQueue='attack1';
-			 	 this.switchAnimation('attack0');
-			 	 return true;
-			 	}
-			 else if(this.animation=="attack1" && this.animInQueue!="attack2")
-			 	{
-			 	this.animInQueue="attack2";		
-			 	return true;	 		
-			 	}
-			 else if(this.animation=="attack2")
-			 	{
-			 	if(this.animationFrame>= this.animations["attack2"]["maxFrames"]-1)
-			 		{
-			 		this.switchAnimation('idle');
-			 		this.meleeOver=true;
-			 		return false;
-			 		}
-			 	return true;
-			 	}
-			 return true;
-			}
-
-		Rush()
-			{
-			 //constructor(x,y,wid,hei,spriteGroups,hitboxName="unknown hitbox",parentx,xoffset,yoffset,dmg=10,dmghitback=0)
-			 this.SpawnAttackSequence();
-			 if(this.meleeOver)
-			 	{
-			 	 this.performPostRushRitual();
-			 	 return true;
-			 	}
-			 
-			 if(!this.initSetupDone)
-			 	{
-			 	 this.initSetupDone=true;
-			 	 this.maxVelocity.x=30*xscale;			 	 
-			 	}
-			 this.acceleration.add(this.horiForce.copy().mult(this.sx*5));
-
-			 this.waitTimerMeleeEnd+=deltaTime;
-			 if(this.waitTimerMeleeEnd > this.maxRushTime || this.PlayerDetected(this.sx,30*xscale) )
-			 	{			 	 
-			 	this.velocity.x=0;
-			 	this.waitTimerMeleeEnd=0;	
-			 	this.meleeOver=true;		 	
-			 	}			 
-			}
-		performPostRushRitual()
-			{
-			 this.velocity.x=0;	
-			 if(this.animation.substring(0,this.animation.length-1)!="attack")
-			 	{
-			 	
-			 	this.switchAnimation('idle');			 	
-			    }
-			 this.waitTimerMeleeEnd+=deltaTime;
-			 if(this.waitTimerMeleeEnd > this.maxWaitTimeAfterMelee)
-			 	{
-			 	 this.RecoverFromRush();
-			 	}
-			}
-		RecoverFromRush()
-			{
-			 this.maxVelocity.x=2*xscale;
-			 this.initSetupDone=false;			 
-			 this.waitTimerMeleeEnd=0;			
-			 // this.velocity.x=Lerp(this.velocity.x,0,2*xscale);	
-			 this.velocity.x=0;
-			 this.state='agro';
-			 this.meleeOver=false;
-			}
 		IdleBehav()
 			{
 			  this.velocity.x=Lerp(this.velocity.x,0,2);	
 			  this.switchAnimation('idle');
 			  if(this.PlayerDetected(1))
 			  	{
-		  		this.state='agro';
-		  		this.sx=1;
+			  		this.state='agro';
+			  		this.sx=1;
 			  	}
 			  else if(this.PlayerDetected(-1))
 			  	{
-		  		this.state='agro';
-		  		this.sx=-1;
+			  		this.state='agro';
+			  		this.sx=-1;
 			  	}
 
 			}
-
 		AgroBehav()
 			{
 			if(!this.startled)
@@ -1712,48 +1090,30 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 				}
 		
 			if(this.PlayerInHitRange())
-				{				
+				{
+				
 				if(gameManager.runningClock - this.lastAttackTime > this.maxAttackGap)
 					{
-					 this.velocity.x=Lerp(this.velocity.x,0,2*xscale);	
+					 this.velocity.x=Lerp(this.velocity.x,0,2);	
 					 this.state='attack';
 					 //remember to reset lastAttackTime
 					}
-				if(this.longAttackCount!=0) this.longAttackCount=0;
 				}
 			else if(this.animation!='startle')
 				{				
 				 this.switchAnimation('walking');
  				 this.acceleration.add(this.horiForce.copy().mult(this.sx));
- 				 this.longAttackCount+=deltaTime;
- 				 if(this.longAttackCount > this.maxLongAttackCount)
- 				 	{
- 				 	 this.state=this.longRangeAttacks[Math.floor(Math.random()*this.longRangeAttacks.length)]
- 				 	 this.longAttackCount=0;
- 				 	}
 				}
 			
-			if(!this.tgt || Math.abs(this.position.x - this.tgt.position.x) > this.playerOutDistance)
+			if(Math.abs(this.position.x - gameManager.player.position.x) > this.playerOutDistance)
 				{
 				 this.startled=false;				 
 				 this.state='idle';
-				 this.longAttackCount=0;
 				}
 
 			}
-		Throw()
-			{	
-			 this.velocity.x=Lerp(this.velocity.x,0,2*xscale);		 
-			 this.Melee();
-			}
-
 		Melee()
 			{
-			 if(this.meleeOver)
-			 	{
-			 	 this.performPostMeleeRitual();
-			 	 return true;
-			 	}
 			 if(this.animation!='attack0' && this.animation!='attack1' && this.animation!='attack2')
 			 	{
 			 	 this.animInQueue='attack1';
@@ -1766,31 +1126,19 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 else if(this.animation=="attack2")
 			 	{
 			 	if(this.animationFrame>= this.animations["attack2"]["maxFrames"]-1)
-			 		this.meleeOver=true;
-			 		// this.WrapUpMelee();
+			 		this.WrapUpMelee();
 			 	}
-			}
-		performPostMeleeRitual()
-			{
-			 this.switchAnimation('idle');
-			 this.waitTimerMeleeEnd+=deltaTime;
-			 if(this.waitTimerMeleeEnd > this.maxWaitTimeAfterMelee)
-			 	{
-			 	 this.WrapUpMelee();
-			 	}
+
 			}
 		WrapUpMelee()
 			{
 			 this.lastAttackTime=gameManager.runningClock;
 			 this.state='agro';
 			 this.switchAnimation('idle');
-			 this.meleeOver=false;
-			 this.waitTimerMeleeEnd=0;
 			}
 		PlayerInHitRange()
 			{
-			  if(!this.tgt) return false;
-			  let playerSep= this.tgt.position.x - this.position.x;
+			  let playerSep= gameManager.player.position.x - this.position.x;
 			  if(this.sx==1 && playerSep < 0) this.sx=-1;
 			  else if(this.sx==-1 && playerSep > 0) this.sx=1;			  
 			  if(Math.abs(playerSep) < this.attackProxim)
@@ -1801,14 +1149,13 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			  // console.log(`player seperation:${playerSep}, and attack proxim:${this.attackProxim}  returning false`);
 			  return false;
 			}
-		PlayerDetected(n,dist=this.raycastLength)
+		PlayerDetected(n)
 			{
-			  if(!this.tgt) return false;
 	          let offsets=[-40*yscale,0,40*yscale];
 	          for(let offset of offsets)
 	          	{
 	      		let yoffset=new CreateVector(0,offset);
-	      		if(Raycast(this.position.copy().add(yoffset),new CreateVector(n,0),dist,this.tgt))
+	      		if(Raycast(this.position.copy().add(yoffset),new CreateVector(n,0),this.raycastLength,gameManager.player))
 	      			return true;
 	          	}
 	          return false;
@@ -1816,11 +1163,6 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 applyGravity()
 		 	{
 		 	 this.acceleration.y+=this.gravityScale;
-		 	}
-		 checkTarget()
-		 	{
-		 	 if(this.tgt && !this.tgt.isActive)
-		 	 	this.tgt=null;
 		 	}
 		 move()
 		 	{		
@@ -1831,8 +1173,6 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 this.applyVelocityRestrictions();
 		 	 this.update_and_display_hitbox();
 		 	 this.spawnHitBoxOnSlashHusk();
-		 	 this.checkTarget();
-		 	 this.manageInvincibility();
 		 	}
 		 applyVelocity()
 		 	{		 	 	 	 
@@ -1910,7 +1250,6 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	  this.stateMachine();
 		 	  this.move();
 		 	  this.updateHealthBarPos();
-		 	  this.fallDamage();
 		 	}
 		 display()
 		 	{		 	 
@@ -1920,7 +1259,6 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 	 		   this.position.y-gameManager.camera.position.y);
 		 	 ctx.rotate(d2r(this.angle));
 		 	 ctx.scale(this.sx,this.sy);
-		 	 if(this.flickerControl())
 		 	 ctx.drawImage(this.animations[this.animation]['imgsheet'],
 		 	 				this.startx,this.starty,this.imgWidth,this.imgHeight,
 		 	 			   -this.width/2,
@@ -1933,7 +1271,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	}
 		}
 
-    
+
 
 	class UIBar
 		{
@@ -2016,7 +1354,6 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 this.animationFrame=0;
 			 this.animInQueue=null;
 			 this.onScreen=true;
-			 this.isActive=true;
 			 this.sprite_type='player';
 			 this.spriteGroups=spriteGroups;
 			 for(let grp of spriteGroups)
@@ -2040,7 +1377,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 this.slashTrigger=true;
 		 	 // gameManager.camera.tgt=this;
 
-		 	 this.health=100;
+		 	 this.health=30;
 		 	 this.maxHealth=100;
 		 	 this.hitBoxSpawned=false;
 		 	 this.energy = 50;
@@ -2055,79 +1392,29 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 this.hit_box=new HitBox(x,y,this.width*0.5,
 		 	 	                         this.height,
 		 	 	                         [gameManager.collission_sprites
-		 	 	                          // gameManager.active_sprites
+		 	 	                          // gameManager.visible_sprites
 		 	 	                         ],
 		 	 	                         'playerhitbox');
-		 	 this.invincibleState=false;
-		 	 this.invin_count=0;
-		 	 this.max_invin_time=2000;
-		 	 this.flickerCount=0;
-			 this.maxFlickerTime=100;
 		 	 // this.damHitBox = new DamageHitBox(x-100,y,this.width*0.2,this.height*0.2,[gameManager.visible_sprites],'sample',this,70,0);
-		 	 
 			}
 
 			
 		 update_and_display_hitbox()
 		 	{
-	 		// this.hit_box.updatePosition(this.position);
-	 		this.position.setVec(this.hit_box.position);
+		 		// this.hit_box.updatePosition(this.position);
+		 		this.position.setVec(this.hit_box.position);
 		 	}
-		manageInvincibility()
-			{
-			if(!this.invincibleState) return false;
-			this.invin_count+= deltaTime;
-			if(this.invin_count > this.max_invin_time)
-				{
-				 this.invin_count=0;
-				 this.invincibleState=false;
-				} 
-			}
 
-		flickerControl()
-			{
-			  if(!this.invincibleState) return true;
-			  this.flickerCount+=deltaTime;
-			  if(this.flickerCount > this.maxFlickerTime)
-			  	{
-			  	 this.flickerCount=0;
-			  	 return true;
-			  	}
-			  return false;
-			}
-
-		fallDamage()
-			{
-			  return false;
-			  if(this.position.y > 5*canvas.height)
-			  {
-			  	this.health-=2;
-			  	if(this.health > 0) 
-			  		return;
-			  	destroySelf(this.hit_box);
-	 			destroySelf(this);
-	 			this.isActive=false;
-	 			gameManager.player=null;
-	 			gameManager.camera.tgt=gameManager.camera_stop_sprites[0];
-			  }
-			}
-		
-
-		takeDamage(dmg,dir=0)
-		 	{		 	
-		 	if(this.invincibleState) return false;	
-		 	this.invincibleState=true;	 	
-		 	this.acceleration.add(new CreateVector(dir,0));
+		takeDamage(dmg)
+		 	{
 	 		this.health-=dmg;
 	 		gameManager.playerHealthBar.updateValue(this.health);	 		
 	 		if(this.health<=0)
 	 			{
-	 			SpawnClouds(this.position);
 	 			console.log('health fell below zero');
 	 			destroySelf(this.hit_box);
 	 			destroySelf(this);
-	 			this.isActive=false;
-	 			gameManager.player=null;	 			
+	 			gameManager.player=null;
 	 			}
 		 	}
 		refillEnergy()
@@ -2154,26 +1441,17 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 spawnHitBoxOnSlash()
 		 	{
 		 	
-	 		if(this.animation=="slash" && parseInt(this.animationFrame)==6 && !this.hitBoxSpawned)
+	 		if(this.animation=="slash" && parseInt(this.animationFrame)==3 && !this.hitBoxSpawned)
 	 			{
 	 			this.hitBoxSpawned=true;
 	 			new DamageHitBox(this.position.x,
 	 							 this.position.y,
 	 							 this.width*0.2,
 	 							 this.height*0.2,
-	 							 [gameManager.hitbox_sprites,gameManager.active_sprites],
+	 							 [gameManager.visible_sprites,gameManager.hitbox_sprites],
 	 							 'player_hitbox',
 	 							 this,
-	 							 70,0,10,this.sx*1.5);
-	 			/*
-	 			new ThornyBall(this.position.x,
-							   this.position.y,
-							   30*xscale,
-							   30*yscale,
-							   this,70*xscale,0,
-							   [gameManager.visible_sprites,gameManager.active_sprites]
-					          );	*/
-
+	 							 70,0);		
 	 			}
 	 		else if(this.animation!="slash" && this.hitBoxSpawned)
 	 			this.hitBoxSpawned=false;
@@ -2182,7 +1460,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	{
 		 	for(let x of gameManager.collission_sprites)
 		 		{
-		 		 if(!x.onScreen || x==this.hit_box) continue;
+		 		 if(!x.onScreen) continue;
 		 		 
 		 		 if(Raycast(this.position.copy(),new CreateVector(0,1),this.downCheckRaycast,x) )
 		 		 	{
@@ -2206,7 +1484,6 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 	 	{
 		 	 	 	if(this.energy < this.energyCosts["jump"]) 
 		 	 	 		return false;
-		 	 	 	
 		 	 	 	this.energy-=this.energyCosts["jump"];
 		 	 	 	this.spaceTrigger=false;
 		 	 	 	this.jumping=true;
@@ -2243,7 +1520,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 move()
 		 	{	
 		 	 // DisplayInGaps(`${this.position.x},${this.position.y}`);	 	 
-		 	 // this.checkDeath();
+		 	 this.checkDeath();
 		 	 this.applyGravity();
 		 	 this.manualControls();
 		 	 this.jumpingContols();
@@ -2254,13 +1531,10 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 this.update_and_display_hitbox();	 
 		 	 this.spawnHitBoxOnSlash();	 
 		 	 this.refillEnergy();
-		 	 this.manageInvincibility();
 		 	}
 
 		 manualControls()
 		 	{
-		 	if(this.invincibleState && this.invin_count < 0.5*this.max_invin_time)
-		 		return false; 
 		 	if(this.animation!='slash')
 			 	{
 		 		if(leftPress || leftArrow)
@@ -2381,12 +1655,10 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 if(!this.onScreen) return false;
 		 	 this.runAnimation();
 		 	 this.move();
-		 	 this.fallDamage();
 		 	}
 		 display()
 		 	{		 	 
-		 	 if(!this.onScreen || !this.flickerControl()) return false;
-
+		 	 if(!this.onScreen) return false;
 		 	 ctx.save();
 		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
 		 	 	 		   this.position.y-gameManager.camera.position.y);
@@ -2450,8 +1722,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		{
 		 constructor()
 		 	{
-		 	 this.visible_sprites=[];
-		 	 this.active_sprites=[];		 	 		 	 
+		 	 this.visible_sprites=[];		 	 		 	 
 		 	 this.collission_sprites=[];
 		 	 this.hitbox_sprites=[];
 		 	 this.enemy_sprites=[];
@@ -2467,10 +1738,11 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 this.gamePaused=false;
 		 	 this.inTransition=false;
 		 	 this.sceneForward=true;
-		 	 this.positionAdjuster=new PositionAdjuster(null,[this.visible_sprites,this.active_sprites]);
+		 	 this.positionAdjuster=new PositionAdjuster(null,[this.visible_sprites]);
 
-		 	 this.playerHealthBar= new UIBar(50,20,300,30,100,100,'#222222','#FF0000',[this.visible_sprites,this.active_sprites]);
-			 this.playerEnergyBar= new UIBar(50,100,300,30,100,100,'#222222','#0000FF',[this.visible_sprites,this.active_sprites]);
+
+		 	 this.playerHealthBar= new UIBar(50,20,300,30,100,100,'#222222','#FF0000',[this.visible_sprites]);
+			 this.playerEnergyBar= new UIBar(50,100,300,30,100,100,'#222222','#0000FF',[this.visible_sprites]);
 		 	}
 
 		 unload_components()
@@ -2479,7 +1751,6 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	this.camera_stop_sprites=[];
 		 	this.entryexit_sprites=[];
 		 	this.visible_sprites=[this.player,this.positionAdjuster];
-		 	this.active_sprites=[this.player,this.positionAdjuster];
 		 	}
 
 		 runClock()
@@ -2528,7 +1799,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
  				if(elem.sprite_type==ent_ex)
  					{
  					 console.log(`player placed at ${elem.position.x},${elem.position.y} of ${elem.sprite_type}`);
- 					 gameManager.player.hit_box.position.setVec(elem.position);
+ 					 gameManager.player.position.setVec(elem.position);
  					}
 	 			}
 		 	}
@@ -2553,13 +1824,10 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 this.camera.smoothFocus(hori,vert);
 
 		 	 for(let sprite of this.visible_sprites)
-		 	 	{			 	 	
-		 	 	sprite.display();
-		 	 	}
-		 	 for(let sprite of this.active_sprites)
-		 	 	{
+		 	 	{	
 		 	 	if(!gameManager.gamePaused)	 	 	
-		 	 		sprite.update();	
+		 	 		sprite.update();
+		 	 	sprite.display();
 		 	 	}
 		 	 for(let hb of this.hitbox_sprites)
 		 	 	{
@@ -2577,7 +1845,6 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 	 	}
 		 	 	 else if(hb.sprite_type=="enemy_hitbox")
 		 	 	 	{
-		 	 	 	  if(!gameManager.player) continue;
 		 	 	 	  if(b_collision(gameManager.player.hit_box,hb))
 		 	 	 	  	hb.causeDamage(gameManager.player);
 		 	 	 	}
@@ -2632,41 +1899,33 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 	 		   	   elem['y']*yscale,
 		 	 	 		   	   elem['width']*xscale,
 		 	 	 		   	   elem['height']*yscale,
-		 	 	 		   	   [this.visible_sprites,this.active_sprites]
+		 	 	 		   	   [this.visible_sprites]
 		 	 	 		   	   );			 	 	 
 		 	 	 else if(elem['sprite'].split('_')[0]=='camstopper')
 		 	 	 	new CameraStopper(elem['x']*xscale,
 		 	 	 		   	   elem['y']*yscale,
 		 	 	 		   	   elem['sprite'],
-		 	 	 		   	   [this.visible_sprites,this.camera_stop_sprites,this.active_sprites]
+		 	 	 		   	   [this.visible_sprites,this.camera_stop_sprites]
 		 	 	 		   	   );
 		 	 	 else if(elem['sprite'].split('_')[0]=='entryexit')
 		 	 	 	new EntryExitPoint(elem['x']*xscale,
 		 	 	 		   	   elem['y']*yscale,
 		 	 	 		   	   elem['sprite'].split('_')[1],
-		 	 	 		   	   [this.visible_sprites,this.entryexit_sprites,this.active_sprites]
+		 	 	 		   	   [this.visible_sprites,this.entryexit_sprites]
 		 	 	 		   	   );
 		 	 	 else if(elem['sprite'].split('_')[0]=='scenechanger')
 		 	 	 	new SceneChanger(elem['x']*xscale,
 		 	 	 		   	   elem['y']*yscale,
 		 	 	 		   	   elem['sprite'].split('_')[1],
-		 	 	 		   	   [this.visible_sprites,this.active_sprites]
+		 	 	 		   	   [this.visible_sprites]
 		 	 	 		   	   );
 		 	 	 else if(elem['sprite']=='husk')		 	 	 	
 		 	 	 	  new Husk(elem['x']*xscale,
 		 	 	 		   	   elem['y']*yscale,
 		 	 	 		   	   elem['width']*xscale,
 		 	 	 		   	   elem['height']*yscale,
-		 	 	 		   	   [this.visible_sprites,this.enemy_sprites,this.active_sprites]
+		 	 	 		   	   [this.visible_sprites,this.enemy_sprites]
 		 	 	 		   	   );
-		 	 	 else if(elem['sprite']=='lance')		 	 	 	
-		 	 	 	  new Lance(elem['x']*xscale,
-		 	 	 		   	   elem['y']*yscale,
-		 	 	 		   	   elem['width']*xscale,
-		 	 	 		   	   elem['height']*yscale,
-		 	 	 		   	   [this.visible_sprites,this.enemy_sprites,this.active_sprites]
-		 	 	 		   	   );
-
 		 	 	}
 		 	 this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');
 		 	 this.camera.tgt=this.camera_stop_sprites[this.sceneForward?0:1];
