@@ -9,11 +9,13 @@ let scenes=[
 				{"sprite":"entryexit_entry","x":-344,"y":464},
 				{"sprite":"entryexit_exit","x":3209,"y":610},
 				{"sprite":"scenechanger_scright","x":3678,"y":572},
-				{"sprite":"lance","x":300,"y":200,"width":250,"height":200}
-				// {"sprite":"husk","x":1714,"y":200,"width":150,"height":200}
+				// {"sprite":"lance","x":300,"y":200,"width":250,"height":200},
+				// {"sprite":"husk","x":1714,"y":200,"width":150,"height":200,"spriteId":"husk1"}
+				{"sprite":"falseknight","x":125,"y":319,"width":368,"height":223},
 			],
 			[
 			    // {"sprite":"player","x":200,"y":200,"width":150,"height":100},
+			    {"sprite":"husk","x":200,"y":500,"width":150,"height":200,"spriteId":"husk2"},
 				{"sprite":"platform","x":200,"y":600,"width":2200,"height":50},				
 				{"sprite":"camstopper_left","x":-115,"y":394},
 				{"sprite":"camstopper_right","x":625,"y":447},
@@ -23,12 +25,12 @@ let scenes=[
 				{"sprite":"scenechanger_scright","x":1275,"y":468}
 			],
 			[
-			    {"sprite":"player","x":200,"y":200,"width":150,"height":100},
+			    // {"sprite":"player","x":200,"y":200,"width":150,"height":100},
 				{"sprite":"platform","x":200,"y":600,"width":2200,"height":50},		
 				{"sprite":"platform","x":2363,"y":1000,"width":2200,"height":50},	
 				{"sprite":"platform","x":3576,"y":1179,"width":250,"height":50},
 				{"sprite":"platform","x":4576,"y":1370,"width":2200,"height":50},	
-				{"sprite":"platform","x":1288,"y":777,"width":250,"height":50},	
+				{"sprite":"platform","x":1288,"y":800,"width":250,"height":50},	
 				{"sprite":"camstopper_left","x":-115,"y":394},
 				{"sprite":"camstopper_right","x":4838,"y":1189},
 				{"sprite":"entryexit_entry","x":-457,"y":464},

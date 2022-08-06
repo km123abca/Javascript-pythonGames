@@ -554,6 +554,10 @@ class HealthBar:
 		self.health-=dmg
 		self.health=0 if self.health < 0 else self.health
 		self.greenBar.width=self.health/self.maxHealth * self.width
+	def enhanceHealth(self,maxHealth):
+		self.redBar.width*=maxHealth/self.maxHealth
+		self.greenBar.width*=maxHealth/self.maxHealth
+		self.maxHealth=maxHealth
 		
 	def update(self,angle,position):
 		self.redBar.update(0,position)
@@ -717,7 +721,9 @@ class Zombie:
 		myrect.centerx=self.position.x-gameManager.camera.position.x
 		myrect.centery=self.position.y-gameManager.camera.position.y
 		win.blit(rotated_image,myrect)
-		self.updateAnimation()
+		if not gameManager.gamePaused:
+			self.updateAnimation()		
+
 		# self.hitBoxSpawn.display()
 		# self.boxCollider.display()
 		
@@ -1001,6 +1007,158 @@ class Zombie:
 
 ##Zombie ends###
 
+#upgrade screen starts
+TEXT_COLOR_SELECTED = '#111111'
+BAR_COLOR = '#EEEEEE'
+BAR_COLOR_SELECTED = '#111111'
+UPGRADE_BG_COLOR_SELECTED = '#EEEEEE'
+WATER_COLOR = '#71ddee'
+WATER_COLOR_TUPLE=(113,221,238)
+UI_BG_COLOR = '#222222'
+UI_BORDER_COLOR = '#111111'
+TEXT_COLOR = '#EEEEEE'
+HEALTH_COLOR = 'red'
+ENERGY_COLOR = 'blue'
+UI_BORDER_COLOR_ACTIVE = 'gold'
+UI_FONT = './fonts/joystix.ttf'
+UI_FONT_SIZE = 18
+
+class UpgradeScreen:
+	def __init__(self):
+		self.display_surface= pygame.display.get_surface()		
+		self.attribute_names=['health','weapondamage']
+		self.attribute_nr = len(self.attribute_names)
+		self.present_values={'health':PLAYER_HEALTH,'weapondamage':PLAYER_WEAPON_DAMAGE}
+		self.max_values = {'health':400,'weapondamage':100}
+		self.upgrade_costs={'health':10,'weapondamage':10}		
+		self.font = pygame.font.Font(UI_FONT,UI_FONT_SIZE)
+		self.height = self.display_surface.get_size()[1] * 0.8
+		self.width =  self.display_surface.get_size()[0] // 6
+		self.item_list= []
+		self.create_items()
+		self.selection_index = 0
+		self.selection_time = None
+		self.can_move = True
+		self.exp=PLAYER_EXPERIENCE
+
+	def create_items(self):
+		for item,index in enumerate(range(self.attribute_nr)):
+			top = self.display_surface.get_size()[1] * 0.1
+			full_width = self.display_surface.get_size()[0]
+			increment = full_width // self.attribute_nr
+			left = (item * increment) + (increment - self.width)//2
+			self.item_list.append(UpgradeItem(left,top,self.width,self.height,index,self.font))
+
+	def handleSelectionRotation(self):
+		if self.selection_index >= self.attribute_nr:
+			self.selection_index = 0
+		if self.selection_index < 0:
+			self.selection_index = self.attribute_nr - 1
+
+	def input(self):
+		keys = pygame.key.get_pressed()
+		if self.can_move:
+			if keys[pygame.K_RIGHT]:
+				self.selection_index+= 1
+				self.can_move = False
+				self.selection_time = pygame.time.get_ticks()
+			elif keys[pygame.K_LEFT]:
+				self.selection_index-=1
+				self.can_move = False
+				self.selection_time = pygame.time.get_ticks()
+			if keys[pygame.K_SPACE]:
+				self.can_move = False
+				self.selection_time = pygame.time.get_ticks()
+				self.item_list[self.selection_index].trigger(self)
+			self.handleSelectionRotation()
+
+	def selection_cooldown(self):
+		if not self.can_move:
+			current_time = pygame.time.get_ticks()
+			if current_time - self.selection_time >= 300:
+				self.can_move=True
+
+	def display(self):		
+		self.input()
+		self.selection_cooldown()
+		self.displayExp()
+		for index,item in enumerate(self.item_list):
+			name = self.attribute_names[index]
+			value = list(self.present_values.values())[index]
+			max_value = list(self.max_values.values())[index]
+			cost = list(self.upgrade_costs.values())[index]
+			item.display(self.display_surface,self.selection_index,name,value,max_value,cost)
+
+	def displayExp(self):
+		color=TEXT_COLOR
+		t =self.display_surface.get_size()[1] * 0.95
+		l =self.display_surface.get_size()[0] * 0.4
+		h =self.display_surface.get_size()[1] * 0.8
+		w =self.display_surface.get_size()[0] // 6
+		rectx= pygame.Rect(l,t,w,h)
+		title_surf = self.font.render("Experience :"+str(self.exp),False,color)
+		title_rect = title_surf.get_rect(midtop=rectx.midtop)
+		self.display_surface.blit(title_surf,title_rect)
+
+class UpgradeItem:
+	def __init__(self,l,t,w,h,index,font):
+		self.rect = pygame.Rect(l,t,w,h)
+		self.index = index
+		self.font = font
+
+	def display_names(self,surface,name,cost,selected):		
+		color= TEXT_COLOR_SELECTED if selected else TEXT_COLOR
+		#title text
+		title_surf = self.font.render(name,False,color)
+		title_rect = title_surf.get_rect(midtop=self.rect.midtop + pygame.math.Vector2(0,20))
+		#cost
+		title_surf2 = self.font.render(str(cost),False,color)
+		title_rect2 = title_surf.get_rect(midbottom=self.rect.midbottom + pygame.math.Vector2(0,-20))
+		#draw
+		surface.blit(title_surf,title_rect)
+		surface.blit(title_surf2,title_rect2)
+
+
+	def display(self,surface,selection_num,name,value,max_value,cost):
+		if self.index == selection_num:
+			pygame.draw.rect(surface,UPGRADE_BG_COLOR_SELECTED,self.rect)
+			pygame.draw.rect(surface,UI_BORDER_COLOR,self.rect,4)
+		else:
+			pygame.draw.rect(surface,UI_BG_COLOR,self.rect)
+			pygame.draw.rect(surface,UI_BORDER_COLOR,self.rect,4)
+		self.display_names(surface,name,value,self.index == selection_num)
+		self.display_bar(surface,value,max_value,self.index == selection_num)
+
+	def display_bar(self,surface,value,max_value,selected):
+		top = self.rect.midtop + pygame.math.Vector2(0,60)
+		bottom = self.rect.midbottom - pygame.math.Vector2(0,60)
+		color = BAR_COLOR_SELECTED if selected else BAR_COLOR
+
+		full_height = bottom[1] - top[1]
+		relative_number = (value/max_value) * full_height
+		value_rect = pygame.Rect(top[0]-15,bottom[1] - relative_number,30,10)
+
+		pygame.draw.line(surface,color,top,bottom,5)
+		pygame.draw.rect(surface,color,value_rect)
+
+	def trigger(self,parentobj):
+		upgrade_attribute =parentobj.attribute_names[self.index]
+		if parentobj.exp >= parentobj.upgrade_costs[upgrade_attribute] and parentobj.present_values[upgrade_attribute] < parentobj.max_values[upgrade_attribute]:
+			parentobj.exp-= parentobj.upgrade_costs[upgrade_attribute]
+			parentobj.present_values[upgrade_attribute]=int(1.2 * parentobj.present_values[upgrade_attribute])
+			gameManager.player.EnhanceParameter(upgrade_attribute,parentobj.present_values[upgrade_attribute])
+			# print(f'{upgrade_attribute} upgrade cost is now {player.upgrade_cost[upgrade_attribute]}')
+			
+
+		if parentobj.present_values[upgrade_attribute] > parentobj.max_values[upgrade_attribute]:
+			parentobj.present_values[upgrade_attribute] = parentobj.max_values[upgrade_attribute]
+		else:
+			parentobj.upgrade_costs[upgrade_attribute]= int(1.4 * parentobj.upgrade_costs[upgrade_attribute])
+
+		# if upgrade_attribute == 'energy':
+		# 	player.energy=player.stats['energy']
+#upgrade screen ends
+
 ####Small Bug Starts #########
 class SmallBug:
 	def __init__(self,x,y,width,height):		
@@ -1121,10 +1279,12 @@ class Player:
 		self.angle=0
 		self.animInQueue=None
 		self.weaponIndex=0		
-		self.maxHealth=100
+		self.maxHealth=PLAYER_HEALTH
 		self.health=self.maxHealth
+		self.weapondamage=PLAYER_WEAPON_DAMAGE
+		self.exp=PLAYER_EXPERIENCE
 		self.meleeRegistered=False
-		self.healthBar=HealthBar(x,y,0,-80*yscale,-40*xscale,200*xscale,10*yscale,self.maxHealth,False)
+		self.healthBar=HealthBar(x,y,0,-80*yscale,-40*xscale,100*xscale,10*yscale,self.maxHealth,False)
 		for i in range(19):
 			imagex=pygame.transform.scale(pygame.image.load(os.path.join('sprites',
 				f'soldier/idle/survivor-idle_handgun_{i}.png')),(self.width,self.height))
@@ -1261,7 +1421,7 @@ class Player:
 		self.flickerCounter=0
 
 		self.healthBarHidden=False
-		self.healthBarClock=0
+		self.healthBarClock=time.time()
 		self.healthBarMaxTime=3
 
 		self.staggerDir=None
@@ -1305,6 +1465,8 @@ class Player:
 		self.action_required="stop" #variable used in lockedmovement to decide whether to move or stop
 		self.delCounter=0
 
+		
+
 	def WaitForReloadTime(self):
 		if time.time()-self.gunStartTime > self.gunMaxTime:
 			self.rifleShots=5
@@ -1316,6 +1478,12 @@ class Player:
 		if time.time()-self.dashStartTime > self.dashTime:
 			self.dashOn=False
 			self.dashStartTime=time.time()
+
+	def EnhanceParameter(self,param,paramVal):
+		if param=='health':
+			self.maxHealth=paramVal
+		elif param=='weapondamage':
+			self.weapondamage=paramVal
 
 
 	def ShowHealthBar(self):
@@ -1840,13 +2008,15 @@ class Player:
 		self.updateAnimation()
 		#self.boxCollider.display(win)
 	def display(self):
+		w2screen(win,'Experience:',100,100)
 		if not self.FlickerManagerCleared():
 			return
 		self.rotatedImage=pygame.transform.rotate(self.images[self.anim][self.frame],-self.angle)
 		myrect=self.rotatedImage.get_rect()
 		myrect.centerx,myrect.centery=self.position.x-gameManager.camera.position.x,self.position.y-gameManager.camera.position.y		
 		win.blit(self.rotatedImage,myrect)
-		self.updateAnimation()		
+		if not gameManager.gamePaused:
+			self.updateAnimation()		
 		# self.updateAndDrawShootPos(win)
 ###########################Player ends#####################################
 
@@ -1905,9 +2075,9 @@ class bullet:
 					SpawnCloudGroup(self.position)
 					shootingSound.play()
 					if gameManager.player.presentWeapon()=="shotgun":						
-						x.TakeDamage(20)
+						x.TakeDamage(gameManager.player.weapondamage*2)
 					else:
-						x.TakeDamage(5)
+						x.TakeDamage(gameManager.player.weapondamage)
 		elif self.bulletType=="enemy":			
 			if not gameManager.player.onScreen or gameManager.player.InvincibleMode:
 				return
@@ -2434,7 +2604,7 @@ class Beetle:
 		return "unknown"
 
 	def display(self):		
-		if self.clearToShowNextImg():
+		if (not gameManager.gamePaused) and self.clearToShowNextImg():
 			self.animFrame+=1
 			if self.animFrame >= len(self.animations[self.anim]):
 				self.animFrame=0
@@ -2635,8 +2805,8 @@ class Beetle:
 ################## Game Manager starts ###################################
 class GameManager:
 	def __init__(self):
-		self.scenesLoaded=[True,True,True,True,False,False,False,False,False]
-		self.scenesReady=[True,True,True,True,True,False,False,False,False]
+		self.scenesLoaded=[False,False,False,False,False,False,False,False,False]
+		self.scenesReady=[True,False,False,False,False,False,False,False,False]
 		self.loadingObjects=False
 		self.loadingType=None
 		self.currentScene=-1
@@ -2657,10 +2827,17 @@ class GameManager:
 		self.allGameObjects=[]		
 		self.comingFromPreviousScene=True
 		self.killedElems={0:[],1:[],2:[],3:[],4:[]}
+		self.gamePaused=False
+		self.upgrade_screen=UpgradeScreen()
 
 		self.camera=Camera()
+
 		self.player=Player(358*xscale,310*yscale,100*xscale,100*yscale)
-		# self.camera.target=self.player
+
+		'''
+		deletable
+		self.camera.target=self.player
+		'''
 		self.focusedOnPlayer=False
 
 		self.pChanger=None
@@ -2671,7 +2848,7 @@ class GameManager:
 		self.gTrigger=False
 		self.indicatorDot=StaticDot(1,1,50,50)
 
-		self.infoScreenLive=False
+		self.infoScreenLive=True
 		self.startGameInstructions=['Press Left and Right Arrows to Turn','Up arrow to move','space to shoot']
 
 		self.counterx=0 #This variable continuosly gets inc each frame and is used to display stuff in long gaps
@@ -2949,25 +3126,32 @@ class GameManager:
 			self.pChanger.update(win)
 		if self.sceneChanging:
 			return 
-		if self.player and self.player.onScreen:		
-			self.player.update()
+
+		if self.player and self.player.onScreen:
+			if not self.gamePaused:		
+				self.player.update()
 			self.player.display()
 
 		for x in self.volatiles:
 			if x.onScreen:
-				x.update()
+				if not self.gamePaused:
+					x.update()
 				x.display()			
 		flushList(self.volatiles)
 		for x in self.nonvolatiles:
 			if x.onScreen:
-				x.update()
+				if not self.gamePaused:
+					x.update()
 				x.display()		
 		
 		flushList(self.enemiesList)	
 		flushList(self.cloudsList)
 		flushList(self.zombiesList)
-		flushList(self.beetlesList)
+		flushList(self.beetlesList)		
 		self.CheckAllStoppers()
+		if gameManager.gamePaused:
+			self.upgrade_screen.display()
+			gameManager.player.ShowHealthBar()
 
 ################## Game Manager ends ###################################
 
@@ -3049,8 +3233,9 @@ FRAME_RATE=30
 WIN_WIDTH,WIN_HEIGHT=1200,700
 # WIN_WIDTH,WIN_HEIGHT=1400,900
 xscale,yscale=WIN_WIDTH/1200,WIN_HEIGHT/700
+PLAYER_HEALTH,PLAYER_WEAPON_DAMAGE,PLAYER_EXPERIENCE=100,10,500
 
-gameManager=GameManager()
+# gameManager=GameManager()
 # global player,pChanger
 # pChanger,player=None,None
 roadBlocksList,wallsList=[],[]
@@ -3058,6 +3243,8 @@ roadBlocksList,wallsList=[],[]
 win=pygame.display.set_mode((WIN_WIDTH,WIN_HEIGHT))
 clock=pygame.time.Clock()
 run=True
+
+gameManager=GameManager()
 while run:
 	clock.tick(FRAME_RATE)
 	for event in pygame.event.get():
@@ -3171,6 +3358,9 @@ while run:
 				EPRESSED= True
 			if event.key == K_r:
 				RPRESSED= True
+
+			if event.key == K_x:
+				gameManager.gamePaused=not gameManager.gamePaused
 
 			if event.key == K_ESCAPE:
 				pygame.quit()

@@ -110,7 +110,7 @@ class Item:
 
 	def trigger(self,player):
 		upgrade_attribute = list(player.stats.keys())[self.index]
-		if player.exp >= player.upgrade_cost[upgrade_attribute] and player.stats[upgrade_attribute] > player.max_stats[upgrade_attribute]:
+		if player.exp >= player.upgrade_cost[upgrade_attribute] and player.stats[upgrade_attribute] < player.max_stats[upgrade_attribute]:
 			player.exp-= player.upgrade_cost[upgrade_attribute]
 			player.stats[upgrade_attribute]=int(1.2 * player.stats[upgrade_attribute])
 			# print(f'{upgrade_attribute} upgrade cost is now {player.upgrade_cost[upgrade_attribute]}')

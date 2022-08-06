@@ -1,0 +1,4420 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Platformer</title>
+	<script src="scenedata.js"></script>
+<script>	
+	let mouseX,mouseY;
+	let spacePress,upPress,rightPress,downPress,leftPress,gPress,fPress,enterPress;
+	let ipress,lpress,mpress,jpress,tpress,hpress,bpress,ppress;
+	let mousePressed;
+
+	// let backGroundColor="#16a1b3";
+	let backGroundColor='#051405';
+	let FPS=60;
+	let deltaTime=1000 / FPS;
+	function trackMouse(e)
+	{
+	mouseX=e.clientX;
+	mouseY=e.clientY;
+	}
+	function showMouse()	
+	{
+		let mx=mouseX+gameManager.camera.position.x;
+		let my=mouseY+gameManager.camera.position.y;
+		mx=mx.toFixed(2);
+		my=my.toFixed(2);
+		w2screen(`${mx},${my}`,canvas.width/2,200);
+	}
+	const w2screen=(strr = "", px = 20, py = 30,fillStyle="#FFFFFF") =>
+    	{
+	      ctx.font = "40px Haettenschweiler";
+	      ctx.fillStyle = fillStyle;
+	      ctx.fillText(strr, px, py);
+    	}
+    class CreateVector
+    	{
+		constructor(x,y)
+			{
+			 this.x=x;
+			 this.y=y;	
+			}		
+		set(x,y)
+			{
+			 this.x=x;
+			 this.y=y;
+			 return this;
+			}
+		setVec(vec)
+			{
+			 this.x=vec.x;
+			 this.y=vec.y;			 
+			}
+		mag()
+			{
+			 return Math.sqrt(this.x**2+this.y**2);
+			}
+		add(vec)
+			{
+			this.x+=vec.x;
+			this.y+=vec.y;
+			return this;
+			}
+		sub(vec)
+			{
+			this.x-=vec.x;
+			this.y-=vec.y;
+			return this;
+			}
+		mult(num)
+			{
+			this.x*=num;
+			this.y*=num;
+			return this;
+			}
+		div(num)
+			{
+			if(num==0)
+				{
+				 alert("div by 0:!!!");
+				 return new CreateVector(0,0);
+				}
+			this.x/=num;
+			this.y/=num;
+			return this;
+			}
+		normalize()
+			{
+			let mag=this.mag();
+			if(mag==0) return this;
+			this.x/=mag;
+			this.y/=mag;
+			return this;
+			}
+		normalized()
+			{
+			 return this.copy().normalize();
+			}
+		copy()
+			{
+			let copyVec=new CreateVector(this.x,this.y);
+			return copyVec;
+			}
+		equals(vec)
+			{
+			 return this.x==vec.x && this.y==vec.y;
+			}
+		desc()
+			{
+			return `Vector:${this.x},${this.y}`
+			}
+		heading()
+			{
+			let angx=Math.atan2(this.y,this.x)/Math.PI*180;
+			return angx<0?angx+360:angx;
+			}
+		pointToAngle(angle)
+			{
+			let mag=this.mag();
+			this.x=mag*Math.cos(angle/180*Math.PI);
+			this.y=mag*Math.sin(angle/180*Math.PI);			
+			return this;
+			}
+		rotateByAngle(delta)
+			{
+			let ang=this.heading();
+			return this.pointToAngle(ang+delta);
+			}
+		dot(vec)
+			{
+			return this.x*vec.x+this.y*vec.y;
+			}		
+    	}
+
+    function PointInsideObject(objToCheck,pt)
+    	{
+    	if (pt.x >= objToCheck.position.x-objToCheck.width/2 && pt.x <= objToCheck.position.x+objToCheck.width/2)
+		if (pt.y >= objToCheck.position.y-objToCheck.height/2 && pt.y <= objToCheck.position.y+objToCheck.height/2)
+			return true
+		return false
+    	}
+    function Raycast(originx,direction,lenx,objToCheck)
+    	{
+		//graphic		 	 
+	 	 Draw_a_line(originx.copy().add(new CreateVector(0,0)),
+	 	 	 		 originx.copy().add(new CreateVector(0,0)).add(direction.copy().mult(lenx))
+	 	 	 		);	 	 
+	 	//graphic
+
+		let origin=originx.copy();
+		let destin=originx.copy().add(direction.copy().mult(lenx));	
+		let deltaz=2*xscale
+		let startLen=0
+
+		while (startLen < lenx)
+			{
+			if (PointInsideObject(objToCheck,origin.add(direction.copy().mult(deltaz))) )
+				return true
+			startLen+=deltaz
+			}
+		return false
+		}
+    function RaycastAll(originx,direction,lenx,arrOfArrObjs,arrAvoid)
+    	{
+    	
+		//graphic		 	 
+	 	 Draw_a_line(originx.copy().add(new CreateVector(0,0)),
+	 	 	 		 originx.copy().add(new CreateVector(0,0)).add(direction.copy().mult(lenx))
+	 	 	 		);	 	 
+	 	//graphic
+
+		let origin=originx.copy();
+		let destin=originx.copy().add(direction.copy().mult(lenx));	
+		let deltaz=2*xscale
+		let startLen=0
+			
+
+		while (startLen < lenx)
+			{
+			for(let objxArr of arrOfArrObjs)
+				for(let objToCheck of objxArr)
+				{
+				 let skipFlag=false;
+				 for(let avoidObj of arrAvoid)
+				 	{				 	
+				 	if(avoidObj==objToCheck)
+				 		{
+				 		skipFlag=true;
+				 		break;	
+				 		}
+				 	}
+				 if (skipFlag) continue;
+
+				 if (PointInsideObject(objToCheck,origin.add(direction.copy().mult(deltaz))) )
+				 	{
+				 	 console.log('reporting hit inside '+objToCheck.sprite_type);
+				     return true;
+					}
+				}
+			startLen+=deltaz;
+			}
+		return false
+		}
+	//collision check algorithm starts
+	function b_collision(obj1,obj2)
+		{
+		 let cornerPoints1=[obj1.position.copy().add(new CreateVector(-obj1.width/2,-obj1.height/2)),
+		 				   obj1.position.copy().add(new CreateVector(-obj1.width/2, obj1.height/2)),
+		 				   obj1.position.copy().add(new CreateVector( obj1.width/2,-obj1.height/2)),
+		 				   obj1.position.copy().add(new CreateVector( obj1.width/2, obj1.height/2))
+		 				  ];
+ 		 let cornerPoints2=[obj2.position.copy().add(new CreateVector(-obj2.width/2,-obj2.height/2)),
+		 				    obj2.position.copy().add(new CreateVector(-obj2.width/2, obj2.height/2)),
+		 				    obj2.position.copy().add(new CreateVector( obj2.width/2,-obj2.height/2)),
+		 				    obj2.position.copy().add(new CreateVector( obj2.width/2, obj2.height/2))
+		 				  ];
+		 cornerPoints1=cornerPoints1.map(x=>obj1.position.copy().add(x.copy().sub(obj1.position).rotateByAngle(obj1.angle)) );
+		 cornerPoints2=cornerPoints2.map(x=>obj2.position.copy().add(x.copy().sub(obj2.position).rotateByAngle(obj2.angle)) );
+		 return ArePointsInside(cornerPoints1,obj2)||ArePointsInside(cornerPoints2,obj1);
+		}
+	function ArePointsInside(pts,obj2)
+		{
+		let ptsy=pts.map(x=>GetRAVec(x,obj2.angle));
+		let objx={position:GetRAVec(obj2.position,obj2.angle),width:obj2.width,height:obj2.height};
+		for(let pt of ptsy)
+			{
+			 if(PointInsideObject(objx,pt)) return true;
+			}
+		return false;
+		}
+	//collision check algorithm ends
+	//simple box collsion check
+	function collisioncheckzVec(elem1,elem2)
+				{
+			return (inter_ects(elem1.position.x-elem1.width/2,elem1.position.y-elem1.height/2,
+							   elem1.width,elem1.height,
+					   		   elem2.position.x-elem2.width/2,elem2.position.y-elem2.height/2,
+					   		   elem2.width,elem2.height
+					  		  )
+				   );
+				}
+	function circularCollision(elem1,elem2)
+		{
+			let centerSeperation=elem1.position.copy();
+			centerSeperation.sub(elem2.position);
+			centerSeperation=centerSeperation.mag();
+			return centerSeperation < elem1.width/2+elem2.width/2;
+		}
+	function inter_ects(q1,q2,ql1,ql2,w1,w2,wl1,wl2)
+				{
+				if(w1>=q1)
+					{
+					if((w1-q1)<ql1)
+						{
+						if(w2>=q2)
+							{
+							if((w2-q2)<ql2) return true;
+							return false;
+							}
+						else
+							{
+							if((q2-w2)<wl2) return true;
+							return false;
+							}
+						}
+					}
+				else
+					{
+					if((q1-w1)<wl1)
+						{
+						if(w2>=q2)
+							{
+							if((w2-q2)<ql2) return true;
+							return false;
+							}
+						else
+							{
+							if((q2-w2)<wl2) return true;
+							return false;
+							}
+						}
+					}
+				}
+	//simple box collision check ends
+	function GetRAVec(a,angle)
+		{
+			let t=d2r(angle);
+			let xval= a.x * Math.cos(t)+a.y * Math.sin(t);
+			let yval=-a.x * Math.sin(t)+a.y * Math.cos(t);
+			return new CreateVector(xval,yval);
+		}
+	function GetrRAVec(a,angle)
+		{
+			let t=d2r(angle);
+			let xval= a.x * Math.cos(t)-a.y * Math.sin(t);
+			let yval= a.x * Math.sin(t)+a.y * Math.cos(t);
+			return new CreateVector(xval,yval);
+		}
+	function d2r(ang)
+		{
+		return ang/180*Math.PI;
+		}
+	function r2d(ang)
+		{
+		return ang/Math.PI*180;
+		}
+	function Lerp(startValue,endValue,LerpFac)
+		{
+		return startValue+(endValue-startValue)/LerpFac;
+		}
+    function AngleLerp(startValue,endValue,lerpFac)
+    	{
+    	// console.log('received start:'+startValue);
+    	// console.log('received end:'+endValue);
+    	if (Math.abs(endValue - startValue) < SepFrom360(startValue) + SepFrom360(endValue))
+    		return startValue+(endValue-startValue)/lerpFac	
+    	return CloseAngleDistance360(startValue,(SepFrom360(startValue)+SepFrom360(endValue))/lerpFac )
+    	}
+	function SepFrom360(angle)
+		{
+		if (angle < 180)
+			return angle
+		return 360 - angle
+		}
+	function CloseAngleDistance360(startAngle,delta)
+		{
+		if (startAngle < 180)
+			{
+			if (startAngle > delta)
+				return startAngle - delta;
+			return 360 - (delta - startAngle);
+			}
+		else
+			{
+			 if (360 - startAngle > delta)
+			 	return startAngle + delta;
+			 return delta - (360 - startAngle);
+			}
+		}
+	function LoadImages(folderPath,imageNames)
+		{
+		let result=[];
+		for(let imgx of imageNames)
+			{
+			let createdImage=new Image();
+			// console.log('./'+folderPath+'/'+imgx);
+			try
+				{
+				createdImage.src='./'+folderPath+'/'+imgx;
+				}
+			catch(err)
+				{
+				console.log(err);				
+				}
+			result.push(createdImage);
+			}
+		return result;
+		}
+	function LoadImagex(folderPath,imageName)
+		{
+			let createdImage= new Image();
+			createdImage.src='./'+folderPath+'/'+imageName;
+			return createdImage;
+		}
+
+	
+	let tempTimer=0;
+	function DisplayInGaps(strx)
+		{
+		 if(gameManager.runningClock - tempTimer > 2000)
+		 	{
+		 	  tempTimer=gameManager.runningClock;
+		 	  console.log(strx);
+		    }
+		}
+
+	function Draw_a_line(startPos,endPos,color='#FF0000')
+		{
+		ctx.strokeStyle=color;
+		ctx.beginPath();
+		ctx.moveTo(startPos.x - gameManager.camera.position.x,startPos.y - gameManager.camera.position.y);
+		ctx.lineTo(endPos.x - gameManager.camera.position.x,endPos.y - gameManager.camera.position.y);
+		ctx.stroke();
+		}
+
+	function destroySelf(objx)
+		{
+		 
+		 for(let i in objx.spriteGroups)
+		 {		  
+	 	  for(let j in objx.spriteGroups[i])
+	 		{
+
+	 		 if(objx.spriteGroups[i][j]==objx)
+	 		 	{
+	 		 	  objx.spriteGroups[i].splice(j,1);
+	 		 	  break;
+	 		 	}	
+	 		}
+		 }
+		 
+		}
+	
+let BLACKCLOUD= LoadImagex('sprites','cloud-1dark.png');
+let WHITECLOUD= LoadImagex('sprites','cloud-1.png');
+let THORNYBALL = LoadImagex('sprites','Thornyball.png');
+    
+</script>
+</head>
+<body style='background-color:black;'>
+<canvas style='border:3px solid black;' onmousemove="trackMouse(event)">
+<!--audio list-->
+	<audio id="backgroundMusic" onended="resetMusicVar()">
+		<source src="./sounds/techno_bg_music.mp3" type="audio/mpeg">
+	</audio>
+	<audio id="fogGate" >
+		<source src="./sounds/fogGate.wav" type="audio/mpeg">
+	</audio>
+	<audio id="GetCoin" >
+		<source src="./sounds/GetCoin.wav" type="audio/mpeg">
+	</audio>
+	<audio id="GoalBloop" >
+		<source src="./sounds/GoalBloop.wav" type="audio/mpeg">
+	</audio>
+	<audio id="HitPaddleBloop" >
+		<source src="./sounds/HitPaddleBloop.wav" type="audio/mpeg">
+	</audio>
+	<audio id="Jump" >
+		<source src="./sounds/Jump.wav" type="audio/mpeg">
+	</audio> 
+	<audio id="RockSmash" >
+		<source src="./sounds/RockSmash.wav" type="audio/mpeg">
+	</audio>
+	<audio id="LossBuzz" >
+		<source src="./sounds/LossBuzz.wav" type="audio/mpeg">
+	</audio>
+	<audio id="whoosh" >
+		<source src="./sounds/whoosh.wav" type="audio/mpeg">
+	</audio>
+<!--audio list ends-->
+<script>
+	var canvas = document.querySelector('canvas');
+	//music starts
+	var bgMusic= document.querySelector('#backgroundMusic');
+	var fogGateSound= document.querySelector('#fogGate');
+
+	let musicStarted=false;
+	var startMusic=()=>{
+						if(!musicStarted)
+							{
+							 musicStarted=true;
+							 //bgMusic.play();
+							}	
+						};
+	var resetMusicVar=()=>{
+		musicStarted=false;
+		startMusic();
+	}
+	//music ends
+	
+   	ctx = canvas.getContext('2d');
+   	canvas.width = window.innerWidth-35;
+  	canvas.height = window.innerHeight-100;
+  	let xscale=canvas.width/1273;
+    let yscale=canvas.height/873;
+    var resize = function () 
+		{
+		canvas.width = window.innerWidth-35;
+		canvas.height = window.innerHeight-100;
+		};
+
+	window.addEventListener('resize', resize);
+	//keypresses start
+    let upArrow=false,leftArrow=false,rightArrow=false,downArrow=false;
+    let keysPressed=new Set();
+    CapturePressedKey=(keyCode,pressed=true)=>{
+    	if(!((keyCode>64 && keyCode<91)||(keyCode > 96 && keyCode < 123))) return false;
+    	let charx=String.fromCharCode(keyCode);
+    	let charx2=String.fromCharCode(keyCode+32);
+    	/*
+    	if(pressed)
+    	{
+    		console.log(charx+' about to be inserted');
+    	}
+    	else
+    	{
+    		console.log(charx+' and '+charx2+' about to be popped');
+    	}*/
+    	if(pressed && !keysPressed.has(charx))    		
+    		keysPressed.add(charx);
+    	else if(!pressed)
+    	    {
+    	     keysPressed.delete(charx);
+    	     keysPressed.delete(charx2);
+    	    }
+
+    }
+
+    GetKeyPressedx=(x)=>{
+    	return keysPressed.has(x)||keysPressed.has(x.toUpperCase());
+    }
+
+
+	document.onkeydown=function(e)
+	                 {
+	                 	// console.log(e.keyCode);
+	                 	// CapturePressedKey(e.keyCode);
+	                 	startMusic();
+	                 	if(e.keyCode==37) leftArrow=true;
+	                 	if(e.keyCode==38) upArrow=true;
+	                 	if(e.keyCode==39) rightArrow=true;
+	                 	if(e.keyCode==40) downArrow=true;
+	                 }
+
+	document.onkeypress=function (e)
+					{
+					// console.log(e.keyCode);	
+					CapturePressedKey(e.keyCode);		
+					if(e.keyCode==32) spacePress=true;
+					if(e.keyCode==119) upPress=true;
+					if(e.keyCode==100) rightPress=true;
+					if(e.keyCode==115) downPress=true;
+					if(e.keyCode==97) leftPress=true;
+					if(e.keyCode==103) gPress=true;
+					if(e.keyCode==102) fPress=true;
+					if(e.keyCode==13)  enterPress=true;	
+
+					if(e.keyCode==105) ipress=true;	
+					if(e.keyCode==108) lpress=true;	
+					if(e.keyCode==109) mpress=true;		
+					if(e.keyCode==106) jpress=true;
+
+					if(e.keyCode==116) tpress=true;	
+					if(e.keyCode==104) hpress=true;	
+					if(e.keyCode==98) bpress=true;	
+
+					if(e.keyCode==112)
+									{
+									gameManager.gamePaused=!gameManager.gamePaused; 
+									ppress=true;
+									}	
+					};
+	document.onkeyup=function (e)
+					{	
+					// console.log(e.keyCode);
+					CapturePressedKey(e.keyCode,false);
+					if(e.keyCode==32) spacePress=false;					
+					if(e.keyCode==87) upPress=false;
+					if(e.keyCode==68) rightPress=false;
+					if(e.keyCode==83) downPress=false;
+					if(e.keyCode==65) leftPress=false;
+					if(e.keyCode==71) gPress=false;
+					if(e.keyCode==70) fPress=false;
+					if(e.keyCode==13)  enterPress=false;
+
+					if(e.keyCode==73) ipress=false;
+					if(e.keyCode==76) lpress=false;
+					if(e.keyCode==77) mpress=false;
+					if(e.keyCode==74) jpress=false;
+
+					if(e.keyCode==84) tpress=false;
+					if(e.keyCode==72) hpress=false;
+					if(e.keyCode==66) bpress=false;
+
+					if(e.keyCode==80) ppress=false;
+
+					if(e.keyCode==37) leftArrow=false;
+                 	if(e.keyCode==38) upArrow=false;
+                 	if(e.keyCode==39) rightArrow=false;
+                 	if(e.keyCode==40) downArrow=false;
+					};
+	document.onmousedown=function(e)
+					{
+					mousePressed=true;													
+					};	
+	document.onmouseup=function(e)
+					{
+					mousePressed=false;												
+					};
+	//keypresses end
+
+	let checkVar=true;
+	//Game Classes Start
+
+	class IndicatorObjs
+		{
+		constructor(x,y,colorx,spriteGroups)
+			{
+			 this.position=new CreateVector(x,y);
+			 this.angle=0;
+			 this.colorx=colorx;
+			 this.rad=20*xscale;
+			 for(let grp of spriteGroups)
+			 	grp.push(this);
+			 this.onScreen=true;
+			 this.width=111;
+			 this.height=111;
+			}
+		display()
+			{	
+			if(!this.onScreen) return false; 				
+			ctx.save();			
+			ctx.translate(this.position.x - gameManager.camera.position.x,this.position.y - gameManager.camera.position.y);	
+			ctx.fillStyle=this.colorx;
+			ctx.strokeStyle=this.colorx;				
+			ctx.beginPath();
+			ctx.arc(0,0,this.rad,0,2*Math.PI);
+			ctx.fill();
+			ctx.stroke();
+			ctx.restore();
+			}
+		}
+	//start of dummy point
+	class MarkedSpot extends IndicatorObjs
+		{
+		constructor(x,y,sprite_type,spriteGroups)
+			{
+			  super(x,y,'#0000FF',spriteGroups);
+			  this.sprite_type=sprite_type;
+			}
+		 update()
+		  {	
+		  	return false;
+		  }
+		}
+	//end of dummy point
+
+	class SceneChanger extends IndicatorObjs
+		{
+		constructor(x,y,sprite_type,spriteGroups)
+			{
+			  super(x,y,'#00FFFF',spriteGroups);
+			  this.sprite_type=sprite_type;
+			  this.width=50*xscale;
+			  this.height=200*yscale;
+			  this.cornerPts=[[-1,-1],[1,-1],[1,1],[-1,1]];
+			  this.cornerPts=this.cornerPts.map(x=>[x[0]*this.width/2,x[1]*this.height/2]);
+			  
+			}
+		update()
+			{			
+			 if(!gameManager.player) return false; 
+			 if(!gameManager.inTransition && b_collision(this,gameManager.player))
+			 	{			 	  
+			 	  gameManager.changeScene(this.sprite_type);
+			 	}
+			}
+		display()
+			{			
+			if(!this.onScreen)
+				return false;
+			ctx.save();
+            ctx.translate(this.position.x - gameManager.camera.position.x,this.position.y - gameManager.camera.position.y);                          
+            ctx.fillStyle=this.colorx;
+            ctx.strokeStyle=this.colorx;
+            ctx.beginPath();
+            ctx.moveTo(this.cornerPts[0][0],this.cornerPts[0][1]);
+            for(var g=1;g<this.cornerPts.length;g++)
+                ctx.lineTo(this.cornerPts[g][0],this.cornerPts[g][1]);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();               
+            ctx.restore();
+			}
+		}
+	class EntryExitPoint extends IndicatorObjs
+		{
+		constructor(x,y,sprite_type,spriteGroups)
+			{
+			  super(x,y,'#0000FF',spriteGroups);
+			  this.sprite_type=sprite_type;
+			}
+		 update()
+		  {	
+		  	return false;
+		  	/*
+		  	if(gameManager.camera.tgt==this)
+		  	{		  	 
+		  	 switch(this.sprite_type)
+		  	 	{
+		  	 	 case 'entry':
+		  	 	 	if(gameManager.player.position.x > this.position.x)
+		  	 	 		gameManager.camera.tgt=gameManager.player;
+		  	 	 		break;
+		  	 	 case 'exit':
+		  	 	 	if(gameManager.player.position.x < this.position.x)
+		  	 	 		gameManager.camera.tgt=gameManager.player;
+		  	 	 		break;
+		  	 	}
+		  	}
+		  	*/
+
+		  }
+		}
+
+	class CameraStopper extends IndicatorObjs
+		{
+		constructor(x,y,sprite_type,spriteGroups)
+		  {
+		  	super(x,y,'#00FF00',spriteGroups);
+		  	this.sprite_type=sprite_type;
+		  }
+		cameraCanFollow(objx)
+		  {
+		    if((this.sprite_type=='camstopper_left' && objx.position.x < this.position.x) ||
+		       (this.sprite_type=='camstopper_right' && objx.position.x > this.position.x)
+		      )
+		    	return [false,true];
+		    if((this.sprite_type=='camstopper_top' && objx.position.y < this.position.y) ||
+		       (this.sprite_type=='camstopper_bottom' && objx.position.y > this.position.y)
+		      )
+		    	return [true,false];
+		    return [true,true];
+		  }
+		 update()
+		  {		
+		  if(!gameManager.player) return false;  
+		  if(gameManager.camera.tgt==this)
+		  	{		  	 
+		  	 switch(this.sprite_type)
+		  	 	{
+		  	 	 case 'camstopper_left':
+		  	 	 	if(gameManager.player.position.x > this.position.x)
+		  	 	 		gameManager.camera.tgt=gameManager.player;
+		  	 	 		break;
+		  	 	 case 'camstopper_right':
+		  	 	 	if(gameManager.player.position.x < this.position.x)
+		  	 	 		gameManager.camera.tgt=gameManager.player;
+		  	 	 		break;
+		  	 	}
+		  	}
+		  }
+		}
+
+
+	//positionAdjuster start
+	class PositionAdjuster
+		{
+		constructor(obj,spriteGroups)
+			{
+			 this.obj=obj;
+			 this.sprite_type="pos_adjuster";
+			 this.onScreen=true;
+			 this.rad=50*xscale;
+			 this.moveSpeed=0;
+			 this.moveSpeedMax=200*xscale;
+			 this.shapeSpeed=0;
+			 this.shapeSpeedMax=50;
+			 this.objIndex=0;
+			 this.last_gpress_time=0;	 
+			 for(let grp of spriteGroups)
+			 	{
+			 	 grp.push(this);
+			 	}
+			}
+		changeObject(obj)
+			{
+			 this.obj=obj;
+			}
+		display()
+			{	
+			if(!this.obj) return false;		 				
+			ctx.save();			
+			ctx.translate(this.obj.position.x - gameManager.camera.position.x,this.obj.position.y - gameManager.camera.position.y);	
+			ctx.fillStyle='#FFFF00';
+			ctx.strokeStyle='#FF0000';				
+			ctx.beginPath();
+			ctx.arc(0,0,this.rad,0,2*Math.PI);
+			ctx.fill();
+			ctx.stroke();
+			ctx.restore();
+			}
+		update()
+			{
+			 this.attractFocus();
+			 if(!this.obj) return false;
+			 this.adjustObjPosition();
+			 this.adjustObjShape();			 	
+			 this.showData();		 
+			}
+
+		showData()
+			{
+			 if(!this.obj) return false;
+			 w2screen(`sprite:${this.obj.sprite_type}`,300,100);
+			 w2screen(`x:${(this.obj.position.x/xscale).toFixed(0)},y:${(this.obj.position.y/yscale).toFixed(0)}`,300,150);
+			 w2screen(`width:${(this.obj.width/xscale).toFixed(0)},height:${(this.obj.height/yscale).toFixed(0)}`,300,200);
+			}	
+		attractFocus()
+			{
+			if(gPress)
+				{
+				  
+				  if(gameManager.runningClock - this.last_gpress_time > 250)
+				  	{
+				  	  this.last_gpress_time=gameManager.runningClock;
+				  	  this.objIndex+=1;
+				  	  if(this.objIndex >= gameManager.visible_sprites.length) this.objIndex=0;
+				  	  if(gameManager.visible_sprites[this.objIndex]==this)
+				  	  	this.objIndex+=1;
+				  	  this.changeObject(gameManager.visible_sprites[this.objIndex]);
+				  	}
+				}
+			}
+		adjustObjPosition()
+			{
+			 if(ipress || jpress || mpress || lpress) 
+			 	this.moveSpeed=Lerp(this.moveSpeed,this.moveSpeedMax,16);
+			 else
+			 	this.moveSpeed=0;
+			 if(ipress)		 				 	 
+			 	this.obj.position.y=this.obj.position.y - this.moveSpeed;
+			 else if(mpress)
+			 	this.obj.position.y=this.obj.position.y + this.moveSpeed;
+
+			 if(lpress)
+			 	this.obj.position.x=this.obj.position.x + this.moveSpeed;
+			 else if(jpress)
+			 	this.obj.position.x=this.obj.position.x - this.moveSpeed;
+			}
+
+		adjustObjShape()
+			{
+			 if(tpress || hpress || bpress || fPress) 
+			 	this.moveSpeed=Lerp(this.moveSpeed,this.moveSpeedMax,16);
+			 else
+			 	this.moveSpeed=0;
+			 if(tpress)		 				 	 
+			 	this.obj.height=this.obj.height - this.moveSpeed;
+			 else if(bpress)
+			 	this.obj.height=this.obj.height + this.moveSpeed;
+
+			 if(hpress)
+			 	this.obj.width=this.obj.width + this.moveSpeed;
+			 else if(fPress)
+			 	this.obj.width=this.obj.width - this.moveSpeed;
+			}
+
+		}
+	//positionAdjuster ends
+
+	class Platform
+		{
+		 constructor(x,y,width,height,spriteGroups)
+		 	{
+		 	 // console.log(`platform with width:${width} loaded`);
+		 	 this.position=new CreateVector(x,y);
+		 	 this.width=width;
+		 	 this.height=height;
+		 	 this.angle=0;
+		 	 let imgx=new Image();
+		 	 imgx.src=`./sprites/Pipes/pipeHori.png`;
+		 	 this.animations={'idle':[imgx]};
+		 	 this.animation='idle';
+		 	 this.animationFrame=0;
+		 	 this.mc=false;
+		 	 this.onScreen=true;
+		 	 this.sprite_type='platform';
+		 	 for(let grp of spriteGroups)
+		 	 	grp.push(this);
+
+		 	}
+		 update()
+		 	{
+		 	 //this.runAnimation();
+		 	 // console.log(`${this.sprite_type+this.width} updating`);
+		 	 // this.manualControls();
+		 	 return false;
+		 	}
+		 display()
+		 	{
+		 	 if(!this.onScreen) return false;
+
+		 	 ctx.save();
+		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
+		 	 	 		   this.position.y-gameManager.camera.position.y);
+		 	 ctx.rotate(d2r(this.angle));
+		 	 ctx.drawImage(this.animations[this.animation][this.animationFrame],
+		 	 			   -this.width/2,
+		 	 			   -this.height/2,
+		 	 			   this.width,
+		 	 			   this.height
+		 	 			  );
+		 	 ctx.restore(); 
+		 	}
+		  	manualControls()
+		  		{
+		  		if(upPress) this.position.y-=5;
+		  		if(downPress) this.position.y+=5;
+		  		if(leftPress) this.position.x-=5;
+		  		if(rightPress) this.position.x+=5;
+
+		  		if(gPress) this.angle+=1;
+		  		if(fPress) this.angle-=1;
+		  		// this.checkCollisions();
+		  		}
+		  	checkCollisions()
+		  		{
+		  		 for(let sp of gameManager.visible_sprites)
+		  		 	{		
+		  		 	if(sp==this || sp.sprite_type=="pos_adjuster") continue;
+		  		 	// console.log(sp.sprite_type);  		 	
+		  		 	if(checkVar)
+			  		 	{
+			  		 	try
+				  		 	{
+				  		 	if(b_collision(this,sp))
+				  		 		{
+				  		 		 console.log('collision');
+				  		 		} 
+				  		 	}
+				  		 catch(err)
+				  		 	{
+				  		 		checkVar=false;
+				  		 		console.log(err);
+				  		 	}
+			  		 	}
+		  		 	}
+		  		}		 
+		}
+
+	class HitBox
+		{
+		 constructor(x,y,wid,hei,spriteGroups,hitboxName="unknown hitbox")
+		 	{
+		 	 this.position= new CreateVector(x,y);
+		 	 this.width = wid;
+			 this.height= hei;
+			 this.onScreen=true;
+			 this.sprite_type=hitboxName;
+			 this.angle=0;
+			 this.spriteGroups=spriteGroups;
+			 for(let grp of spriteGroups)
+			 	grp.push(this);
+		 	}
+		 update()
+		 	{
+		 	 return true;
+		 	}
+		 updatePosition(pos)
+		 	{
+		 	 if(!this.position.equals(pos))
+		 	 	this.position.setVec(pos);		
+		 	}
+		 display()
+		 	{		 	 
+		 	 if(!this.onScreen) return false;
+		 	 ctx.save();
+		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
+		 	 	 		   this.position.y-gameManager.camera.position.y);
+		 	 ctx.rotate(d2r(this.angle));
+		 	 // ctx.scale(this.sx,this.sy);
+		 	 ctx.fillStyle='#b3ffff';
+		 	 ctx.strokeStyle='#00FF00';
+		 	 ctx.beginPath();
+		 	 ctx.rect(-this.width/2,-this.height/2,this.width,this.height);
+		 	 ctx.stroke();
+		 	 ctx.fill();		 	 
+		 	 ctx.restore();
+		 	}
+
+		}
+
+
+
+	class DamageHitBox extends HitBox
+		{
+		constructor(x,y,wid,hei,spriteGroups,hitboxName="unknown hitbox",parentx,xoffset,yoffset,dmg=10,dmghitback=0,life=50)
+			{
+			super(x,y,wid,hei,spriteGroups,hitboxName);
+			this.spriteGroups=spriteGroups;
+			this.startTime= gameManager.runningClock;
+			this.parentx=parentx;
+			this.offset=new CreateVector(xoffset,yoffset);
+			this.dmg=dmg;
+			this.hitback=dmghitback;
+			this.life=life;
+			}
+		causeDamage(go)
+			{
+			  go.takeDamage(this.dmg,this.hitback);
+			  if(this.parentx.hitBoxMadeContact)
+			  	{
+			  	 this.parentx.hitBoxMadeContact("lanceSpear");
+			  	}
+			  this.destroySelf();
+			}
+		update()
+			{
+			 if(gameManager.runningClock - this.startTime > this.life)
+			 	this.destroySelf();
+			 this.updatePosition();
+			}
+		updatePosition()
+			{			 
+			 let offset=this.offset.copy();
+			 offset.x*=this.parentx.sx;
+			 offset.y*=this.parentx.sy;
+			 super.updatePosition(this.parentx.position.copy().add(offset));
+			}
+		destroySelf()
+			{
+			 for(let i in this.spriteGroups)
+			 {
+		 	for(let j in this.spriteGroups[i])
+		 		{
+		 		 if(this.spriteGroups[i][j]==this)
+		 		 	{		 		 	  
+		 		 	  this.spriteGroups[i].splice(j,1);
+		 		 	  break;
+		 		 	}	
+		 		}
+			 }
+			}
+		}
+
+	function SpawnClouds(pos,n=60)
+		{
+		 for(let i=0;i<n;i++)
+		 	new CloudBurst(pos.x,pos.y,[gameManager.visible_sprites,gameManager.active_sprites]);
+		}
+
+	class CloudBurst
+		{
+		 constructor(x,y,spriteGroups)
+		 	{
+		 	 this.position = new CreateVector(x,y);
+		 	 this.width= 15 * xscale;
+		 	 this.height= 15 * yscale;
+		 	 this.imagex= WHITECLOUD;
+		 	 this.onScreen=true;
+		 	 this.isActive=true;
+		 	 this.spriteGroups=spriteGroups;
+		 	 for(let grp of spriteGroups)
+			 	grp.push(this);
+			 this.angle=0;	
+			 this.birthTime=gameManager.runningClock;	
+			 this.maxLife=1500;	
+			 this.velocity=new CreateVector((Math.random()-0.5)*4,(Math.random()-0.5)*4);
+
+		 	}
+		 display()
+		 	{
+			if(!this.onScreen) return false; 				
+			ctx.save();			
+			ctx.translate(this.position.x - gameManager.camera.position.x,this.position.y - gameManager.camera.position.y);	
+			ctx.drawImage(this.imagex,-this.width/2,-this.height/2,this.width,this.height);
+			ctx.restore();
+		 	}
+		 update()
+		 	{
+		 	 this.move();
+		 	 if(gameManager.runningClock - this.birthTime > this.maxLife)
+		 	 	{
+		 	 	 destroySelf(this);
+		 	 	}		 	 
+		 	}
+		 move()
+		 	{
+		 	 this.position.add(this.velocity);
+		 	}
+		}
+
+	class ThornyBall
+		{
+		 constructor(x,y,wid,hei,parentx,offsetx,offsety,spriteGroups,horiVel=14)
+			{			 
+			 this.sprite_type='thornyball';
+			 this.position= new CreateVector(x,y);
+			 this.offsetpos=new CreateVector(parentx.sx*offsetx,parentx.sy*offsety);
+			 this.position.add(this.offsetpos);
+			 this.parentx=parentx;
+			 this.width = wid * xscale;
+			 this.height = hei * yscale;
+			 this.onScreen=true;
+			 this.isActive=true;
+			 this.angle=0;
+			 this.rotAngle=0;
+			 this.imagex=THORNYBALL;
+			 if(!parentx)	
+			 	this.velocity=new CreateVector(0,0);
+			 else		 
+			 	this.velocity=new CreateVector(parentx.sx*horiVel*xscale,0);
+			 this.gravityScale=2*yscale;
+			 this.maxVelocity=new CreateVector(horiVel*xscale,12*yscale);
+			 this.spriteGroups=spriteGroups;
+			 this.acceleration=new CreateVector(0,0);
+			 for(let x of this.spriteGroups)
+			 	x.push(this);
+ 		 	 this.hit_box=new HitBox(this.position.x,this.position.y,this.width*0.5,this.height*0.5,
+		 	                         [ //gameManager.collission_sprites,
+		 	                          // gameManager.visible_sprites
+		 	                         ],
+		 	                         'tballhitbox');
+            this.birthTime=gameManager.runningClock;
+            this.lifeTime=3000;
+			}
+		 mindHealth()
+		 	{
+		 	 if(gameManager.runningClock - this.birthTime > this.lifeTime)
+		 	 	 {
+		 	 	 SpawnClouds(this.position);
+		 	  	 destroySelf(this.hit_box);
+		 	  	 destroySelf(this);
+		 	 	 }
+		 	}
+		 update_and_display_hitbox()
+		 	{	 		
+	 		this.position.setVec(this.hit_box.position);
+		 	}
+		 display()
+		 	{		 	 
+		 	 if(!this.onScreen) return false;
+		 	 ctx.save();
+		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
+		 	 	 		   this.position.y-gameManager.camera.position.y);
+		 	 ctx.rotate(d2r(this.rotAngle));
+		 	 // ctx.scale(this.sx,this.sy);
+		 	 // if(this.flickerControl())
+		 	 ctx.drawImage(this.imagex,-this.width/2,-this.height/2,this.width,this.height);		 	 
+		 	 ctx.restore();
+		 	}
+		 rotateself()
+		 	{
+		 	 this.rotAngle+=5;
+		 	 if(this.rotAngle > 360) this.rotAngle=0;
+		 	}
+
+		 update()
+		 	{
+		 	 this.applyGravity();
+		 	 this.velocity.add(this.acceleration);
+		 	 this.acceleration.set(0,0);
+		 	 this.applyVelocity();
+		 	 this.applyVelocityRestrictions();
+		 	 this.checkCollisions();
+		 	 this.rotateself();
+		 	 this.update_and_display_hitbox();
+		 	 this.mindHealth();
+		 	}
+		 applyGravity()
+		 	{
+		 	 this.acceleration.y+=this.gravityScale;
+		 	}
+		 applyVelocity()
+		 	{		 	 	 	 
+		 	 this.hit_box.position.x+=this.velocity.x;		 	
+		 	 for(let k in gameManager.collission_sprites)
+		 	 	{ 
+		 	 	 let x=gameManager.collission_sprites[k];
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(x==this.hit_box) continue;		 	 	 
+		 	 	 if(b_collision(this.hit_box,x)) 
+		 	 	 	{	 		 
+		 	 	 		 	 
+		 	 	 	 if(this.velocity.x > 0)
+		 	 	 	 	{		 	 	 	 
+		 	 	 	 	this.hit_box.position.x=x.position.x - x.width/2-this.hit_box.width/2-2;	
+
+		 	 	 	  	}
+		 	 	 	 else 
+		 	 	 	 	{
+		 	 	 	    this.hit_box.position.x=x.position.x + x.width/2 + this.hit_box.width/2+2;		 	 	 	    
+		 	 	 		}
+		 	 	 	}
+		 	 	}
+
+		 	 this.hit_box.position.y+=this.velocity.y;
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(x==this) continue;		 	 	 
+		 	 	 if(b_collision(this.hit_box,x)) 
+		 	 	 	{
+		 	 	 	
+		 	 	    
+		 	 	 	if(this.velocity.y > 0)
+		 	 	 		{
+		 	 	 		this.hit_box.position.y=x.position.y-x.height/2-this.hit_box.height/2-2;	
+		 	 	 		this.acceleration.add(new CreateVector(0,2*-this.velocity.y));	 	 	 		
+		 	 	 		}
+		 	 	 	else
+		 	 	 		{
+		 	 	 		this.hit_box.position.y=x.position.y+x.height/2+this.hit_box.height/2+2;		
+		 	 	 		this.acceleration.add(new CreateVector(0,2*this.velocity.y)); 	 	 		
+		 	 	 		}
+		 	 	 	}
+		 	 	}
+		 	}
+		 applyVelocityRestrictions()
+		 	{
+		 	 let xdir=this.velocity.x/Math.abs(this.velocity.x);
+		 	 let ydir=this.velocity.y/Math.abs(this.velocity.y);
+		 	 if(Math.abs(this.velocity.y) > this.maxVelocity.y)
+		 	 	this.velocity.y=ydir*this.maxVelocity.y;
+		 	 if(Math.abs(this.velocity.x) > this.maxVelocity.x)
+		 	 	this.velocity.x=xdir*this.maxVelocity.x;
+		 	}
+
+		 checkCollisions()
+		 	{
+		 	  for(let sp of gameManager.collission_sprites) 
+		 	  	{		 	  	 
+		 	  	 if(sp.sprite_type=='playerhitbox' && b_collision(this,sp))
+		 	  	 	{
+		 	  	 	  SpawnClouds(this.position);
+		 	  	 	  destroySelf(this.hit_box);
+		 	  	 	  destroySelf(this);
+		 	  	 	  gameManager.player.takeDamage(10,this.parentx.sx);
+		 	  	 	}
+		 	  	}
+		 	}
+
+		}
+	//Spear starts
+	class Spear 
+		{
+		 constructor(x,y,wid,hei,dirx,spriteGroups,parentx)
+		 	{	
+		 	 this.sprite_type='spear';
+		 	 this.parentx=parentx;
+		 	 this.position=new CreateVector(x,y);
+		     this.width = wid * xscale;
+		     this.height = hei * yscale;
+		     let folderPath='sprites/lanceSentry/';
+		     this.onScreen= true;
+			 this.isActive=true;
+			 this.angle=dirx.heading();
+			 this.sx=1;
+			 this.sy=1;
+			 this.force=dirx.mult(5);
+			 this.startx=0;
+			 this.starty=0;
+			 this.imgWidth=0;
+			 this.imgHeight=0;
+			 this.acceleration=new CreateVector(0,0);
+			 this.velocity=new CreateVector(0,0);
+			 this.maxVelocity=10*xscale;	
+			 //animations start
+			 this.animations={
+					 	'static':{'imgsheet':LoadImagex(folderPath,'Javelin.png'),
+					  		    'width':474,
+					  		    'height':22,			  		    
+					  		    'rows':1,
+					  		    'cols':1,
+					  		    'maxFrames':1,
+					  		    'width_extend':1,
+					  		    'height_extend':1,
+					  		    'anim_speed':0.01
+					  		    },
+					  	'snap':{'imgsheet':LoadImagex(folderPath,'JavelinSnap.png'),
+					  		    'width':1187,
+					  		    'height':126,			  		    
+					  		    'rows':1,
+					  		    'cols':3,
+					  		    'maxFrames':3,
+					  		    'width_extend':1,
+					  		    'height_extend':1,
+					  		    'anim_speed':0.08
+				  				 }
+			  				};
+			 //animations end
+			 this.animation='static';
+			 this.animInQueue=null;
+			 this.animationFrame=0;			 
+			 this.sprite_type='spear';
+			 this.state='static';
+			 this.spriteGroups=spriteGroups;
+			 for(let grp of spriteGroups)
+			 	grp.push(this);
+			 this.hit_box=new HitBox(x,y,30*xscale,30*yscale,[],'spearhitbox');
+			 // this.hit_box.angle=this.angle;
+			 this.hit_box_offset=new CreateVector(50*xscale,0);
+			 this.snapping=false;
+		 	}
+
+		update_and_display_hitbox()
+		 	{	 		
+		 	let hit_box_offset=this.hit_box_offset.copy().rotateByAngle(this.angle);
+	 		this.position.setVec(this.hit_box.position.copy().add(hit_box_offset.mult(-1)));
+		 	}
+		runAnimation()
+			{
+			  this.animationFrame+=this.animations[this.animation]['anim_speed'];
+			  if(this.animationFrame >= this.animations[this.animation]['maxFrames'])
+			  	{
+		  		this.animationFrame=0;
+		  		if(this.animInQueue) 
+		  			{
+		  			this.animation=this.animInQueue;
+		  			//console.log('back to '+this.animation);
+		  			this.animInQueue=null;
+		  			}
+			  	}
+			  let rowIndex=parseInt(parseInt(this.animationFrame)/this.animations[this.animation]['cols']);
+			  let colIndex=parseInt(this.animationFrame)%this.animations[this.animation]['cols'];
+			  this.startx=colIndex * this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
+			  this.starty=rowIndex * this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
+			  this.imgWidth = this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
+			  this.imgHeight = this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
+			}
+		 checkForSnap()
+		 	{
+		 	 if(!this.snapping) return false;
+		 	 this.force.set(0,0);
+		 	 this.velocity.set(0,0);		 	 
+		 	 // return false;
+		 	 if(parseInt(this.animationFrame)==1)
+		 	 	{	
+		 	 	 // console.log('spear destroyed');
+		 	 	 destroySelf(this);
+		 	 	 destroySelf(this.hit_box);
+		 	 	 SpawnClouds(this.position);		 	 	 
+		 	 	}
+		 	}
+		 move()
+		 	{		 	
+		 	 this.acceleration.add(this.force);	 
+		 	 this.velocity.add(this.acceleration);
+		 	 this.acceleration.set(0,0);
+		 	 this.applyVelocity();
+		 	 this.applyVelocityRestrictions();
+		 	 this.update_and_display_hitbox();
+		 	}
+		switchAnimation(animx)
+			{
+			 if(this.animation != animx)
+			 	{
+			 	this.animationFrame=0;
+			 	this.animation=animx;			 	
+			 	}
+			}
+		 applyVelocity()
+		 	{		 	  
+		 	 this.hit_box.position.x+=this.velocity.x;		 	
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(x==this.hit_box) continue;
+		 	 	 if(x==this.parentx.hit_box) continue;
+		 	 	 
+		 	 	 if(b_collision(this.hit_box,x)) 
+		 	 	 	{
+		 	 	 	 if(!this.snapping)
+		 	 	 	 	{
+		 	 	 	 	this.switchAnimation('snap');
+		 	 	 	 	
+		 	 	 	 	SpawnClouds(this.position);
+		 	 	 	    this.snapping=true;
+		 	 	 	    if(x.sprite_type=='playerhitbox')
+		 	 	 	    	{
+		 	 	 	    	 gameManager.player.takeDamage(10);
+		 	 	 	    	}
+		 	 	 		}		 	 	 	
+
+		 	 	 	 if(this.velocity.x > 0)
+		 	 	 	 	{
+		 	 	 	 	this.hit_box.position.x=x.position.x-x.width/2-this.hit_box.width/2-2;
+		 	 	 	 	}
+		 	 	 	 else 
+		 	 	 	    {
+		 	 	 	 	this.hit_box.position.x=x.position.x+x.width/2+this.hit_box.width/2+2;
+		 	 	 	    }
+		 	 	 	 
+		 	 	 	}		 	 	 
+		 	 	}
+
+		 	 this.hit_box.position.y+=this.velocity.y;
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(x==this.hit_box) continue;
+		 	 	 if(x==this.parentx.hit_box) continue;
+
+		 	 	 if(b_collision(this.hit_box,x)) 
+		 	 	 	{
+		 	 	 	if(!this.snapping)
+		 	 	 		{
+		 	 	 		this.switchAnimation('snap');
+		 	 	 		SpawnClouds(this.position);		 	 	 		
+		 	 	 		this.snapping=true;
+		 	 	 		if(x.sprite_type=='playerhitbox')
+		 	 	 	    	{
+		 	 	 	    	 gameManager.player.takeDamage(10);
+		 	 	 	    	}
+		 	 	 		}		 	 	 	
+		 	 	 	if(this.velocity.y > 0)
+		 	 	 		{
+		 	 	 		this.hit_box.position.y=x.position.y-x.height/2-this.hit_box.height/2-2;
+		 	 	 		}
+		 	 	 	else
+		 	 	 		{
+		 	 	 		this.hit_box.position.y=x.position.y+x.height/2+this.hit_box.height/2+2;	
+		 	 	 		}
+		 	 	 	
+		 	 	 	}
+		 	 	}
+		 	}
+		 applyVelocityRestrictions()
+		 	{
+		 	 if(this.velocity.mag()>this.maxVelocity)
+		 	 	{
+		 	 	 this.velocity.normalize().mult(this.maxVelocity);
+		 	 	}
+		 	}
+		update()
+		  	{
+		 	  this.runAnimation();		 	  
+		 	  this.move();	 	
+		 	  this.checkForSnap();  
+		  	}
+		display()
+		  	{
+		 	 if(!this.onScreen) return false;		 	
+		 	 ctx.save();
+		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
+		 	 	 		   this.position.y-gameManager.camera.position.y);
+		 	 ctx.rotate(d2r(this.angle));
+		 	 ctx.scale(this.sx,this.sy);		 	 			 	 
+		 	 ctx.drawImage(this.animations[this.animation]['imgsheet'],
+		 	 				this.startx,this.starty,this.imgWidth,this.imgHeight,
+		 	 			   -this.width/2,
+		 	 			   -this.height/2,
+		 	 			   this.width*this.animations[this.animation]['width_extend'],
+		 	 			   this.height*this.animations[this.animation]['height_extend']
+		 	 			  );
+		 	 // context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
+		 	 ctx.restore();
+		  	}
+
+		 	
+		}
+	//Spear ends
+	//Lance starts
+	class Lance
+		{
+		 constructor(x,y,wid,hei,spriteGroups,spriteId='lance0')
+		    {
+		     this.position=new CreateVector(x,y);
+		     this.width = wid * xscale;
+		     this.height = hei * yscale;
+		     this.spriteId=spriteId;
+		     let folderPath='sprites/lanceSentry/';
+		     this.onScreen= true;
+			 this.isActive=true;
+			 this.angle=0;
+			 this.sx=1;
+			 this.sy=1;
+			 this.startx=0;
+			 this.starty=0;
+			 this.imgWidth=0;
+			 this.imgHeight=0;
+			 this.raycastLength=520*xscale;
+			 this.playerOutDistance= 2000*xscale;
+			 this.playerGap=800*xscale;
+			 this.throwDone=false;
+
+			 this.acceleration=new CreateVector(0,0);
+			 this.velocity=new CreateVector(0,0);
+			 this.normalvx=2*xscale;
+			 this.rushvx=10*xscale;
+			 this.showervx=3.5*xscale;
+			 this.maxVelocity=new CreateVector(2*xscale,2*yscale);		
+			 this.horiForce=new CreateVector(1*xscale,0);	 
+			 this.gravityScale=2*yscale;
+			 this.restClock=0;
+			 this.restTime=2000;
+			 this.lastAttackTime=0;
+			 if(gameManager.player)
+			 	this.tgt= gameManager.player;
+			 //animations
+			 this.animations={
+			 	'anticipate':{'imgsheet':LoadImagex(folderPath,'Anticipate.png'),
+			  		    'width':1527,
+			  		    'height':310,			  		    
+			  		    'rows':1,
+			  		    'cols':4,
+			  		    'maxFrames':4,
+			  		    'width_extend':1,
+			  		    'height_extend':1,
+			  		    'anim_speed':0.1},
+			 	'charge':{'imgsheet':LoadImagex(folderPath,'Charge.png'),
+			  		    'width':1177,
+			  		    'height':156,			  		    
+			  		    'rows':1,
+			  		    'cols':3,
+			  		    'maxFrames':3,
+			  		    'width_extend':1,
+			  		    'height_extend':1,'anim_speed':0.2},
+			 	'death':{'imgsheet':LoadImagex(folderPath,'Death.png'),
+			  		    'width':749,
+			  		    'height':127,			  		    
+			  		    'rows':1,
+			  		    'cols':4,
+			  		    'maxFrames':4,
+			  		    'width_extend':1,
+			  		    'height_extend':1,'anim_speed':0.2},
+			 	'idle':{'imgsheet':LoadImagex(folderPath,'Idle.png'),
+			  		    'width':1653,
+			  		    'height':435,			  		    
+			  		    'rows':2,
+			  		    'cols':5,
+			  		    'maxFrames':7,
+			  		    'width_extend':1,
+			  		    'height_extend':1,'anim_speed':0.2},
+			 	'recover':{'imgsheet':LoadImagex(folderPath,'Recover.png'),
+			  		    'width':1119,
+			  		    'height':254,			  		    
+			  		    'rows':1,
+			  		    'cols':3,
+			  		    'maxFrames':3,
+			  		    'width_extend':1,
+			  		    'height_extend':1,'anim_speed':0.05},
+			 	'throw':{'imgsheet':LoadImagex(folderPath,'Throw.png'),
+			  		    'width':1916,
+			  		    'height':757,			  		    
+			  		    'rows':3,
+			  		    'cols':5,
+			  		    'maxFrames':13,
+			  		    'width_extend':1,
+			  		    'height_extend':1,'anim_speed':0.2}
+						 };
+						 //animations
+			 this.animation='idle';
+			 this.animInQueue=null;
+			 this.animationFrame=0;			 
+			 this.sprite_type='lance_sentry';
+			 this.state='idle';
+			 this.spriteGroups=spriteGroups;
+			 for(let grp of spriteGroups)
+			 	grp.push(this);
+			 this.hit_box=new HitBox(x,y,this.width*0.5,this.height*0.5,[
+			 	                                                        gameManager.collission_sprites
+			 	                                                        // gameManager.visible_sprites
+			 	                                                        // gameManager.active_sprites
+			 	                                                        ],'lancehitbox');
+			 this.image_offset=new CreateVector(0,0*xscale);
+
+			 this.invincibleState=false;
+		 	 this.invin_count=0;
+		 	 this.max_invin_time=2000;
+		 	 this.flickerCount=0;
+			 this.maxFlickerTime=100;
+			 // this.longRangeAttacks=['throw','rush'];
+			 this.gapClosings=["ballShower","slowApproach"];
+			 // this.gapClosings=["ballShower"];
+			 // this.attacksList=["throwSpear","rush","rush","rush"];
+			 this.attacksList=["rush","rush","rush"];
+			 this.pointed=false;
+			 this.maxAttackGap=2000;
+			 this.spearThrown=false;
+			 this.tgtVec=new CreateVector(0,0);
+			 this.enemysx=0;
+
+			 this.phase1Rush=false;
+			 this.rushVarsSet=false;
+			 this.rushForce=new CreateVector(0,2*yscale);
+			 this.probeDir=new CreateVector(0,1);
+			 this.rushProbeDist=100*yscale;
+			 this.movementHalted=false;
+			 this.rushClock=0;
+			 this.rushHaltTime=500;
+			 this.phase2Rush=false;
+			 this.rushForceHori=new CreateVector(2*xscale,0);
+		 	this.rushHoriTime=1500;
+		 	this.ballHoriTime=3000;
+		 	this.rushAscentTime=2000;
+		 	this.spearPointSpawned=false;
+		 	this.hitPlayer=false;
+		 	this.health=100;
+		 	this.maxHealth=100;
+		 	this.uiBarTimer=0;
+		 	this.uiBarMaxTime=3000;
+		 	this.healthBarOffset=new CreateVector(-30*xscale,-150*yscale);
+		 	this.lanceHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,'#222222','#FF0000',[gameManager.visible_sprites],false,'lancehealth');
+		 	this.ballTimer=0;
+		 	this.ballGapMax=1000;
+		 	this.expVal=50;
+			 //lance constructor ends
+		    }
+		manageInvincibility()
+			{
+			if(!this.invincibleState) return false;
+			this.invin_count+= deltaTime;
+			if(this.invin_count > this.max_invin_time)
+				{
+				 this.invin_count=0;
+				 this.invincibleState=false;
+				} 
+			}
+		
+		 takeDamage(dmg,dir=0)
+		 	{
+		 	//this.acceleration.add(new CreateVector(dir,0));
+		 	if(this.invincibleState) return false;	
+		 	this.invincibleState=true;	
+	 		this.health-=dmg;
+	 		this.lanceHealthBar.updateValue(this.health);
+	 		this.lanceHealthBar.onScreen=true;
+	 		if(this.health<0)
+	 			{
+	 			this.tgt.giveExp(this.expVal);
+	 			SpawnClouds(this.position);
+	 			destroySelf(this);
+	 			destroySelf(this.hit_box);
+	 			destroySelf(this.lanceHealthBar);
+	 			gameManager.listOfDestroyedSprites.push(this.spriteId);
+	 			this.isActive=false;
+	 			}	
+		 	}
+
+		updateHealthBarPos()
+			{
+				if(this.lanceHealthBar.onScreen)
+					{	
+					this.uiBarTimer+=deltaTime;
+					if(this.uiBarTimer > this.uiBarMaxTime)
+					{
+					 this.uiBarTimer=0;
+					 this.lanceHealthBar.onScreen=false;
+					}
+					}
+				this.lanceHealthBar.position.setVec(this.position.copy().add(this.healthBarOffset));
+			}
+		flickerControl()
+			{
+			  if(!this.invincibleState) return true;
+			  this.flickerCount+=deltaTime;
+			  if(this.flickerCount > this.maxFlickerTime)
+			  	{
+			  	 this.flickerCount=0;
+			  	 return true;
+			  	}
+			  return false;
+			}
+		switchAnimation(animx)
+			{
+			 if(this.animation != animx)
+			 	{
+			 	this.animationFrame=0;
+			 	this.animation=animx;			 	
+			 	}
+			}
+		runAnimation()
+			{
+			  this.animationFrame+=this.animations[this.animation]['anim_speed'];
+			  if(this.animationFrame >= this.animations[this.animation]['maxFrames'])
+			  	{
+		  		this.animationFrame=0;
+		  		if(this.animInQueue) 
+		  			{
+		  			this.animation=this.animInQueue;
+		  			//console.log('back to '+this.animation);
+		  			this.animInQueue=null;
+		  			}
+			  	}
+			  let rowIndex=parseInt(parseInt(this.animationFrame)/this.animations[this.animation]['cols']);
+			  let colIndex=parseInt(this.animationFrame)%this.animations[this.animation]['cols'];
+			  this.startx=colIndex * this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
+			  this.starty=rowIndex * this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
+			  this.imgWidth = this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
+			  this.imgHeight = this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
+			}
+		 stateMachine()
+		 	{
+		 	 switch(this.state)
+		 	 	{
+		 	 	 case 'idle':
+		 	 	 	this.idleActions();
+		 	 	 	break;
+		 	 	 case 'agro':
+		 	 	 	this.agroActions();
+		 	 	 	break;
+		 	 	 case 'throwSpear':
+		 	 	 	this.throwSpear();
+		 	 	 	break;
+		 	 	 case 'rush':
+		 	 	    this.rush();
+		 	 	    break;
+		 	 	 case 'slowApproach':
+		 	 	 	this.slowApproach();
+		 	 	 	break;
+		 	 	 case 'ballShower':
+		 	 	 	this.ballShower();
+		 	 	 	break;
+		 	 	 case 'riseup':
+		 	 	  	this.riseup();
+		 	 	  	break;
+		 	 	 case 'quickThrow':
+		 	 	 	this.quickThrow();
+		 	 	 	break;
+		 	 	 default:
+		 	 	 	break;
+		 	 	}
+		 	}
+		PlayerDetected(dist=this.raycastLength)
+			{
+			  if(!this.tgt) return false;
+	          let offsets=[-40*yscale,0,40*yscale];
+	          let probeRay=new CreateVector(1,0);
+	          let angles=[0,60,90,120];
+	          for(let anglex of angles)
+	          	{	      		
+	      		if(Raycast(this.position.copy(),probeRay.pointToAngle(anglex),dist,this.tgt))
+	      			return Math.sign(this.position.x-this.tgt.position.x);
+	          	}
+	          return 0;
+			}
+		 idleActions()
+		 	{
+		 	 this.velocity.x=Lerp(this.velocity.x,0,2*xscale);
+		 	 if(Math.abs(this.angle) > 1)
+		 	 	this.angle=AngleLerp(this.angle,0,30);
+		 	 let pd=this.PlayerDetected();
+		 	 if(Math.abs(pd))
+		 	 	{
+		 	 	 this.sx=pd;
+		 	 	}
+		 	 if(Math.abs(pd)==1)
+		 	 	this.state='agro';
+		 	 
+		 	}
+		 turnInTgtDirection()
+		 	{
+		 	/*
+		 	 let pd=this.PlayerDetected();
+		 	 if(Math.abs(pd))
+		 	 	{
+		 	 	 this.sx=pd;		 	 	 
+		 	 	}
+		 	 */
+		 	 return false;
+		 	}
+		 slowApproach()
+		 	{
+		 	 if(Math.abs(this.angle) > 1)
+		 	 	this.angle=AngleLerp(this.angle,0,30);
+		 	 if(this.enemysx==0)
+		 	 	{
+		 	 	 this.enemysx=Math.sign(this.position.x - this.tgt.position.x);			 	 	 	 	 	 
+		 	 	}		 	 
+		 	 this.acceleration.add(this.horiForce.copy().mult(this.sx*-1));
+		 	 if(Math.abs(this.position.x - this.tgt.position.x) < this.playerGap*0.5 || this.enemysx != this.sx)
+		 	 	{
+		 	 	this.state='agro';
+		 	 	this.enemysx=0;
+		 	 	}
+		 	}
+		 
+		 agroActions()
+		 	{
+		 	  this.sx=Math.sign(this.position.x-this.tgt.position.x);
+		 	  if(Math.abs(this.angle) > 1)
+		 	 	this.angle=AngleLerp(this.angle,0,30);
+		 	  let enemyGap=this.position.x - this.tgt.position.x;
+		 	  this.velocity.x=Lerp(this.velocity.x,0,2*xscale);
+		      if(!this.tgt || Math.abs(enemyGap) > this.playerOutDistance)
+				{				 			 
+				 this.state='idle';				
+				}	
+			  else if(Math.abs(enemyGap) > this.playerGap)
+			  	{
+			  	 // this.state='slowApproach';
+			  	 this.state=this.gapClosings[Math.floor(Math.random()*this.gapClosings.length)];
+			  	}			
+			  if(gameManager.runningClock - this.lastAttackTime > this.maxAttackGap)	
+			  	{			  	 
+			  	 this.state = this.attacksList[Math.floor(Math.random()*this.attacksList.length)];
+			  	}		  
+		 	}
+
+		 quickThrow()
+		 	{
+		 	 if(!this.pointed) 
+		 	 	{
+		 	 	this.pointed=true;
+		 	 	this.switchAnimation('throw');
+		 	 	this.tgtVec=new CreateVector(this.sx * -1,0);		 	 	
+		 	 	}
+		 	 else if(this.animation=='throw' && parseInt(this.animationFrame)==8 && !this.spearThrown)
+		 	 	{
+		 	 	this.spearThrown=true;
+		 	 	document.querySelector('#whoosh').play();
+ 	 			new Spear(this.position.x,this.position.y,200*xscale,50*yscale,
+ 	  	 		   	  this.tgtVec,
+ 	  	 			  [gameManager.visible_sprites,gameManager.active_sprites],
+ 	  	 			  this);
+		 	 	}
+		 	  else if(this.animation=='throw' && parseInt(this.animationFrame)==12)		 	  
+		 	  	{	 	  			 	  		
+	 	  		this.switchAnimation('idle');
+	 	  		this.throwDone=true;
+	 	  		this.restClock=gameManager.runningClock;
+		 	  	}
+		 	  else if(this.throwDone && gameManager.runningClock - this.restClock > this.restTime)
+		 	  	{
+		 	  	this.throwDone=false;
+				this.lastAttackTime=gameManager.runningClock;
+	 	  		this.state='riseup';
+	 	  		this.pointed=false;	 	  		
+	 	  		this.switchAnimation('idle');
+	 	  		this.spearThrown=false;
+		 	  	}	
+		 	}
+		 
+		 throwSpear()
+		 	{
+              this.velocity.x=Lerp(this.velocity.x,0,2*xscale);
+		 	  if(!this.pointed)
+		 	  	{
+		 	  	  this.sx=Math.sign(this.position.x-this.tgt.position.x);
+		 	  	  // this.turnInTgtDirection();
+		 	  	  // this.sx=Math.sign(this.position.x-this.tgt.position.x);
+		 	  	  let tgtVec= this.tgt.position.copy().sub(this.position);
+		 	  	 
+		 	  	  let tgtAngle= tgtVec.heading()+ (this.sx==1?180:0);
+		 	  	  if(tgtAngle < 0) tgtAngle+=360;
+		 	  	  else if(tgtAngle > 360) tgtAngle-=360;
+
+		 	  	  this.angle=AngleLerp(this.angle,tgtAngle,30);
+		 	  	  if(Math.abs(this.angle - tgtAngle) < 20)
+		 	  	  {
+		 	  	  	this.pointed=true;
+		 	  	  	this.switchAnimation('throw');
+		 	  	  	this.tgtVec=this.tgt.position.copy().sub(this.position).normalized();
+		 	  	  }
+		 	  	}
+		 	  else if(this.animation=='throw' && parseInt(this.animationFrame)==8 && !this.spearThrown)
+		 	  	 {
+		 	  	 	// let dirx=this.tgt.position.copy().sub(this.position).normalized();
+		 	  	 	document.querySelector('#whoosh').play();
+		 	  	 	new Spear(this.position.x,this.position.y,200*xscale,50*yscale,
+		 	  	 		   	  this.tgtVec,
+		 	  	 			  [gameManager.visible_sprites,gameManager.active_sprites],
+		 	  	 			  this);
+		 	  	 	this.spearThrown=true;
+		 	  	 }
+		 	  else if(this.animation=='throw' && parseInt(this.animationFrame)==12)		 	  
+		 	  	{	 	  		
+	 	  		this.lastAttackTime=gameManager.runningClock;
+	 	  		this.state='agro';
+	 	  		this.pointed=false;
+	 	  		this.spearThrown=false;
+	 	  		this.switchAnimation('idle');
+		 	  	}
+		 	  	//implement wait for sometime to correct angle
+		 	}
+		 hitBoxMadeContact(hitboxdesc)
+		 	{
+		 	 // console.log(hitboxdesc+' reports contact');
+		 	 this.hitPlayer=true;
+		 	}
+
+		 dropBallsOnIntervals()
+		 	{
+		 	 this.ballTimer+=deltaTime;
+		 	 if(this.ballTimer < this.ballGapMax) return false;
+		 	 this.ballTimer=0;
+		 	 new ThornyBall(this.position.x,
+ 						   this.position.y,
+ 						   30*xscale,
+ 						   30*yscale,
+ 						   this,60*xscale*-1*this.sx,0,
+ 						   [gameManager.visible_sprites,gameManager.active_sprites],0
+		 				          ); 
+		 	}
+		 ballShower()
+		 	{		 	  
+	 	  	 if(!this.rushVarsSet)
+	 	  	 	{
+	 	  	 	 this.angle=0;
+	 	  	 	 this.rushVarsSet=true;
+	 	  	 	 this.maxVelocity.x=this.showervx;
+	 	  	 	 this.switchAnimation('charge');
+	 	  	 	}
+	 	  	 
+	 	  	 this.rushClock+=deltaTime;
+	 	  	 if(this.rushClock < this.ballHoriTime*0.8)
+	 	  	 	{
+	 	  	 	this.acceleration.add(this.rushForceHori.copy().mult(this.sx*-1));
+	 	  	 	this.dropBallsOnIntervals();
+	 	  	 	}
+	 	  	 else
+	 	 	 	{
+	 	 	 	this.velocity.x=Lerp(this.velocity.x,0,10);
+	 	 	 	if(this.animation=='charge')
+	 	 	 	 	{
+	 	 	 	 	 this.animInQueue='idle';
+	 	 	 	 	 this.switchAnimation('recover');
+	 	 	 	 	}
+	 	 	 	}
+	 	  	 if(this.rushClock > this.ballHoriTime)
+	 	 	 	{
+	 	 	 	 this.rushClock=0; 	 	 	 	
+	 	 	 	 this.rushVarsSet=false;
+	 	 	 	 this.maxVelocity.x=this.normalvx;
+	 	 	 	 this.state='agro';
+	 	 	 	 this.lastAttackTime=gameManager.runningClock;
+	 	 	 	}		 	  	
+		 	}
+		
+		 rush()
+		 	{
+		 	 if(!this.phase1Rush)
+		 	 	{		 	 	
+		 	 	if(!this.movementHalted)
+			 	 	{			 	 	
+		 	 		if(!this.rushVarsSet)
+		 	 			{
+		 	 			 this.maxVelocity.x=this.rushvx;
+		 	 			 this.rushVarsSet=true;
+		 	 			 this.velocity.set(0,0);
+		 	 			}
+		 	 		this.acceleration.add(this.rushForce);
+		 	 		// let gDetected=RaycastAll(this.position.copy(),this.probeDir,this.rushProbeDist,[gameManager.collission_sprites],[this.hit_box]);
+
+		 	 		let gDetected=false;
+		 	 		let playerHit=false;
+		 	 		for (let sp of gameManager.collission_sprites)
+		 	 			{
+		 	 			if(sp==this.hit_box) continue;
+		 	 			if(Raycast(this.position.copy(),this.probeDir,this.rushProbeDist,sp))
+		 	 				{	
+		 	 				gDetected=true;
+		 	 				if(sp.sprite_type=='playerhitbox')
+		 	 					playerHit=true;
+		 	 			    break;
+		 	 				}
+		 	 			}		 	 		
+		 	 		if(gDetected)
+		 	 			{		 	 	
+		 	 			 let playerPos= this.tgt.position.x-this.position.x;		 	 			 			
+		 	 			 let playerAbsent= playerPos > 0 && this.sx==1 || playerPos < 0 && this.sx==-1;
+		 	 			 if(playerHit || playerAbsent)
+			 	 			 {
+			 	 			 if(playerAbsent)
+			 	 			 	console.log('cancelling: player is absent:1863');
+			 	 			 this.maxVelocity.x=this.normalvx;
+			 	 			 this.rushVarsSet=false;
+			 	 			 this.velocity.set(0,0);
+			 	 			 this.state='riseup';
+			 	 			 }
+			 	 		 else if(Math.random()<0.6)
+			 	 		 	{
+
+			 	 		 	 this.movementHalted=true;
+			 	 		 	}	
+			 	 		 else
+			 	 		 	{			 	 		 	  
+			 	 		 	 this.maxVelocity.x=this.normalvx;
+			 	 			 this.rushVarsSet=false;
+			 	 			 this.velocity.set(0,0);
+			 	 			 this.state='quickThrow';
+			 	 		 	}	 	 			 
+		 	 			 
+		 	 			}
+			 	 	}
+			 	 else
+			 	 	{	
+			 	 	 if(!this.spearPointSpawned)
+			 	 	 	{
+			 	 	 	this.spearPointSpawned=true;			 	 	 
+			 	 	 	//console.log('lance point spawned');
+			 	 	 	new DamageHitBox(this.position.x,this.position.y,30*xscale,30*yscale,
+			 	 	 					 [gameManager.active_sprites,gameManager.hitbox_sprites],
+			 	 	 					 'enemy_hitbox',this,-100*xscale,30*yscale,10,-this.sx*10,4000
+			 	 	 					);
+			 	 	 	}
+			 	 	 if(this.animation!='anticipate' && this.animation!='charge')
+			 	 	 	{
+			 	 	 	 this.animInQueue='charge';
+			 	 	 	 this.switchAnimation('anticipate');
+			 	 	 	}		 	 	 
+			 	 	 this.velocity.y=Lerp(this.velocity.y,0,10);
+			 	 	 this.rushVarsSet=false;
+			 	 	 this.rushClock+= deltaTime;
+			 	 	 if(this.rushClock > this.rushHaltTime)
+			 	 	 	{	
+			 	 	 	 this.rushClock=0;
+			 	 	 	 this.phase1Rush=true;
+			 	 	 	 this.movementHalted=false;
+			 	 	 	 
+			 	 	 	}
+			 	 	}
+		 	 	}
+		 	 else if(!this.phase2Rush)
+		 	 	{
+		 	 	 this.rushClock+=deltaTime;
+		 	 	 if(this.hitPlayer)
+		 	 	 	{
+		 	 	 	 this.hitPlayer=false;
+		 	 	 	 this.rushClock=this.rushHoriTime*0.82;
+		 	 	 	}
+		 	 	 if(this.rushClock > this.rushHoriTime*0.8)
+		 	 	 	{
+		 	 	 	this.velocity.x=Lerp(this.velocity.x,0,10);
+		 	 	 	}
+		 	 	 else
+		 	 	 	{
+		 	 	 	 this.acceleration.add(this.rushForceHori.copy().mult(this.sx*-1));
+		 	 	 	}
+		 	 	 if(this.rushClock > this.rushHoriTime)
+		 	 	 	{
+		 	 	 	 this.rushClock=0;		 	 	 	 
+		 	 	 	 this.phase2Rush=true;
+		 	 	 	 this.restClock=gameManager.runningClock;
+		 	 	 	 if(this.animation=='charge')
+		 	 	 	 	{
+		 	 	 	 	 this.animInQueue='idle';
+		 	 	 	 	 this.switchAnimation('recover');
+		 	 	 	 	}
+		 	 	 	}
+		 	 	}
+		 	 else if(gameManager.runningClock - this.restClock > this.restTime)
+		 	 	{		 	 	  	 	 	  
+		 	 	  this.rushClock+=deltaTime; 	  	
+		 	 	  if(this.rushClock < 0.8*this.rushAscentTime && this.tgt.position.y - this.position.y < 200*yscale)
+		 	 	  {
+		 	 	  	this.acceleration.add(this.rushForce.copy().mult(-1));
+		 	 	  }
+		 	 	  else
+		 	 	  	{
+		 	 	  	this.velocity.y=Lerp(this.velocity.y,0,10);		 	 	  	
+		 	 	  	}
+		 	 	  if(this.rushClock > this.rushAscentTime)
+		 	 	  	{
+		 	 	  	 this.rushClock=0;
+		 	 	  	 this.phase2Rush=false;
+		 	 	  	 this.phase1Rush=false;
+		 	 	  	 this.lastAttackTime=gameManager.runningClock;
+	 	  			 this.state='agro';	 	  			 
+	 	  			 this.maxVelocity.x=this.normalvx;
+	 	  			 this.spearPointSpawned=false;
+	 	  			 this.switchAnimation('idle');
+		 	 	  	}
+		 	 	}
+		 	}
+		 riseup()
+		 	{
+		 	 if(this.tgt.position.y - this.position.y < 200*yscale)
+		 	 	 this.acceleration.add(this.rushForce.copy().mult(-1));
+		 	 else
+		 	 	{
+		 	 	 this.velocity.y=0;
+		 	 	 this.state='agro';
+		 	 	}
+		 	}
+		 
+		 move()
+		 	{		 		 
+		 	 this.velocity.add(this.acceleration);
+		 	 this.acceleration.set(0,0);		 	
+		 	 this.applyVelocity();
+		 	 this.applyVelocityRestrictions();
+		 	 this.update_and_display_hitbox();
+		 	 // this.spawnHitBoxOnSlashHusk();
+		 	 // this.checkTarget();
+		 	 // this.manageInvincibility();		 	 
+
+		 	}
+		 applyVelocity()
+		 	{		 	 	 	 
+		 	 this.hit_box.position.x+=this.velocity.x;		 	
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(x==this.hit_box) continue;
+		 	 	 
+		 	 	 if(b_collision(this.hit_box,x)) 
+		 	 	 	{
+		 	 	 	
+		 	 	 	 if(this.velocity.x > 0)
+		 	 	 	 	this.hit_box.position.x=x.position.x-x.width/2-this.hit_box.width/2-2;
+		 	 	 	 else 
+		 	 	 	 	this.hit_box.position.x=x.position.x+x.width/2+this.hit_box.width/2+2;
+		 	 	 	}		 	 	 
+		 	 	}
+
+		 	 this.hit_box.position.y+=this.velocity.y;
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(x==this.hit_box) continue;
+		 	 	 if(b_collision(this.hit_box,x)) 
+		 	 	 	{
+		 	 	 	
+		 	 	 	if(this.velocity.y > 0)
+		 	 	 		this.hit_box.position.y=x.position.y-x.height/2-this.hit_box.height/2-2;
+		 	 	 	else
+		 	 	 		this.hit_box.position.y=x.position.y+x.height/2+this.hit_box.height/2+2;	
+		 	 	 	}
+		 	 	}
+		 	}
+		 applyVelocityRestrictions()
+		 	{
+		 	 let xdir=this.velocity.x/Math.abs(this.velocity.x);
+		 	 let ydir=this.velocity.y/Math.abs(this.velocity.y);
+		 	 if(Math.abs(this.velocity.y) > this.maxVelocity.y)
+		 	 	this.velocity.y=ydir*this.maxVelocity.y;
+		 	 if(Math.abs(this.velocity.x) > this.maxVelocity.x)
+		 	 	this.velocity.x=xdir*this.maxVelocity.x;
+		 	}
+		 update_and_display_hitbox()
+		 	{
+	 		// this.hit_box.updatePosition(this.position.copy().add(this.hit_box_offset));
+	 		this.position.setVec(this.hit_box.position.copy().add(this.image_offset));
+		 	}
+		  update()
+		  	{
+		 	  this.runAnimation();
+		 	  this.stateMachine();
+		 	  this.update_and_display_hitbox();
+		 	  this.move();
+		 	  this.updateHealthBarPos();
+		 	  this.manageInvincibility();
+		 	  w2screen(this.state,this.position.x-gameManager.camera.position.x,this.position.y-50*yscale-gameManager.camera.position.y);
+		  	}
+		  display()
+		  	{
+		 	 if(!this.onScreen) return false;
+		 	 ctx.save();
+		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
+		 	 	 		   this.position.y-gameManager.camera.position.y);
+		 	 ctx.rotate(d2r(this.angle));
+		 	 ctx.scale(this.sx,this.sy);
+		 	 if(this.flickerControl())
+		 	 ctx.drawImage(this.animations[this.animation]['imgsheet'],
+		 	 				this.startx,this.starty,this.imgWidth,this.imgHeight,
+		 	 			   -this.width/2,
+		 	 			   -this.height/2,
+		 	 			   this.width*this.animations[this.animation]['width_extend'],
+		 	 			   this.height*this.animations[this.animation]['height_extend']
+		 	 			  );
+		 	 // context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
+		 	 ctx.restore();
+		  	}
+		}
+
+    //false knight starts
+    class FalseKnight
+    	{
+    	constructor(x,y,wid,hei,spriteGroups,spriteId='falseknight')
+    		{
+    		 this.position= new CreateVector(x,y);
+    		 this.width = wid * xscale;
+    		 this.height = hei * yscale;
+    		 let folderPath='sprites/FalseKnight';
+    		 this.onScreen=true;
+    		 this.angle=0;
+    		 this.sx=1;
+    		 this.sy=1;
+    		 this.startx=0;
+			 this.starty=0;
+			 this.imgWidth=0;
+			 this.imgHeight=0;
+			 this.spriteId=spriteId;
+			 this.acceleration=new CreateVector(0,0);
+			 this.velocity=new CreateVector(0,0);
+			 this.maxVelocity=new CreateVector(3*xscale,12*yscale);		
+			 this.horiForce=new CreateVector(2*xscale,0);	 
+			 this.fkJumpForce=new CreateVector(0,-250*yscale);
+			 this.gravityScale=2*yscale;			 	
+			 this.expVal=200; 
+			 this.attackStarted=false;
+
+			 this.animations={
+						 	'attack':{'imgsheet':LoadImagex(folderPath,'attack.png'),
+						  		    'width':2118,
+						  		    'height':590,			  		    
+						  		    'rows':1,
+						  		    'cols':3,
+						  		    'maxFrames':3,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.15
+						  		     },
+				'attack_anticipate':{'imgsheet':LoadImagex(folderPath,'attack_anticipate.png'),
+						  		    'width':2881,
+						  		    'height':795,			  		    
+						  		    'rows':2,
+						  		    'cols':5,
+						  		    'maxFrames':6,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.2
+						  		     },
+				    'attack_recover':{'imgsheet':LoadImagex(folderPath,'attack_recover.png'),
+						  		    'width':3300,
+						  		    'height':564,			  		    
+						  		    'rows':1,
+						  		    'cols':5,
+						  		    'maxFrames':5,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.2
+						  		     },
+				    'idle':{'imgsheet':LoadImagex(folderPath,'idle.png'),
+						  		    'width':3117,
+						  		    'height':396,			  		    
+						  		    'rows':1,
+						  		    'cols':5,
+						  		    'maxFrames':5,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.2
+						  		     },
+				              'jump':{'imgsheet':LoadImagex(folderPath,'jump.png'),
+						  		    'width':2414,
+						  		    'height':339,			  		    
+						  		    'rows':1,
+						  		    'cols':4,
+						  		    'maxFrames':4,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.2
+						  		     },
+				   'jump_anticipate':{'imgsheet':LoadImagex(folderPath,'jump_anticipate.png'),
+						  		    'width':1830,
+						  		    'height':381,			  		    
+						  		    'rows':1,
+						  		    'cols':3,
+						  		    'maxFrames':3,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.2
+						  		     },
+				   'jump_attack_1':{'imgsheet':LoadImagex(folderPath,'jump_attack_1.png'),
+						  		    'width':1689,
+						  		    'height':618,			  		    
+						  		    'rows':1,
+						  		    'cols':2,
+						  		    'maxFrames':2,
+						  		    'width_extend':1.25,
+						  		    'height_extend':1.25,
+						  		    'anim_speed':0.1
+						  		     },
+				     'jump_attack_2':{'imgsheet':LoadImagex(folderPath,'jump_attack_2.png'),
+						  		    'width':861,
+						  		    'height':589,			  		    
+						  		    'rows':1,
+						  		    'cols':2,
+						  		    'maxFrames':2,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.2
+						  		     },
+				     'jump_attack_3':{'imgsheet':LoadImagex(folderPath,'jump_attack_3.png'),
+						  		    'width':1236,
+						  		    'height':399,			  		    
+						  		    'rows':1,
+						  		    'cols':2,
+						  		    'maxFrames':2,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.2
+						  		     },
+				     'run':{'imgsheet':LoadImagex(folderPath,'run.png'),
+						  		    'width':3120,
+						  		    'height':483,			  		    
+						  		    'rows':1,
+						  		    'cols':5,
+						  		    'maxFrames':5,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.2
+						  		     },
+			  		         };			  		
+			  	this.animation='idle';
+			  	this.animInQueue=null;
+			  	this.animationFrame=0;
+			  	this.sprite_type='false_knight';
+			  	this.state='fkagro';
+			  	this.maxHealth=100;
+			  	this.health=this.maxHealth;
+			  	this.spriteGroups=spriteGroups;
+			 	for(let grp of spriteGroups)
+			 		grp.push(this);
+			    this.hit_box=new HitBox(x,y,this.width*0.4,this.height*0.8,[
+                                                        gameManager.collission_sprites
+                                                        // gameManager.active_sprites
+                                                        ],'falseknighthitbox');
+			 this.image_offset=new CreateVector(-30*xscale,-15*yscale);
+			 this.fkHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,'#222222','#FF0000',[gameManager.visible_sprites],false,'fkhealth');
+			 this.fkHealthBar.onScreen=false;
+			 this.uiBarTimer=0;
+			 this.uiBarMaxTime=2000;
+			 this.healthBarOffset=new CreateVector(-30*xscale,-150*yscale);
+			 this.hitBoxSpawned=false;
+			 if(gameManager.player)
+			 	this.tgt= gameManager.player;	
+
+			 this.invincibleState=false;
+		 	 this.invin_count=0;
+		 	 this.max_invin_time=2000;
+		 	 this.flickerCount=0;
+			 this.maxFlickerTime=100;
+
+			 this.gravityScale=2*yscale;
+			 this.fkLastAttackTime=0;
+    		 this.fkMinAttackGap=800;
+    		 this.fkPlayerFarDistance=200*xscale;
+    		 this.fkJumpInDistance=400*xscale;    		
+
+    		 this.closeAttacks=['fkattack'];
+    	     this.longAttacks =['runup'];
+    	     this.randomAttacks=['fkjumpattack'];
+    	     this.jumpForceApplied=false;
+    	     this.attackClock=0;
+    	     this.freeToJump=true;
+    	     
+    		} 
+		 takeDamage(dmg,dir=0)
+		 	{
+		 	//this.acceleration.add(new CreateVector(dir,0));
+		 	if(this.invincibleState) return false;	
+		 	this.invincibleState=true;	
+	 		this.health-=dmg;
+	 		this.fkHealthBar.updateValue(this.health);
+	 		this.fkHealthBar.onScreen=true;
+	 		if(this.health<0)
+	 			{
+	 			this.tgt.giveExp(this.expVal);
+	 			SpawnClouds(this.position);
+	 			destroySelf(this);
+	 			destroySelf(this.fkHealthBar);	 			
+	 			}	
+		 	}   		
+		flickerControl()
+			{
+			  if(!this.invincibleState) return true;
+			  this.flickerCount+=deltaTime;
+			  if(this.flickerCount > this.maxFlickerTime)
+			  	{
+			  	 this.flickerCount=0;
+			  	 return true;
+			  	}
+			  return false;
+			}
+		 applyGravity()
+		 	{
+		 	 this.acceleration.y+=this.gravityScale;
+		 	}
+		 applyVelocity()
+		 	{		 	 	 	 
+		 	 this.hit_box.position.x+=this.velocity.x;		 	
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(x==this.hit_box) continue;
+		 	 	 
+		 	 	 if(b_collision(this.hit_box,x)) 
+		 	 	 	{		 	 	 	
+		 	 	 	 if(this.velocity.x > 0)
+		 	 	 	 	this.hit_box.position.x=x.position.x-x.width/2-this.hit_box.width/2-2;
+		 	 	 	 else 
+		 	 	 	 	this.hit_box.position.x=x.position.x+x.width/2+this.hit_box.width/2+2;
+		 	 	 	}
+		 	 	 		 	 	
+		 	 	}
+
+		 	 this.hit_box.position.y+=this.velocity.y;
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(x==this.hit_box) continue;
+		 	 	 if(b_collision(this.hit_box,x)) 
+		 	 	 	{
+		 	 	 	
+		 	 	 	if(this.velocity.y > 0)
+		 	 	 		this.hit_box.position.y=x.position.y-x.height/2-this.hit_box.height/2-2;
+		 	 	 	else
+		 	 	 		this.hit_box.position.y=x.position.y+x.height/2+this.hit_box.height/2+2;	
+		 	 	 	}
+		 	 	}
+		 	}
+		 applyVelocityRestrictions()
+		 	{
+		 	 let xdir=this.velocity.x/Math.abs(this.velocity.x);
+		 	 let ydir=this.velocity.y/Math.abs(this.velocity.y);
+		 	 if(Math.abs(this.velocity.y) > this.maxVelocity.y)
+		 	 	this.velocity.y=ydir*this.maxVelocity.y;
+		 	 if(Math.abs(this.velocity.x) > this.maxVelocity.x)
+		 	 	this.velocity.x=xdir*this.maxVelocity.x;
+		 	}
+		update_and_display_hitbox()
+		 	{
+	 		// this.hit_box.updatePosition(this.position);
+	 		this.position.setVec(this.hit_box.position.copy().add(this.image_offset));
+		 	}
+		 move()
+		 	{		
+		 	 this.applyGravity(); 	 
+		 	 this.velocity.add(this.acceleration);
+		 	 this.acceleration.set(0,0);		 	
+		 	 this.applyVelocity();
+		 	 this.applyVelocityRestrictions();
+		 	 this.update_and_display_hitbox();
+		 	 this.spawnHitBoxOnHit_fknight();
+		 	}
+    	update()
+    		{
+    		 this.stateMachine();
+    		 this.runAnimation();
+    		 this.move();    		 
+    		}
+    	display()
+		 	{		 	 
+		 	 if(!this.onScreen) return false;
+		 	 ctx.save();
+		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
+		 	 	 		   this.position.y-gameManager.camera.position.y);
+		 	 ctx.rotate(d2r(this.angle));
+		 	 ctx.scale(this.sx,this.sy);
+		 	 if(this.flickerControl())
+		 	 ctx.drawImage(this.animations[this.animation]['imgsheet'],
+		 	 				this.startx,this.starty,this.imgWidth,this.imgHeight,
+		 	 			   -this.width/2,
+		 	 			   -this.height/2,
+		 	 			   this.width*this.animations[this.animation]['width_extend'],
+		 	 			   this.height*this.animations[this.animation]['height_extend']
+		 	 			  );
+		 	 // context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
+		 	 ctx.restore();
+		 	 w2screen(this.state,this.position.x-gameManager.camera.position.x,this.position.y-50*yscale-gameManager.camera.position.y);
+		 	}
+    	stateMachine()
+    		{
+    		 switch(this.state)
+    		 	{
+    		 	 case 'idle':
+    		 	  this.fkidle();
+    		 	  break;
+    		 	 case 'fkagro':
+    		 	  this.fkagro();
+    		 	  break;
+    		 	 case 'runup':
+    		 	  this.runup();
+    		 	  break;
+    		 	 case 'fkattack':
+    		 	  this.fkattack();
+    		 	  break;
+    		 	 case 'fkjumpattack':
+    		 	  this.fkjumpattack();
+    		 	  break;
+    		 	 default:
+    		 	  console.log('warning: unknown state');
+    		 	  break;
+    		 	}
+    		}
+    	fkidle()
+    		{
+    		 return false;
+    		}  
+
+    	
+    	fkjumpattack()
+    		{
+    		 if(!this.jumpForceApplied)
+    		 	{
+    		 	 this.velocity.x=0;
+    		 	 this.animInQueue='jump_attack_1';
+    		 	 this.switchAnimation('jump_anticipate');
+    		 	 this.jumpForceApplied=true;
+    		 	 this.acceleration.add(this.fkJumpForce);
+    		 	 this.attackClock=gameManager.runningClock;
+    		 	 this.maxVelocity.x=10*xscale;
+    		 	}
+    		 else if(this.animation=='jump_attack_1')
+    		 	{
+ 					this.animInQueue='attack_recover';
+    		 	}
+    		 else if(this.animation=='attack_recover')
+    		 	{
+    		 		this.animInQueue='idle';
+    		 	}
+    		 if(gameManager.runningClock - this.attackClock < 500)
+    		 	{
+    		 	this.velocity.x=Lerp(this.velocity.x,10*xscale*this.sx,16);
+    		 	}
+    		 else
+    		 	{
+    		 	this.velocity.x=Lerp(this.velocity.x,0,16);
+    		 	}
+    		 if(gameManager.runningClock - this.attackClock > 3000)
+    		 	{
+    		 	 this.fkLastAttackTime=gameManager.runningClock;
+    		 	 this.state='fkagro';
+    		 	 this.jumpForceApplied=false;  
+    		 	 this.maxVelocity.x=3*xscale; 
+    		 	 this.hitBoxSpawned=false; 		 	 
+    		 	}
+
+    		}
+    	runup()
+    		{
+    		 this.switchAnimation("run");
+    		 let playerSep=this.tgt.position.x - this.position.x;
+    		 if(Math.abs(playerSep) > this.fkPlayerFarDistance)
+    		 	this.acceleration.add(this.horiForce.copy().mult(this.sx*2));    		 
+    		 else
+    		 	{
+    		 	this.velocity.x=0;
+    		 	this.state="fkagro";
+    		 	this.switchAnimation('idle');
+    		 	}
+    		 if(Math.abs(playerSep) < this.fkJumpInDistance && this.freeToJump )
+    		 	{    		 
+    		 	 this.freeToJump=false;	
+    		 	 if(Math.random()<0.5)
+    		 	 	{
+    		 	 	this.velocity.x=0;
+    		 	 	this.state="fkjumpattack";   
+    		 	 	} 		 	
+    		 	}
+    		 
+    		}
+ 	
+    	fkagro()
+    		{
+    		 if(!this.tgt.isActive)
+    		 	return false;
+
+    		 let playerSep=this.tgt.position.x - this.position.x;
+    		 this.sx=Math.sign(playerSep);
+    		 if(Math.abs(playerSep) > this.fkJumpInDistance)
+    		 	{
+    		 	 if(!this.freeToJump) 
+    		    	{
+    		    	this.freeToJump=true;    		    		
+    		    	}
+    			 }
+
+    		 if(Math.abs(playerSep) > this.fkPlayerFarDistance) 
+    		 	{   		 	
+    		    this.state=this.longAttacks[Math.floor(Math.random()*this.longAttacks.length)];    		   
+    			}
+    		 if(gameManager.runningClock - this.fkLastAttackTime > this.fkMinAttackGap)    	
+    		    {    		    
+    		 	this.state=this.closeAttacks[Math.floor(Math.random()*this.closeAttacks.length)];   
+    		 	}		 
+    		}
+    	fkattack()
+    		{
+    		 if(!this.attackStarted && this.animation!="attack" && this.animation!="attack_anticipate" && this.animation!="attack_recover")
+    		 	{
+    		 	 this.switchAnimation("attack_anticipate");
+    		 	 this.animInQueue="attack";
+    		 	 this.attackStarted=true;
+    		 	}
+    		 else if(this.animation=="attack" && this.animInQueue!="attack_recover")
+    		 	{
+    		 	 this.animInQueue="attack_recover";
+    		 	}
+    		 else if(this.animation=="attack_recover" && this.animInQueue!="idle")
+    		 	{
+    		 	 this.animInQueue="idle";    		 	 
+    		 	}
+    		 if(this.animation=="idle" && this.attackStarted)
+    		 	{
+    		 	 this.state="fkagro";
+    		 	 this.attackStarted=false;
+    		 	 this.hitBoxSpawned=false;
+    		 	 this.fkLastAttackTime=gameManager.runningClock;
+    		 	}
+
+    		}
+    	spawnHitBoxOnHit_fknight()
+    		{
+    		 let hbWidthRatio=0.2;
+    		 let hbHeightRatio=0.3;    		 
+    		 if(this.animation=="attack" && parseInt(this.animationFrame)==2 && !this.hitBoxSpawned)
+    		 	{    
+    		 	this.hitBoxSpawned=true;		 	
+	 			new DamageHitBox(this.position.x,
+								 this.position.y,
+								 this.width*hbWidthRatio,
+								 this.height*hbHeightRatio,
+								 [gameManager.active_sprites,gameManager.hitbox_sprites],
+								 'enemy_hitbox',
+								 this,
+								 120*xscale,50*yscale,10,this.sx*1.5,1000); //xoffset,yoffset,dmg=10,dmghitback=0,life=50
+    		 	}
+    		else if(this.animation=="jump_attack_1" && parseInt(this.animationFrame)==1 && !this.hitBoxSpawned)
+    		 	{    
+    		 	this.hitBoxSpawned=true;		 	
+	 			new DamageHitBox(this.position.x,
+								 this.position.y,
+								 this.width*hbWidthRatio,
+								 this.height*hbHeightRatio,
+								 [gameManager.active_sprites,gameManager.hitbox_sprites],
+								 'enemy_hitbox',
+								 this,
+								 120*xscale,50*yscale,10,this.sx*1.5,1000); //xoffset,yoffset,dmg=10,dmghitback=0,life=50
+    		 	}
+
+
+    		}
+    	runAnimation()
+    		{
+			  this.animationFrame+=this.animations[this.animation]['anim_speed'];
+			  if(this.animationFrame >= this.animations[this.animation]['maxFrames'])
+			  	{
+		  		this.animationFrame=0;
+		  		if(this.animInQueue) 
+		  			{
+		  			this.animation=this.animInQueue;
+		  			//console.log('back to '+this.animation);
+		  			this.animInQueue=null;
+		  			}
+			  	}
+			  let rowIndex=parseInt(parseInt(this.animationFrame)/this.animations[this.animation]['cols']);
+			  let colIndex=parseInt(this.animationFrame)%this.animations[this.animation]['cols'];
+			  this.startx=colIndex * this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
+			  this.starty=rowIndex * this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
+			  this.imgWidth = this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
+			  this.imgHeight = this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
+			}
+		switchAnimation(animx)
+			{
+			 if(this.animation != animx)
+			 	{
+			 	this.animationFrame=0;
+			 	this.animation=animx;			 	
+			 	}
+			}
+
+    	}
+    //false knight ends
+    
+	class Husk
+		{
+		constructor(x,y,wid,hei,spriteGroups,spriteId='husk0')
+			{
+			 this.position= new CreateVector(x,y);
+			 this.width = wid * xscale;
+			 this.height= hei * yscale;
+			 let folderPath='sprites/husk/';
+			 this.onScreen= true;
+			 this.isActive=true;
+			 this.angle=0;
+			 this.sx=1;
+			 this.sy=1;
+			 this.startx=0;
+			 this.starty=0;
+			 this.imgWidth=0;
+			 this.imgHeight=0;
+			 this.spriteId=spriteId;
+
+			 this.acceleration=new CreateVector(0,0);
+			 this.velocity=new CreateVector(0,0);
+			 this.maxVelocity=new CreateVector(2*xscale,12*yscale);		
+			 this.horiForce=new CreateVector(1*xscale,0);	 
+			 this.gravityScale=2*yscale;	
+			 this.longRangeAttacks=['throw','rush'];	
+			 this.expVal=200; 
+			 this.soundPlayed=false;
+
+			 this.animations={
+			 	'walking':{'imgsheet':LoadImagex(folderPath,'WalkingSheet.png'),
+			  		    'width':1906,
+			  		    'height':678,			  		    
+			  		    'rows':2,
+			  		    'cols':6,
+			  		    'maxFrames':8,
+			  		    'width_extend':1,
+			  		    'height_extend':1,
+			  		    'anim_speed':0.2},
+			 	'idle':{'imgsheet':LoadImagex(folderPath,'IdleSheet.png'),
+			  		    'width':1584,
+			  		    'height':348,			  		    
+			  		    'rows':1,
+			  		    'cols':5,
+			  		    'maxFrames':5,
+			  		    'width_extend':1,
+			  		    'height_extend':1,'anim_speed':0.2},
+			 	'attack0':{'imgsheet':LoadImagex(folderPath,'AttackAnticipate.png'),
+			  		    'width':1950,
+			  		    'height':464,			  		    
+			  		    'rows':1,
+			  		    'cols':5,
+			  		    'maxFrames':5,
+			  		    'width_extend':1,
+			  		    'height_extend':1,'anim_speed':0.2},
+			 	'attack1':{'imgsheet':LoadImagex(folderPath,'Attack.png'),
+			  		    'width':1337,
+			  		    'height':425,			  		    
+			  		    'rows':1,
+			  		    'cols':2,
+			  		    'maxFrames':2,
+			  		    'width_extend':1,
+			  		    'height_extend':1,'anim_speed':0.2},
+			 	'attack2':{'imgsheet':LoadImagex(folderPath,'AttackRecover.png'),
+			  		    'width':1218,
+			  		    'height':340,			  		    
+			  		    'rows':1,
+			  		    'cols':3,
+			  		    'maxFrames':3,
+			  		    'width_extend':1,
+			  		    'height_extend':1,'anim_speed':0.2},
+			 	'startle':{'imgsheet':LoadImagex(folderPath,'StartleSheet.png'),
+			  		    'width':1464,
+			  		    'height':357,			  		    
+			  		    'rows':1,
+			  		    'cols':4,
+			  		    'maxFrames':4,
+			  		    'width_extend':1,
+			  		    'height_extend':1,'anim_speed':0.05}
+
+			 };
+			 this.animation='idle';
+			 this.animInQueue=null;
+			 this.animationFrame=0;			 
+			 this.sprite_type='husk_sentry';
+			 this.state='idle';
+			 this.raycastLength=320*xscale;
+			 this.attackProxim=150*xscale;
+			 this.playerOutDistance=1200*xscale;
+			 this.startled=false;
+			 this.lastAttackTime=0;
+			 this.maxAttackGap=1000;
+			 this.maxHealth=20;
+			 this.health=this.maxHealth;
+			 this.spriteGroups=spriteGroups;
+			 for(let grp of spriteGroups)
+			 	grp.push(this);
+			 this.hit_box=new HitBox(x,y,this.width*0.5,this.height*0.5,[
+			 	                                                        gameManager.collission_sprites
+			 	                                                        // gameManager.active_sprites
+			 	                                                        ],'huskhitbox');
+			 this.image_offset=new CreateVector(0,-45*xscale);
+			 this.huskHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,'#222222','#FF0000',[gameManager.visible_sprites],false,'huskhealth');
+			 this.huskHealthBar.onScreen=false;
+			 this.uiBarTimer=0;
+			 this.uiBarMaxTime=2000;
+			 this.healthBarOffset=new CreateVector(-30*xscale,-150*yscale);
+			 this.hitBoxSpawned=false;
+			 if(gameManager.player)
+			 	this.tgt= gameManager.player;	
+
+			 this.invincibleState=false;
+		 	 this.invin_count=0;
+		 	 this.max_invin_time=2000;
+		 	 this.flickerCount=0;
+			 this.maxFlickerTime=100;
+
+			 this.longAttackCount=0;
+			 this.maxLongAttackCount=2000;		
+			 this.meleeOver=false;
+			 this.waitTimerMeleeEnd=0;
+			 this.maxWaitTimeAfterMelee=2000; 
+
+			 this.initSetupDone=false;
+		 	 this.maxRushTime=1500;
+			}
+
+		manageInvincibility()
+			{
+			if(!this.invincibleState) return false;
+			this.invin_count+= deltaTime;
+			if(this.invin_count > this.max_invin_time)
+				{
+				 this.invin_count=0;
+				 this.invincibleState=false;
+				} 
+			}
+
+		flickerControl()
+			{
+			  if(!this.invincibleState) return true;
+			  this.flickerCount+=deltaTime;
+			  if(this.flickerCount > this.maxFlickerTime)
+			  	{
+			  	 this.flickerCount=0;
+			  	 return true;
+			  	}
+			  return false;
+			}
+		updateHealthBarPos()
+			{
+				if(this.huskHealthBar.onScreen)
+					{	
+					this.uiBarTimer+=deltaTime;
+					if(this.uiBarTimer > this.uiBarMaxTime)
+					{
+					 this.uiBarTimer=0;
+					 this.huskHealthBar.onScreen=false;
+					}
+					}
+				this.huskHealthBar.position.setVec(this.position.copy().add(this.healthBarOffset));
+			}
+		switchAnimation(animx)
+			{
+			 if(this.animation != animx)
+			 	{
+			 	this.animationFrame=0;
+			 	this.animation=animx;			 	
+			 	}
+			}
+
+		 update_and_display_hitbox()
+		 	{
+	 		// this.hit_box.updatePosition(this.position.copy().add(this.hit_box_offset));
+	 		this.position.setVec(this.hit_box.position.copy().add(this.image_offset));
+		 	}
+		 takeDamage(dmg,dir=0)
+		 	{
+		 	//this.acceleration.add(new CreateVector(dir,0));
+
+		 	if(this.invincibleState) return false;	
+		 	this.invincibleState=true;	
+	 		this.health-=dmg;
+	 		this.huskHealthBar.updateValue(this.health);
+	 		this.huskHealthBar.onScreen=true;
+	 		if(this.health<0)
+	 			{
+	 			this.tgt.giveExp(this.expVal);
+	 			SpawnClouds(this.position);
+	 			destroySelf(this);
+	 			destroySelf(this.hit_box);
+	 			destroySelf(this.huskHealthBar);
+	 			gameManager.listOfDestroyedSprites.push(this.spriteId);
+	 			this.isActive=false;
+	 			}	
+		 	}
+
+		fallDamage()
+			{
+			  if(Math.abs(this.position.y-gameManager.camera.position.y > canvas.height*5))
+			  	{
+	 			SpawnClouds(this.position);
+	 			destroySelf(this);
+	 			this.isActive=false;
+	 			console.log(this.sprite_type+' reports fall damage!!!');
+	 			}	
+			}
+
+		stateMachine()
+			{
+              switch(this.state)
+               {
+               	case 'idle':
+               		this.IdleBehav();
+               		break;
+               	case 'agro':
+               		this.AgroBehav();
+               		break;
+               	case 'attack':
+               		this.Melee();
+               		break;
+               	case 'throw':
+               		this.Throw();
+               		break;
+               	case 'rush':
+               	    this.Rush();
+               	    break;
+               	default:
+               		break;
+               }
+			} 
+		 spawnHitBoxOnSlashHusk()
+		 	{		 	
+	 		if(this.animation=="attack2" && parseInt(this.animationFrame)==1 && !this.hitBoxSpawned)
+	 			{
+	 			this.hitBoxSpawned=true;
+	 			let hbWidthRatio=0.2;
+	 			let hbHeightRatio=0.2;
+	 			if(this.state=="rush")
+	 				{
+	 				 hbWidthRatio=1;
+	 				 hbHeightRatio=0.5;	 				 
+	 				}
+	 			if(this.state=="attack" || this.state=="rush")
+		 			new DamageHitBox(this.position.x,
+		 							 this.position.y,
+		 							 this.width*hbWidthRatio,
+		 							 this.height*hbHeightRatio,
+		 							 [gameManager.active_sprites,gameManager.hitbox_sprites],
+		 							 'enemy_hitbox',
+		 							 this,
+		 							 70,0,10,this.sx*1.5);	
+		 		else if(this.state=='throw')
+		 			{		 			
+		 			new ThornyBall(this.position.x,
+		 						   this.position.y,
+		 						   30*xscale,
+		 						   30*yscale,
+		 						   this,70*xscale,0,
+		 						   [gameManager.visible_sprites,gameManager.active_sprites]
+		 				          );
+		 			}
+
+	 			}
+	 		else if(this.animation!="attack2" && this.hitBoxSpawned)
+	 			this.hitBoxSpawned=false;
+		 	}
+
+		SpawnAttackSequence()
+			{
+			if(this.animation!='attack0' && this.animation!='attack1' && this.animation!='attack2' && !this.meleeOver)
+			 	{
+			 	 this.animInQueue='attack1';
+			 	 this.switchAnimation('attack0');
+			 	 return true;
+			 	}
+			 else if(this.animation=="attack1" && this.animInQueue!="attack2")
+			 	{
+			 	this.animInQueue="attack2";		
+			 	return true;	 		
+			 	}
+			 else if(this.animation=="attack2")
+			 	{
+			 	if(this.animationFrame>= this.animations["attack2"]["maxFrames"]-1)
+			 		{
+			 		this.switchAnimation('idle');
+			 		this.meleeOver=true;
+			 		return false;
+			 		}
+			 	return true;
+			 	}
+			 return true;
+			}
+
+		Rush()
+			{
+			 //constructor(x,y,wid,hei,spriteGroups,hitboxName="unknown hitbox",parentx,xoffset,yoffset,dmg=10,dmghitback=0)
+			 if(!this.soundPlayed)
+			 	{
+			 	 document.querySelector('#whoosh').play();
+			 	 this.soundPlayed=true;
+			 	}
+			 this.SpawnAttackSequence();
+			 if(this.meleeOver)
+			 	{
+			 	 this.performPostRushRitual();
+			 	 return true;
+			 	}
+			 
+			 if(!this.initSetupDone)
+			 	{
+			 	 this.initSetupDone=true;
+			 	 this.maxVelocity.x=30*xscale;			 	 
+			 	}
+			 this.acceleration.add(this.horiForce.copy().mult(this.sx*5));
+
+			 this.waitTimerMeleeEnd+=deltaTime;
+			 if(this.waitTimerMeleeEnd > this.maxRushTime || this.PlayerDetected(this.sx,30*xscale) )
+			 	{			 	 
+			 	this.velocity.x=0;
+			 	this.waitTimerMeleeEnd=0;	
+			 	this.meleeOver=true;		 	
+			 	}			 
+			}
+		performPostRushRitual()
+			{
+			 this.velocity.x=0;	
+			 if(this.animation.substring(0,this.animation.length-1)!="attack")
+			 	{
+			 	
+			 	this.switchAnimation('idle');			 	
+			    }
+			 this.waitTimerMeleeEnd+=deltaTime;
+			 if(this.waitTimerMeleeEnd > this.maxWaitTimeAfterMelee)
+			 	{
+			 	 this.RecoverFromRush();
+			 	}
+			}
+		RecoverFromRush()
+			{
+			 this.maxVelocity.x=2*xscale;
+			 this.initSetupDone=false;			 
+			 this.waitTimerMeleeEnd=0;			
+			 // this.velocity.x=Lerp(this.velocity.x,0,2*xscale);	
+			 this.velocity.x=0;
+			 this.state='agro';
+			 this.soundPlayed=false;
+			 this.meleeOver=false;
+			}
+		IdleBehav()
+			{
+			  this.velocity.x=Lerp(this.velocity.x,0,2);	
+			  this.switchAnimation('idle');
+			  if(this.PlayerDetected(1))
+			  	{
+		  		this.state='agro';
+		  		this.sx=1;
+			  	}
+			  else if(this.PlayerDetected(-1))
+			  	{
+		  		this.state='agro';
+		  		this.sx=-1;
+			  	}
+
+			}
+
+		AgroBehav()
+			{
+			if(!this.startled)
+				{
+				 this.startled=true;
+				 this.animInQueue='idle';
+				 this.switchAnimation('startle');
+				}
+		
+			if(this.PlayerInHitRange())
+				{				
+				if(gameManager.runningClock - this.lastAttackTime > this.maxAttackGap)
+					{
+					 this.velocity.x=Lerp(this.velocity.x,0,2*xscale);	
+					 this.state='attack';
+					 //remember to reset lastAttackTime
+					}
+				if(this.longAttackCount!=0) this.longAttackCount=0;
+				}
+			else if(this.animation!='startle')
+				{				
+				 this.switchAnimation('walking');
+ 				 this.acceleration.add(this.horiForce.copy().mult(this.sx));
+ 				 this.longAttackCount+=deltaTime;
+ 				 if(this.longAttackCount > this.maxLongAttackCount)
+ 				 	{
+ 				 	 this.state=this.longRangeAttacks[Math.floor(Math.random()*this.longRangeAttacks.length)]
+ 				 	 this.longAttackCount=0;
+ 				 	}
+				}
+			
+			if(!this.tgt || Math.abs(this.position.x - this.tgt.position.x) > this.playerOutDistance)
+				{
+				 this.startled=false;				 
+				 this.state='idle';
+				 this.longAttackCount=0;
+				}
+
+			}
+		Throw()
+			{			 
+			 this.velocity.x=Lerp(this.velocity.x,0,2*xscale);		 
+			 this.Melee();
+			}
+
+		Melee()
+			{
+			 if(!this.soundPlayed)
+			 	{
+			 	 document.querySelector('#whoosh').play();
+			 	 this.soundPlayed=true;
+			 	}
+			 if(this.meleeOver)
+			 	{
+			 	 this.performPostMeleeRitual();
+			 	 return true;
+			 	}
+			 if(this.animation!='attack0' && this.animation!='attack1' && this.animation!='attack2')
+			 	{
+			 	 this.animInQueue='attack1';
+			 	 this.switchAnimation('attack0');
+			 	 // document.querySelector('#RockSmash').play();
+			 	}
+			 else if(this.animation=="attack1" && this.animInQueue!="attack2")
+			 	{
+			 	this.animInQueue="attack2";	
+			 			 		
+			 	}
+			 else if(this.animation=="attack2")
+			 	{
+			 	if(this.animationFrame>= this.animations["attack2"]["maxFrames"]-1)
+			 		this.meleeOver=true;
+			 		// this.WrapUpMelee();
+			 	}
+			}
+		performPostMeleeRitual()
+			{
+			 this.switchAnimation('idle');
+			 this.waitTimerMeleeEnd+=deltaTime;
+			 if(this.waitTimerMeleeEnd > this.maxWaitTimeAfterMelee)
+			 	{
+			 	 this.WrapUpMelee();
+			 	}
+			}
+		WrapUpMelee()
+			{
+			 this.lastAttackTime=gameManager.runningClock;
+			 this.state='agro';
+			 this.switchAnimation('idle');
+			 this.meleeOver=false;
+			 this.waitTimerMeleeEnd=0;
+			 this.soundPlayed=false;
+			}
+		PlayerInHitRange()
+			{
+			  if(!this.tgt) return false;
+			  let playerSep= this.tgt.position.x - this.position.x;
+			  if(this.sx==1 && playerSep < 0) this.sx=-1;
+			  else if(this.sx==-1 && playerSep > 0) this.sx=1;			  
+			  if(Math.abs(playerSep) < this.attackProxim)
+			  	{
+			  	// console.log(`player seperation:${playerSep}, and attack proxim:${this.attackProxim} returning true`);
+			  	return true;
+			    }
+			  // console.log(`player seperation:${playerSep}, and attack proxim:${this.attackProxim}  returning false`);
+			  return false;
+			}
+		PlayerDetected(n,dist=this.raycastLength)
+			{
+			  if(!this.tgt) return false;
+	          let offsets=[-40*yscale,0,40*yscale];
+	          for(let offset of offsets)
+	          	{
+	      		let yoffset=new CreateVector(0,offset);
+	      		if(Raycast(this.position.copy().add(yoffset),new CreateVector(n,0),dist,this.tgt))
+	      			return true;
+	          	}
+	          return false;
+			}
+		 applyGravity()
+		 	{
+		 	 this.acceleration.y+=this.gravityScale;
+		 	}
+		 checkTarget()
+		 	{
+		 	 if(this.tgt && !this.tgt.isActive)
+		 	 	this.tgt=null;
+		 	}
+		 move()
+		 	{		
+		 	 this.applyGravity(); 	 
+		 	 this.velocity.add(this.acceleration);
+		 	 this.acceleration.set(0,0);		 	
+		 	 this.applyVelocity();
+		 	 this.applyVelocityRestrictions();
+		 	 this.update_and_display_hitbox();
+		 	 this.spawnHitBoxOnSlashHusk();
+		 	 this.checkTarget();
+		 	 this.manageInvincibility();
+		 	}
+		 applyVelocity()
+		 	{		 	 	 	 
+		 	 this.hit_box.position.x+=this.velocity.x;		 	
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(x==this.hit_box) continue;
+		 	 	 
+		 	 	 if(b_collision(this.hit_box,x)) 
+		 	 	 	{
+		 	 	 	
+		 	 	 	 if(this.velocity.x > 0)
+		 	 	 	 	this.hit_box.position.x=x.position.x-x.width/2-this.hit_box.width/2-2;
+		 	 	 	 else 
+		 	 	 	 	this.hit_box.position.x=x.position.x+x.width/2+this.hit_box.width/2+2;
+		 	 	 	}	
+		 	 	 /*delete this snippet 	 
+		 	 	 else if(x.sprite_type == 'playerhitbox')
+		 	 	 	{
+		 	 	 		console.log('no collision');
+		 	 	 		console.log(`${this.hit_box.position.x},${this.hit_box.position.y}__${this.hit_box.width},${this.hit_box.height}`);
+		 	 	 		console.log(`${x.position.x},${x.position.y}__${x.width},${x.height}`);
+		 	 	 	}*/
+		 	 	}
+
+		 	 this.hit_box.position.y+=this.velocity.y;
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(x==this.hit_box) continue;
+		 	 	 if(b_collision(this.hit_box,x)) 
+		 	 	 	{
+		 	 	 	
+		 	 	 	if(this.velocity.y > 0)
+		 	 	 		this.hit_box.position.y=x.position.y-x.height/2-this.hit_box.height/2-2;
+		 	 	 	else
+		 	 	 		this.hit_box.position.y=x.position.y+x.height/2+this.hit_box.height/2+2;	
+		 	 	 	}
+		 	 	}
+		 	}
+		 applyVelocityRestrictions()
+		 	{
+		 	 let xdir=this.velocity.x/Math.abs(this.velocity.x);
+		 	 let ydir=this.velocity.y/Math.abs(this.velocity.y);
+		 	 if(Math.abs(this.velocity.y) > this.maxVelocity.y)
+		 	 	this.velocity.y=ydir*this.maxVelocity.y;
+		 	 if(Math.abs(this.velocity.x) > this.maxVelocity.x)
+		 	 	this.velocity.x=xdir*this.maxVelocity.x;
+		 	}
+
+		runAnimation()
+			{
+			  this.animationFrame+=this.animations[this.animation]['anim_speed'];
+			  if(this.animationFrame >= this.animations[this.animation]['maxFrames'])
+			  	{
+		  		this.animationFrame=0;
+		  		if(this.animInQueue) 
+		  			{
+		  			this.animation=this.animInQueue;
+		  			//console.log('back to '+this.animation);
+		  			this.animInQueue=null;
+		  			}
+			  	}
+			  let rowIndex=parseInt(parseInt(this.animationFrame)/this.animations[this.animation]['cols']);
+			  let colIndex=parseInt(this.animationFrame)%this.animations[this.animation]['cols'];
+			  this.startx=colIndex * this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
+			  this.starty=rowIndex * this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
+			  this.imgWidth = this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
+			  this.imgHeight = this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
+			}
+		 update()
+		 	{
+		 	  this.runAnimation();
+		 	  this.stateMachine();
+		 	  this.move();
+		 	  this.updateHealthBarPos();
+		 	  this.fallDamage();
+		 	}
+		 display()
+		 	{		 	 
+		 	 if(!this.onScreen) return false;
+		 	 ctx.save();
+		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
+		 	 	 		   this.position.y-gameManager.camera.position.y);
+		 	 ctx.rotate(d2r(this.angle));
+		 	 ctx.scale(this.sx,this.sy);
+		 	 if(this.flickerControl())
+		 	 ctx.drawImage(this.animations[this.animation]['imgsheet'],
+		 	 				this.startx,this.starty,this.imgWidth,this.imgHeight,
+		 	 			   -this.width/2,
+		 	 			   -this.height/2,
+		 	 			   this.width*this.animations[this.animation]['width_extend'],
+		 	 			   this.height*this.animations[this.animation]['height_extend']
+		 	 			  );
+		 	 // context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
+		 	 ctx.restore();
+		 	}
+		}
+
+    
+
+	class UIBar
+		{
+		constructor(x,y,wid,hei,val,maxVal,backgroundColor,mainColor,spriteGroups,screenOverlay=true,sprite_type="un_uibar")
+			{
+			 this.position = new CreateVector(x,y);
+			 this.width = wid * xscale;
+			 this.height = hei * yscale;
+			 this.fixedWidth= this.width;
+			 this.onScreen = true;
+			 // this.backgroundColor='#222222';
+			 this.backgroundColor = backgroundColor;
+			 this.mainColor = mainColor;
+			 this.val = val;
+			 this.maxVal = maxVal;
+			 this.fixedMaxVal=maxVal;
+			 this.spriteGroups=spriteGroups;
+			 for(let grp of this.spriteGroups)
+			 	grp.push(this);
+			 this.screenOverlay=screenOverlay;
+			 this.sprite_type=sprite_type;
+			}
+		setValues(val,maxVal)
+			{
+			 this.val = val;
+			 this.maxVal = maxVal;
+			 if(this.maxVal > this.fixedMaxVal)
+			 	this.width=this.fixedWidth*this.maxVal/this.fixedMaxVal;
+			}
+		updateValue(val)
+			{
+			 this.val=val;
+			}
+		 display()
+		 	{	
+		 	 let camx=0,camy=0;
+		 	 if(!this.screenOverlay)
+		 	 	{
+		 	 	 camx=gameManager.camera.position.x;
+		 	 	 camy=gameManager.camera.position.y;
+		 	 	}	 	 
+		 	 if(!this.onScreen) return false;
+		 	 ctx.save();
+		 	 ctx.translate(this.position.x-camx,this.position.y-camy);
+		 	 // ctx.rotate(d2r(this.angle));
+		 	 // ctx.scale(this.sx,this.sy);
+		 	 ctx.beginPath();
+		 	 ctx.fillStyle=this.backgroundColor;
+		 	 ctx.strokeStyle=this.backgroundColor;
+		 	 ctx.lineWidth="6";
+		 	 ctx.rect(0,0,this.width,this.height);
+		 	 ctx.fill();
+		 	 ctx.stroke();
+		 	 ctx.beginPath();
+		 	 ctx.fillStyle=this.mainColor;
+		 	 ctx.strokeStyle=this.backgroundColor;
+		 	 ctx.lineWidth="6";
+		 	 ctx.rect(0,0,this.width*this.val/this.maxVal,this.height);
+		 	 ctx.fill();
+		 	 ctx.restore(); 
+		 	}
+		 update()
+		 	{
+		 	 return false;
+		 	}
+		}
+
+
+	class Player
+		{
+		constructor(x,y,wid,hei,spriteGroups)
+			{
+			 this.position=new CreateVector(x,y);
+			 this.width=wid*xscale;
+			 this.height=hei*yscale;
+			 let idle_images=Array(10).fill(0).map((x,i)=>'E_E_Sword__Idle_00'+i+'.png');
+			 let run_images= Array(10).fill(0).map((x,i)=>'E_E_Sword__Run_00'+i+'.png');
+			 let slash_images=Array(10).fill(0).map((x,i)=>'E_E_Sword__Attack_00'+i+'.png');
+			 let folderPath='sprites/protagonist/';
+			 this.animations={'idle':LoadImages(folderPath+'Idle',idle_images),
+			 				  'run' :LoadImages(folderPath+'Run',run_images),
+			 				  'slash':LoadImages(folderPath+'Slash',slash_images)
+							 };
+			 this.healFlash= LoadImages('sprites/protagonist',['drinkup.png'])[0];
+			 this.animationFractions={'idle':0.8,'run':0.4,'slash':0.2};
+			 this.animation='idle';
+			 this.animationFrame=0;
+			 this.animInQueue=null;
+			 this.onScreen=true;
+			 this.isActive=true;
+			 this.sprite_type='player';
+			 this.spriteGroups=spriteGroups;
+			 for(let grp of spriteGroups)
+			 	grp.push(this);
+			 this.angle=0;
+			 this.acceleration=new CreateVector(0,0);
+			 this.velocity=new CreateVector(0,0);
+			 this.maxVelocity=new CreateVector(7*xscale,12*yscale);
+			 this.horiForce=new CreateVector(1*xscale,0);
+			 this.gravityScale=1*yscale;
+			 this.sx=1;
+			 this.sy=1;
+			 this.jumpingForce=4*this.gravityScale;
+			 this.spaceTrigger=true;
+			 this.jumping=false;
+			 this.jumpTimer=0;
+			 this.maxJumpTime=250;
+
+			 this.sideWaysShift=40*xscale;
+		 	 this.downCheckRaycast=80*yscale;
+		 	 this.slashTrigger=true;
+		 	 // gameManager.camera.tgt=this;
+
+		 	 this.health=50;
+		 	 this.maxHealth=100;
+		 	 this.hitBoxSpawned=false;
+		 	 this.weaponDamage=10;
+		 	 this.energy = 50;
+		 	 this.maxEnergy=100;
+		 	 this.energyRefillRate=0.25
+		 	 this.energyDepleteRate=10;
+		 	 this.energyCosts={"slash":50,"jump":30};
+
+		 	 gameManager.playerHealthBar.setValues(this.health,this.maxHealth);
+		 	 gameManager.playerEnergyBar.setValues(this.energy,this.maxEnergy);
+
+		 	 this.hit_box=new HitBox(x,y,this.width*0.5,
+		 	 	                         this.height,
+		 	 	                         [gameManager.collission_sprites
+		 	 	                          // gameManager.active_sprites
+		 	 	                         ],
+		 	 	                         'playerhitbox');
+		 	 this.invincibleState=false;
+		 	 this.invin_count=0;
+		 	 this.max_invin_time=2000;
+		 	 this.flickerCount=0;
+			 this.maxFlickerTime=100;
+			 this.experience=100;
+			 this.expNeeded=10;
+		     this.healing=false;
+		     this.lastHealTime=0;
+		     this.healCoolDown=2000;
+			 this.healTimeMax=3000;
+			 this.healDelta=100;
+			 this.flashOn=true;
+			 this.healTimer=0;
+			 this.healTimer2=0;
+			 this.soundPlayed=false;
+		 	 // this.damHitBox = new DamageHitBox(x-100,y,this.width*0.2,this.height*0.2,[gameManager.visible_sprites],'sample',this,70,0);
+		 	 
+			}
+		handleHealing()
+			{
+			 if(gameManager.runningClock - this.lastHealTime < this.healCoolDown)
+			 	return false;
+			 if(GetKeyPressedx('q'))
+			 	{
+			 	 if(!this.healing)	 this.healing=true;			 	 
+			 	 if(this.health < this.maxHealth && this.experience > 0)
+			 	 	{
+			 	 	this.health+=0.2;			 	 	
+			 	 	this.experience-=1;
+			 	 	gameManager.playerHealthBar.setValues(this.health,this.maxHealth);
+			 	 	}
+			 	}
+			 else if(this.healing)
+			 	{
+			 	  this.healing = false;
+			 	  this.lastHealTime= gameManager.runningClock;
+			 	}
+			}
+		giveExp(expVal)
+			{
+			 this.experience+=expVal;
+			}
+		receiveParams(health,maxHealth,maxEnergy,weaponDamage,experience)
+			{
+			console.log(`player received health:${health},maxHealth:${maxHealth} and maxEnergy:${maxEnergy}`);
+			this.maxHealth = maxHealth;
+			this.maxEnergy = maxEnergy;
+			this.weaponDamage = weaponDamage;
+			this.experience = experience;
+			this.health = health;
+			gameManager.playerHealthBar.setValues(this.health,this.maxHealth);
+		 	gameManager.playerEnergyBar.setValues(this.energy,this.maxEnergy);	
+			}
+
+		 updateParams(maxHealth,maxEnergy,weaponDamage)
+		 	{
+		 	 this.maxHealth=maxHealth;
+		 	 this.maxEnergy=maxEnergy;
+		 	 this.weaponDamage=weaponDamage;
+		 	 gameManager.playerHealthBar.setValues(this.health,this.maxHealth);
+		 	 gameManager.playerEnergyBar.setValues(this.energy,this.maxEnergy);
+		 	}
+		 update_and_display_hitbox()
+		 	{
+	 		// this.hit_box.updatePosition(this.position);
+	 		this.position.setVec(this.hit_box.position);
+		 	}
+		manageInvincibility()
+			{
+			if(!this.invincibleState) return false;
+			this.invin_count+= deltaTime;
+			if(this.invin_count > this.max_invin_time)
+				{
+				 this.invin_count=0;
+				 this.invincibleState=false;
+				} 
+			}
+
+		flickerControl()
+			{
+			  if(!this.invincibleState) return true;
+			  this.flickerCount+=deltaTime;
+			  if(this.flickerCount > this.maxFlickerTime)
+			  	{
+			  	 this.flickerCount=0;
+			  	 return true;
+			  	}
+			  return false;
+			}
+
+		fallDamage()
+			{
+			  return false;
+			  if(this.position.y > 5*canvas.height)
+			  {
+			  	this.health-=2;
+			  	if(this.health > 0) 
+			  		return;
+			  	destroySelf(this.hit_box);
+	 			destroySelf(this);
+	 			this.isActive=false;
+	 			gameManager.player=null;
+	 			gameManager.camera.tgt=gameManager.camera_stop_sprites[0];
+			  }
+			}
+		
+
+		takeDamage(dmg,dir=0)
+		 	{		 	
+		 	if(this.invincibleState) return false;
+		 	document.querySelector('#LossBuzz').play();	
+		 	this.invincibleState=true;	 	
+		 	this.acceleration.add(new CreateVector(dir,0));
+	 		this.health-=dmg;
+	 		gameManager.playerHealthBar.updateValue(this.health);	 		
+	 		if(this.health<=0)
+	 			{
+	 			SpawnClouds(this.position);
+	 			console.log('health fell below zero');
+	 			destroySelf(this.hit_box);
+	 			destroySelf(this);
+	 			this.isActive=false;
+	 			gameManager.player=null;	 			
+	 			}
+		 	}
+		refillEnergy()
+			{
+			 if(this.energy >= this.maxEnergy) return false;
+			 this.energy+=this.energyRefillRate;
+			 gameManager.playerEnergyBar.updateValue(this.energy);
+			}
+		 	
+		 runAnimation()
+		 	{
+	 		this.animationFrame+=this.animationFractions[this.animation];	 		
+	 		if(this.animationFrame >= this.animations[this.animation].length)
+	 			{
+	 			 this.animationFrame=0;
+	 			 if(this.animInQueue) 
+	 			 	{
+	 			 	this.animation=this.animInQueue;
+	 			 	this.animInQueue=null;
+	 			 	}
+	 			}
+		 	}
+
+		 spawnHitBoxOnSlash()
+		 	{
+		 	
+	 		if(this.animation=="slash" && parseInt(this.animationFrame)==6 && !this.hitBoxSpawned)
+	 			{
+	 			document.querySelector('#RockSmash').play();
+	 			this.hitBoxSpawned=true;
+	 			new DamageHitBox(this.position.x,
+	 							 this.position.y,
+	 							 this.width*0.2,
+	 							 this.height*0.2,
+	 							 [gameManager.hitbox_sprites,gameManager.active_sprites],
+	 							 'player_hitbox',
+	 							 this,
+	 							 70,0,this.weaponDamage,this.sx*1.5);
+	 			/*
+	 			new ThornyBall(this.position.x,
+							   this.position.y,
+							   30*xscale,
+							   30*yscale,
+							   this,70*xscale,0,
+							   [gameManager.visible_sprites,gameManager.active_sprites]
+					          );	*/
+
+	 			}
+	 		else if(this.animation!="slash" && this.hitBoxSpawned)
+	 			this.hitBoxSpawned=false;
+		 	}
+		 checkIfOnGround()
+		 	{
+		 	for(let x of gameManager.collission_sprites)
+		 		{
+		 		 if(!x.onScreen || x==this.hit_box) continue;
+		 		 
+		 		 if(Raycast(this.position.copy(),new CreateVector(0,1),this.downCheckRaycast,x) )
+		 		 	{
+		 		 	return true;
+		 		 	}
+		 		}
+		 	return false;
+		 	}
+
+		 jumpingContols()
+		 	{
+		 	/*
+		 	 if(this.checkIfOnGround())
+		 		DisplayInGaps("player is on ground");
+		 	else
+		 		DisplayInGaps("player is in air");
+		 	*/
+		 	 if(spacePress)
+		 	 	{
+		 	 	 if(this.spaceTrigger && !this.jumping && this.checkIfOnGround())
+		 	 	 	{
+		 	 	 	if(this.energy < this.energyCosts["jump"]) 
+		 	 	 		return false;
+		 	 	 	
+		 	 	 	this.energy-=this.energyCosts["jump"];
+		 	 	 	this.spaceTrigger=false;
+		 	 	 	this.jumping=true;
+		 	 	 	document.querySelector('#GetCoin').play();
+		 	 	 	this.jumpTimer=0;
+		 	 	 	}
+		 	 	 else if(this.jumping)
+		 	 	 	{
+		 	 	 	 this.acceleration.y-=this.jumpingForce;
+		 	 	 	 this.jumpTimer+=deltaTime;		 	 	 	 
+		 	 	 	 if(this.jumpTimer > this.maxJumpTime)
+		 	 	 	 	{		 	 	 	 	 
+		 	 	 	 	 this.jumping=false;
+		 	 	 	 	}
+		 	 	 	}
+		 	 	}
+		 	 else if(!this.spaceTrigger && this.checkIfOnGround()) this.spaceTrigger=true;
+		 	 if(!spacePress && this.jumping) this.jumping=false;
+		 	}
+		 applyGravity()
+		 	{
+		 	 this.acceleration.y+=this.gravityScale;
+		 	}
+		 changeAnimation(anim)
+		 	{
+		 	if(this.animation=="slash") return false;
+	 		
+	 		if(this.animation == anim) return false;
+	 		else
+	 			{
+	 			this.animation=anim;
+	 			this.animationFrame=0;
+	 			}
+		 	}
+		 move()
+		 	{	
+		 	 // DisplayInGaps(`${this.position.x},${this.position.y}`);	 	 
+		 	 // this.checkDeath();
+		 	 this.handleHealing();
+		 	 this.applyGravity();
+		 	 this.manualControls();
+		 	 this.jumpingContols();
+		 	 this.velocity.add(this.acceleration);
+		 	 this.acceleration.set(0,0);
+		 	 this.applyVelocity();
+		 	 this.applyVelocityRestrictions();	
+		 	 this.update_and_display_hitbox();	 
+		 	 this.spawnHitBoxOnSlash();	 
+		 	 this.refillEnergy();
+		 	 this.manageInvincibility();
+		 	}
+
+		 manualControls()
+		 	{
+		 	if(this.invincibleState && this.invin_count < 0.5*this.max_invin_time)
+		 		return false; 
+		 	if(this.animation!='slash')
+			 	{
+		 		if(leftPress || leftArrow)
+		 			{
+		 			if(this.sx!=-1) this.sx=-1;
+		 			this.changeAnimation('run');
+		 			this.acceleration.sub(this.horiForce);
+		 			}
+		 		else if(rightPress || rightArrow)
+		 			{
+		 			if(this.sx!=1) this.sx=1;
+		 			this.changeAnimation('run');
+		 			this.acceleration.add(this.horiForce);
+		 			}
+		 		else
+		 			{
+		 			this.changeAnimation('idle');
+		 			this.velocity.x=Lerp(this.velocity.x,0,16);	 					 		
+		 			}
+		 		}
+	 		else
+		 		{
+		 		this.velocity.x=Lerp(this.velocity.x,0,32);	 	
+		 		}
+
+	 		if(GetKeyPressedx("z") && this.slashTrigger)
+	 			{
+	 			 if(this.energy < this.energyCosts["slash"])
+	 			 	return false;
+	 			 this.energy-=this.energyCosts["slash"]; 
+	 			 this.slashTrigger=false;
+	 			 this.animInQueue="idle";
+	 			 this.changeAnimation("slash");	
+	 			 
+	 			}
+	 		else if(!GetKeyPressedx("z")&& !this.slashTrigger)
+	 			{
+	 			 this.slashTrigger=true;
+	 			}
+	 			
+		 	}
+
+		 checkDeath()
+		 	{
+		 	 return false;
+		 	 if((this.position.x - gameManager.camera.position.x > 1.5*canvas.width)||
+		 	   (this.position.y - gameManager.camera.position.y > 1.5*canvas.height) )
+		 	 	{
+		 	 	 this.onScreen=false;
+		 	 	 console.log(`${this.sprite_type} has died`);
+		 	 	}
+		 	}
+
+		 collidedWith()
+		 	{
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(b_collision(this,x)) 
+		 	 	 	{
+		 	 	 	 return x;
+		 	 	 	}
+		 	 	}
+		 	 return false;
+		 	}
+
+		 applyVelocity()
+		 	{		 	 	 	 
+		 	 this.hit_box.position.x+=this.velocity.x;		 	
+		 	 for(let k in gameManager.collission_sprites)
+		 	 	{ 
+		 	 	 let x=gameManager.collission_sprites[k];
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(x==this || x==this.hit_box) continue;		 	 	 
+		 	 	 if(b_collision(this.hit_box,x)) 
+		 	 	 	{		 
+		 	 	 	// console.log('collision with '+x.sprite_type); 	 	 
+		 	 	 	 if(this.velocity.x > 0)
+		 	 	 	 	{		 	 	 	 
+		 	 	 	 	this.hit_box.position.x=x.position.x - x.width/2-this.hit_box.width/2-2;		 	 	 	 	
+		 	 	 	  	}
+		 	 	 	 else 
+		 	 	 	 	{
+		 	 	 	    this.hit_box.position.x=x.position.x + x.width/2 + this.hit_box.width/2+2;		 	 	 	    
+		 	 	 		}
+		 	 	 	}
+		 	 	}
+
+		 	 this.hit_box.position.y+=this.velocity.y;
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(x==this || x==this.hit_box) continue;		 	 	 
+		 	 	 if(b_collision(this.hit_box,x)) 
+		 	 	 	{
+		 	 	    // console.log('collision with '+x.sprite_type);
+		 	 	 	if(this.velocity.y > 0)
+		 	 	 		{
+		 	 	 		this.hit_box.position.y=x.position.y-x.height/2-this.hit_box.height/2-2;		 	 	 		
+		 	 	 		}
+		 	 	 	else
+		 	 	 		{
+		 	 	 		this.hit_box.position.y=x.position.y+x.height/2+this.hit_box.height/2+2;		 	 	 		
+		 	 	 		}
+		 	 	 	}
+		 	 	}
+		 	}
+		 applyVelocityRestrictions()
+		 	{
+		 	 let xdir=this.velocity.x/Math.abs(this.velocity.x);
+		 	 let ydir=this.velocity.y/Math.abs(this.velocity.y);
+		 	 if(Math.abs(this.velocity.y) > this.maxVelocity.y)
+		 	 	this.velocity.y=ydir*this.maxVelocity.y;
+		 	 if(Math.abs(this.velocity.x) > this.maxVelocity.x)
+		 	 	this.velocity.x=xdir*this.maxVelocity.x;
+		 	}
+
+		 flashThis()
+		 	{
+		 	 if(!this.healing) return false;
+		 	 this.healTimer+= deltaTime;
+		 	 this.healTimer2+=deltaTime;
+		 	 if(this.healTimer > this.healDelta)
+		 	 	{
+		 	 	 this.healTimer=0;
+		 	 	 this.flashOn=!this.flashOn;
+		 	 	}
+		 	 if(this.healTimer2 > this.healTimeMax)
+		 	 	{
+		 	 	 this.flashOn=true;
+		 	 	 this.healing=false;
+		 	 	 this.healTimer=0;
+		 		 this.healTimer2=0;
+		 		 this.lastHealTime= gameManager.runningClock;
+		 	 	}
+		 	 return this.flashOn;
+		 	}
+		 update()
+		 	{
+		 	 if(!this.onScreen) return false;
+		 	 this.runAnimation();
+		 	 this.move();
+		 	 this.fallDamage();
+		 	}
+		 display()
+		 	{		 	 
+		 	 if(!this.onScreen || !this.flickerControl()) return false;
+
+		 	 ctx.save();
+		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
+		 	 	 		   this.position.y-gameManager.camera.position.y);
+		 	 ctx.rotate(d2r(this.angle));
+		 	 ctx.scale(this.sx,this.sy);
+		 	 ctx.drawImage(this.animations[this.animation][parseInt(this.animationFrame)],
+		 	 			   -this.width/2,
+		 	 			   -this.height/2,
+		 	 			   this.width,
+		 	 			   this.height
+		 	 			  );
+		 	 if(this.flashThis())
+		 	 ctx.drawImage(this.healFlash,
+						  -this.width/2,
+		   				  -this.height/2,
+		   				  this.width,
+		   				  this.height
+		 	 			  );
+		 	 ctx.restore(); 
+		 	}
+
+
+		}
+
+	class Camera
+		{
+		  constructor()
+		  	{
+		  	 this.position=new CreateVector(0,0);
+		  	 this.mouseLockX=0;
+		  	 this.mouseLockY=0;	
+		  	 this.tgt=null;	  
+		  	 this.lerpFactor=8;	 
+		  	}
+		  runWithMouse()
+		  	{
+		  	 if(mousePressed)
+		  	 	{	
+		  	 	if(this.mouseLockX==0)
+		  	 		{
+		  	 		this.mouseLockX=mouseX;		  	 		
+		  	 		}
+		  	 	if(this.mouseLockY==0)
+		  	 		{
+		  	 		this.mouseLockY=mouseY;
+		  	 		}
+		  	 	this.position.x-=(mouseX-this.mouseLockX)/10;
+		  	 	this.position.y-=(mouseY-this.mouseLockY)/10;
+		  	 	}
+		  	 else
+		  	 	{
+		  	 	if(this.mouseLockX!=0) this.mouseLockX=0;
+		  	 	if(this.mouseLockY!=0) this.mouseLockY=0;
+		  	 	}
+		  	}
+		  smoothFocus(followH,followV)
+		  	{
+		  	 if(!this.tgt) return false;
+		  	 // DisplayInGaps(`camera is following ${this.tgt.sprite_type}`);
+		  	 if(followH)
+		  	 	this.position.x=Lerp(this.position.x,this.tgt.position.x-canvas.width/2,this.lerpFactor);
+		  	 if(followV)
+		  	 	this.position.y=Lerp(this.position.y,this.tgt.position.y-canvas.height/2,this.lerpFactor);
+		  	}
+
+		}
+	class Button
+		{
+		constructor(x,y,tex,btnGroups)
+			{
+			 this.position=new CreateVector(x,y);
+			 this.tex=tex;
+			 this.width=140;
+			 this.height=50;
+			 this.onScreen=true;
+			 this.mouseTrigger=false;
+			 this.fillColor='#a3a375';
+			 this.clickColor='#ccccb3';
+			 this.presentColor=this.fillColor;
+			 this.btnGroups=btnGroups;
+			 this.btnGroups.push(this);
+			}
+		colorSwitch()
+			{			
+			let leftx=this.position.x - this.width/2;
+		 	let rightx = this.position.x + this.width/2;
+		 	let lefty=this.position.y - this.height/2;
+		 	let righty = this.position.y + this.height/2;		 
+			if(mouseX > leftx && mouseX <rightx && mouseY > lefty && mouseY < righty )
+				{				
+				this.presentColor = this.clickColor;
+				}
+			else
+				{				
+				this.presentColor=this.fillColor;
+				}
+			}
+		update()
+			{
+			 this.colorSwitch();
+			 if(mousePressed && !this.mouseTrigger)
+			 	{
+			 	 this.mouseTrigger=true;
+			 	 let leftx=this.position.x - this.width/2;
+			 	 let rightx = this.position.x + this.width/2;
+			 	 let lefty=this.position.y - this.height/2;
+			 	 let righty = this.position.y + this.height/2;
+			 	 if(mouseX > leftx && mouseX <rightx && mouseY > lefty && mouseY < righty )
+			 	 	{
+			 	 	// this.presentColor = this.clickColor;
+			 	 	 switch(this.tex)
+			 	 	 	{
+			 	 	 	case 'Save':				 	 		
+				 	 		gameManager.saveStatusToLocalStoragex();
+				 	 		gameManager.gamePaused = false;
+				 	 		break;
+				 	 	case 'Restart':
+				 	 	    if(confirm("Press Ok to delete progress and restart game from start"))
+				 	 	    {
+				 	 		localStorage.removeItem("GameSaveData");
+				 	 		window.location.href='Platformer.html';
+				 	 		}
+				 	 		break;
+			 	 		}
+
+			 	 	}
+			 	}
+			 else if(!mousePressed && this.mouseTrigger)
+			 	{
+			 	 this.mouseTrigger=false;			 	 
+			 	}
+			 // else if(!mousePressed)
+			 // 	{
+				// this.presentColor=this.fillColor;
+			 // 	}
+			}
+		display()
+			{			 	 
+			 ctx.save();
+			 ctx.translate(this.position.x,this.position.y);
+			 ctx.fillStyle=this.presentColor;//#ccccb3
+			 ctx.strokeStyle='#000000';
+			 ctx.beginPath();
+			 ctx.rect(-this.width/2,-this.height/2,this.width,this.height);
+			 ctx.stroke();
+			 ctx.fill();			 
+			 ctx.restore();
+			 w2screen(this.tex,this.position.x-40,this.position.y+10);
+			}
+		}
+
+	class LevelUpBox
+		{
+		 constructor(go)
+		 	{		 	  
+		 	  this.position=new CreateVector(canvas.width/2,canvas.height/2);
+		 	  this.width=800;
+		 	  this.height=600;
+		 	  this.maxHealth=100;
+		 	  this.maxEnergy=100;
+		 	  this.weaponDamage=10;
+		 	  this.experience=100;
+		 	  this.expNeeded=10;	
+		 	  this.focussed=1;
+		 	  this.coolDownTimer=0;
+		 	  this.coolDownMaxTime=200;
+		 	  this.btnGroups=[];
+		 	  this.go=go;
+		 	  new Button(this.position.x,this.position.y+270,"Save",this.btnGroups);
+		 	  new Button(this.position.x+300,this.position.y-175,"Restart",this.btnGroups);
+		 	}
+		 update()
+		 	{
+		 	 if(!gameManager.gamePaused || !gameManager.player) return false;		 	 
+		 	 this.runCoolDown();
+		 	 this.checkForKeyPress();		 	 
+		 	}
+		 receiveGameObject(obj)
+		 	{
+		 	 this.go=obj;
+		 	}
+		 displayAndUpdateButtons()
+		 	{
+		 	 for(let btn of this.btnGroups)
+		 	 	{
+		 	 	btn.update();
+		 	 	btn.display();	
+		 		}		 	 
+		 	}
+		 runCoolDown()
+		 	{
+		 	 if(this.coolDownTimer==0) return false;
+		 	 this.coolDownTimer += deltaTime;
+		 	 if(this.coolDownTimer > this.coolDownMaxTime)
+		 	 	{
+		 	 	 this.coolDownTimer=0;
+		 	 	}
+		 	}
+		 changeParam()
+		 	{
+		 	 if(this.go.experience < this.go.expNeeded)
+		 	 	return false;
+		 	 switch(this.focussed)
+		 	 	{
+		 	 		case 1:
+		 	 			this.go.maxHealth+=1;		 	 			
+		 	 			break;
+		 	 		case 2:
+		 	 			this.go.maxEnergy+=1;
+		 	 			break;
+		 	 		case 3:
+		 	 			this.go.weaponDamage+=1;
+		 	 			break;
+		 	 		default:
+		 	 		break;
+		 	 	}
+		 	 this.go.experience-=this.go.expNeeded;		 	 
+		 	 // gameManager.player.updateParams(this.maxHealth,this.maxEnergy,this.weaponDamage);
+		 	 this.go.expNeeded=parseInt(1.1*this.go.expNeeded);
+		 	}
+		 checkForKeyPress()
+		 	{
+		 	 if(downArrow && this.coolDownTimer==0)
+		 	 	{
+		 	 	 this.focussed+=1;
+		 	 	 if(this.focussed > 3) this.focussed=1;
+		 	 	 this.coolDownTimer=1;
+		 	 	}
+		 	 else if(upArrow && this.coolDownTimer==0)
+		 	 	{
+		 	 	 this.focussed-=1;
+		 	 	 if(this.focussed < 1) this.focussed=3;
+		 	 	 this.coolDownTimer=1;
+		 	 	}
+		 	 else if(rightArrow && this.coolDownTimer==0)
+		 	 	{
+		 	 	  this.coolDownTimer=1;
+		 	 	  this.changeParam();
+		 	 	}
+		 	 else if(leftArrow && this.coolDownTimer==0)
+		 	 	{
+		 	 	  this.coolDownTimer=1;
+		 	 	  this.changeParam(-1);
+		 	 	}
+
+		 	}
+		 display()
+		 	{
+		 	 if(!gameManager.gamePaused) return false;
+		 	 ctx.save();
+		 	 ctx.translate(this.position.x,this.position.y);
+		 	 ctx.fillStyle="#604020";
+		 	 ctx.strokeStyle="#604020";
+		 	 ctx.beginPath();
+		 	 ctx.rect(-this.width/2,-this.height/2,this.width,this.height);		 	 
+		 	 ctx.stroke();
+		 	 ctx.fill();		 	 
+		 	 ctx.restore();
+		 	 this.showStats();
+		 	 this.displayAndUpdateButtons();
+		 	}
+
+		 showStats()
+		 	{
+		 	 let startx=this.position.x -this.width*0.4;
+		 	 let starty=this.position.y - this.height*0.4;
+		 	 let shifts=[[100,0],[-100,80],[0,80],[0,80],[0,280],[500,0]];
+		 	 let dialogues=["Use Arrow keys to navigate",
+		 	 			    "Health :"+this.go.maxHealth,
+		 	 			    "Energy :"+this.go.maxEnergy,
+		 	 			    "Weapon Damage:"+this.go.weaponDamage,
+		 	 			    "Exp Needed:"+this.go.expNeeded,
+		 	 			    "Exp:"+this.go.experience
+		 	 			   ];
+		 	 for(let i in dialogues)
+		 	 	{	
+		 	 	 startx+=shifts[i][0];
+		 	 	 starty+=shifts[i][1];
+		 	 	 if(i==this.focussed ||(this.go.experience < this.expNeeded && i==5))
+		 	 	 w2screen(dialogues[i],startx,starty,'#FF0000');
+		 	 	 else
+		 	 	 w2screen(dialogues[i],startx,starty); 
+		 	 	}
+		 	}
+		}
+
+
+	class GameManager
+		{
+		 constructor()
+		 	{
+		 	 this.visible_sprites=[];
+		 	 this.active_sprites=[];		 	 		 	 
+		 	 this.collission_sprites=[];
+		 	 this.hitbox_sprites=[];
+		 	 this.enemy_sprites=[];
+		 	 this.camera_stop_sprites=[];
+		 	 this.entryexit_sprites=[];
+		 	 this.camera=new Camera(0,0);
+		 	 this.scenesReady=[];
+		 	 this.scenesLoaded=[];
+		 	 this.listOfDestroyedSprites=[];
+		 	 this.testing=false;
+		 	 this.runningClock=0;		 	 
+		 	 this.player=null;
+		 	 this.tempCounter=0;
+		 	 this.gamePaused=false;
+		 	 this.inTransition=false;
+		 	 this.sceneForward=true;
+		 	 this.positionAdjuster=new PositionAdjuster(null,[this.visible_sprites,this.active_sprites]);
+
+		 	 this.playerHealthBar= new UIBar(50,20,300,30,100,100,'#222222','#FF0000',[this.visible_sprites,this.active_sprites],true,'playerhealth');
+			 this.playerEnergyBar= new UIBar(50,100,300,30,100,100,'#222222','#0000FF',[this.visible_sprites,this.active_sprites],true,'playerenergy');
+			 this.levelUpBox=new LevelUpBox(this.player);			 
+			 this.localStorageChecked=false;
+		 	}
+		 getLocalStoragex(){
+		 	/*
+		 	let localStorage_local={"sceneNo":2,
+		 						    "player":{"health":80,"maxHealth":200,"weaponDamage":20,"exp":100,"maxEnergy":100}
+		 	                       };
+		 	*/
+		 	let localStorage_local = localStorage.getItem("GameSaveData");
+		 	if(!localStorage_local) return false;
+		 	localStorage_local= JSON.parse(localStorage_local);
+		 	return localStorage_local; 
+		 }
+
+		 saveStatusToLocalStoragex(){
+		 	let sceneNo= this.scenesLoaded.filter(x=>x).length;
+		 	let datum={"sceneNo":sceneNo,
+					   "player":{"health":this.player.health,
+					             "maxHealth":this.player.maxHealth,
+					             "weaponDamage":this.player.weaponDamage,
+					             "exp":this.player.experience,
+					             "maxEnergy":this.player.maxEnergy
+					            },
+					   "listOfDestroyedSprites":this.listOfDestroyedSprites
+                      };
+            localStorage.setItem("GameSaveData",JSON.stringify(datum));
+		 }
+
+
+		 unload_components()
+		 	{
+		 	this.collission_sprites=[];
+		 	this.camera_stop_sprites=[];
+		 	this.entryexit_sprites=[];
+		 	if(!this.player)
+		 		{
+		 		this.visible_sprites=[this.playerHealthBar,this.playerEnergyBar,this.positionAdjuster];
+		 		this.active_sprites=[this.playerHealthBar,this.playerEnergyBar,this.positionAdjuster];	
+		 		}
+		 	else{
+		 		this.visible_sprites=[this.player,this.positionAdjuster,this.playerHealthBar,this.playerEnergyBar];
+		 		this.active_sprites=[this.player,this.positionAdjuster,this.playerHealthBar,this.playerEnergyBar];
+		 		this.collission_sprites=[this.player.hit_box];
+		 		}
+		 			 	
+		 	}
+
+		 runClock()
+		 	{
+	 		this.runningClock+=deltaTime;
+	 		if(this.runningClock > 300000) this.runningClock=0;
+		 	}
+
+		 showExperience()
+		 	{
+		 	 if(!this.player) return false;
+		 	 w2screen("Exp:"+this.player.experience,canvas.width-100,canvas.height-50);
+		 	 w2screen("Weapon:"+this.player.weaponDamage,20,canvas.height-50);
+		 	}
+
+		 update()
+		 	{
+		 	 //DisplayInGaps(this.collission_sprites.map(x=>x.sprite_type).reduce((s,x)=>s+x+',',''));		 	 
+		 	 this.runClock();
+		 	 this.runGame();
+		 	 this.showLevelUpBox();
+		 	 this.checkScenes();	
+		 	 this.showExperience();	 
+		 	}
+		 showLevelUpBox()
+		 	{
+		 	 this.levelUpBox.update();
+		 	 this.levelUpBox.display();
+		 	}
+		 changeScene(sc_id)
+		 	{		
+		 	 this.inTransition=true; 	 		 	 
+		 	 
+
+		 	 if(sc_id=="scright")
+		 	 	{
+		 	 	 this.sceneForward=true;
+		 	 	 this.scenesReady.push(true);
+		 	 	 this.scenesLoaded.push(false);
+		 	 	}
+		 	 else if(sc_id=="scleft")
+		 	 	{
+		 	 	console.log('going back to previous scene');
+		 	 	this.sceneForward=false;
+	 	 		this.scenesReady.pop();
+	 	 		this.scenesLoaded.pop();
+	 	 		this.scenesLoaded[this.scenesLoaded.length-1]=false;
+		 	 	}
+		 	 else
+		 	 	{
+		 	 	this.sceneForward=true;
+		 	 	this.scenesLoaded[this.scenesLoaded.length-1]=false;
+		 	 	}
+		 	}
+
+		 placePlayerOnEntryExit(ent_ex)
+		 	{
+	 		for(let elem of this.entryexit_sprites)
+	 			{
+ 				if(elem.sprite_type==ent_ex)
+ 					{
+ 					 console.log(`player placed at ${elem.position.x},${elem.position.y} of ${elem.sprite_type}`);
+ 					 gameManager.player.hit_box.position.setVec(elem.position);
+ 					}
+	 			}
+		 	}
+
+		 camChecker()
+		 	{
+		 	 if(!(this.camera.tgt && this.camera.tgt==this.player))
+		 	 	{		 	 	
+		 	 	return [true,true];
+		 	 	}
+		 	 let resultMat=[true,true];		 	 
+		 	 for(let camstopper of this.camera_stop_sprites)
+		 	 	{
+		 	 	 resultMat=camstopper.cameraCanFollow(this.player).map((x,i)=>x?resultMat[i]:false);		 	 	 
+		 	 	}
+		 	 return resultMat;
+		 	}
+		 runGame()
+		 	{
+		 	 // this.camera.runWithMouse();
+		 	 const [hori,vert]=this.camChecker();
+		 	 this.camera.smoothFocus(hori,vert);
+
+		 	 for(let sprite of this.visible_sprites)
+		 	 	{			 	 	
+		 	 	sprite.display();
+		 	 	}
+		 	 for(let sprite of this.active_sprites)
+		 	 	{
+		 	 	if(!gameManager.gamePaused)	 	 	
+		 	 		sprite.update();	
+		 	 	}
+		 	 for(let hb of this.hitbox_sprites)
+		 	 	{
+		 	 	 if(gameManager.gamePaused)
+		 	 	 	continue;
+		 	 	 if(hb.sprite_type=="player_hitbox")
+		 	 	 	{
+		 	 	 	 for(let sprite of this.enemy_sprites)
+		 	 	 	 	{
+		 	 	 	 	 if(b_collision(sprite.hit_box,hb))
+		 	 	 	 	 	{
+		 	 	 	 	 	 hb.causeDamage(sprite);	
+		 	 	 	 	 	}
+		 	 	 	 	}
+		 	 	 	}
+		 	 	 else if(hb.sprite_type=="enemy_hitbox")
+		 	 	 	{
+		 	 	 	  if(!gameManager.player) continue;
+		 	 	 	  if(b_collision(gameManager.player.hit_box,hb))
+		 	 	 	  	hb.causeDamage(gameManager.player);
+		 	 	 	}
+		 	 	}
+		 	}
+		 alterSceneData()
+		 	{
+		 	 if(this.localStorageChecked)
+		 	 	{		 	 	
+		 	 	return false;
+		 	    }
+		 	 this.localStorageChecked=true;		 	 
+		 	 let localStoragex=this.getLocalStoragex();
+		 	 if(!localStoragex) 
+		 	 	{
+		 	 	console.log('nothing in localstorage..returning');
+		 	 	return true;
+		 	 	}
+		 	let scene=localStoragex.sceneNo;
+
+ 	 	 	this.player=new Player(100*xscale,
+		   	   					   200*yscale,
+							   	   150*xscale,
+							   	   100*yscale,
+							   	   [this.visible_sprites,this.active_sprites]
+		   	   					  );
+ 	 	 	this.levelUpBox.receiveGameObject(this.player);
+ 	 	 	if(localStoragex.listOfDestroyedSprites)
+ 	 	 		this.listOfDestroyedSprites=localStoragex.listOfDestroyedSprites;
+ 	 	 	this.player.receiveParams(localStoragex.player.health,
+ 	 	 		                      localStoragex.player.maxHealth,
+ 	 	 		                      localStoragex.player.maxEnergy,
+ 	 	 		                      localStoragex.player.weaponDamage,
+ 	 	 		                      localStoragex.player.exp 	 	 		                      
+ 	 	 		                     );
+
+		 	 for(let i=0;i < scene;i++)
+		 	 	{
+		 	 	 this.scenesReady[i]=true;
+		 	 	 this.scenesLoaded[i]=true;
+		 	 	}
+		 	 this.scenesLoaded[this.scenesLoaded.length-1]=false;
+
+		 	 console.log(JSON.stringify(this.scenesReady));
+		 	 console.log(JSON.stringify(this.scenesLoaded));
+		 	}
+		 checkScenes()
+		 	{
+		 	 this.alterSceneData();
+		 	 let n=this.scenesReady.length;		 	 
+		 	 if(n==0)
+		 	 	{
+		 	 	 this.scenesReady[0]=true;
+		 	 	 this.scenesLoaded[0]=false;
+		 	 	 n+=1;
+		 	 	}
+		 	 for(let i=0;i<n;i++)
+			 	 {
+			 	 if(this.scenesReady[i]==true && this.scenesLoaded[i]==false)
+			 	 	{
+			 	 	// if(!(n==1 && this.sceneForward) && !this.testing)
+			 	 	this.unload_components();
+			 	 	this.loadScene(i);
+			 	 	break;
+			 	 	}
+			 	 }
+		 	}
+		 loadScene(n)
+		 	{
+		 	this.tempCounter+=1;
+		 	console.log('gameManager called '+this.tempCounter+ ' times for scene:'+n);
+		 	if(this.tempCounter > 6) 
+		 		{
+		 		console.log('something is wrong');
+		 		return false;
+		 		}
+		 	 // this.unload_components();		 	 
+		 	 for(let elem of scenes[n])
+		 	 	{
+		 	 	/*
+		 	 	 if (this.player || (!this.testing && elem['sprite']=='player' && (n!=0 || !this.sceneForward) ) )
+		 	 	 	continue;
+		 	 	 */
+		 	 	 if(elem['sprite']=='player' && (this.player) )
+		 	 	 	continue;
+		 	 	 if(elem['sprite']=='platform')
+		 	 	 	new Platform(elem['x']*xscale,
+		 	 	 				 elem['y']*yscale,
+		 	 	 				 elem['width']*xscale,
+		 	 	 				 elem['height']*yscale,
+		 	 	 				 [this.visible_sprites,this.collission_sprites]
+		 	 	 				);
+		 	 	 else if(elem['sprite']=='player')	
+		 	 	 	{		 	 	 		 	 	 	
+		 	 	 	this.player=new Player(elem['x']*xscale,
+		 	 	 		   	   elem['y']*yscale,
+		 	 	 		   	   elem['width']*xscale,
+		 	 	 		   	   elem['height']*yscale,
+		 	 	 		   	   [this.visible_sprites,this.active_sprites]
+		 	 	 		   	   );	
+		 	 	   this.levelUpBox.receiveGameObject(this.player);
+		 	 	   }		 	 	 
+		 	 	 else if(elem['sprite'].split('_')[0]=='camstopper')
+		 	 	 	new CameraStopper(elem['x']*xscale,
+		 	 	 		   	   elem['y']*yscale,
+		 	 	 		   	   elem['sprite'],
+		 	 	 		   	   [this.visible_sprites,this.camera_stop_sprites,this.active_sprites]
+		 	 	 		   	   );
+		 	 	 else if(elem['sprite'].split('_')[0]=='entryexit')
+		 	 	 	new EntryExitPoint(elem['x']*xscale,
+		 	 	 		   	   elem['y']*yscale,
+		 	 	 		   	   elem['sprite'].split('_')[1],
+		 	 	 		   	   [this.visible_sprites,this.entryexit_sprites,this.active_sprites]
+		 	 	 		   	   );
+		 	 	 else if(elem['sprite'].split('_')[0]=='scenechanger')
+		 	 	 	new SceneChanger(elem['x']*xscale,
+		 	 	 		   	   elem['y']*yscale,
+		 	 	 		   	   elem['sprite'].split('_')[1],
+		 	 	 		   	   [this.visible_sprites,this.active_sprites]
+		 	 	 		   	   );
+		 	 	 else if(elem['sprite']=='husk' && this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)		 	 	 	
+		 	 	 	  new Husk(elem['x']*xscale,
+		 	 	 		   	   elem['y']*yscale,
+		 	 	 		   	   elem['width']*xscale,
+		 	 	 		   	   elem['height']*yscale,
+		 	 	 		   	   [this.visible_sprites,this.enemy_sprites,this.active_sprites],
+		 	 	 		   	   elem['spriteId']
+		 	 	 		   	   );
+		 	 	 else if(elem['sprite']=='lance' &&  this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)		 	 	 	
+		 	 	 	  new Lance(elem['x']*xscale,
+		 	 	 		   	   elem['y']*yscale,
+		 	 	 		   	   elem['width']*xscale,
+		 	 	 		   	   elem['height']*yscale,
+		 	 	 		   	   [this.visible_sprites,this.enemy_sprites,this.active_sprites],
+		 	 	 		   	   elem['spriteId']
+		 	 	 		   	   );
+		 	 	 else if(elem['sprite']=='falseknight' &&  this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)		 	 	 	
+		 	 	 	  new FalseKnight(elem['x']*xscale,
+		 	 	 		   	   elem['y']*yscale,
+		 	 	 		   	   elem['width']*xscale,
+		 	 	 		   	   elem['height']*yscale,
+		 	 	 		   	   [this.visible_sprites,this.enemy_sprites,this.active_sprites],
+		 	 	 		   	   elem['spriteId']
+		 	 	 		   	   );
+
+		 	 	}
+		 	 this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');		 	 
+		 	 this.camera.tgt=this.camera_stop_sprites[this.sceneForward?0:1];
+		 	 this.scenesLoaded[n]=true;
+		 	 this.inTransition=false;		 	 
+		 	 console.log('scene No'+n+' loaded');
+		 	}
+		}
+	let gameManager=new GameManager();
+	//Game Classes End
+
+	window.addEventListener('load', 
+							function () 
+									{
+								 	resize();									
+							 		var loop = function () 
+													{										                    					
+													ctx.clearRect(0,0,canvas.width,canvas.height);	
+													ctx.fillStyle = backGroundColor;
+													ctx.fillRect(0,0,canvas.width, canvas.height);
+													gameManager.update();	
+													// showMouse();		
+				                                 	};
+					  	     		setInterval(loop, deltaTime);					  		
+									}
+							);
+	
+</script>  
+</canvas>
+</body>
+</html>
