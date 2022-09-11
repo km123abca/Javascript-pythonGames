@@ -414,9 +414,6 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 	<audio id="backgroundMusic" onended="resetMusicVar()">
 		<source src="./sounds/techno_bg_music.mp3" type="audio/mpeg">
 	</audio>
-	<audio id="capraMusic" onended="restartCapraMusic()">
-		<source src="./sounds/Capra.mp3" type="audio/mpeg">
-	</audio>
 	<audio id="fogGate" >
 		<source src="./sounds/fogGate.wav" type="audio/mpeg">
 	</audio>
@@ -447,7 +444,6 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 	//music starts
 	var bgMusic= document.querySelector('#backgroundMusic');
 	var fogGateSound= document.querySelector('#fogGate');
-	var capraMusic= document.querySelector('#capraMusic');
 
 	let musicStarted=false;
 	var startMusic=()=>{
@@ -456,15 +452,10 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 							 musicStarted=true;
 							 // bgMusic.play();
 							}	
-						};						
+						};
 	var resetMusicVar=()=>{
 		musicStarted=false;
 		startMusic();
-	}
-
-	var capraMusic= document.querySelector('#capraMusic');
-	var restartCapraMusic=()=>{
-		capraMusic.play();
 	}
 	//music ends
 	
@@ -2151,7 +2142,6 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	{
     	constructor(x,y,wid,hei,spriteGroups,spriteId='falseknight')
     		{
-    		 this.fkMusicStarted=false;
     		 this.position= new CreateVector(x,y);
     		 this.width = wid * xscale;
     		 this.height = hei * yscale;
@@ -2173,7 +2163,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 this.gravityScale=2*yscale;			 	
 			 this.expVal=200; 
 			 this.attackStarted=false;
-			 this.isActive=false;
+
 			 this.animations={
 						 	'attack':{'imgsheet':LoadImagex(folderPath,'attack.png'),
 						  		    'width':2118,
@@ -2281,7 +2271,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			  	this.animationFrame=0;
 			  	this.sprite_type='false_knight';
 			  	this.state='fkagro';
-			  	this.maxHealth=10;
+			  	this.maxHealth=20;
 			  	this.health=this.maxHealth;
 			  	this.spriteGroups=spriteGroups;
 			 	for(let grp of spriteGroups)
@@ -2321,14 +2311,6 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	     this.freeToJump=true;
     	     
     		} 
-    	 removeBars()
-    	 	{
-    	 	 for(let go of gameManager.active_sprites)
-    	 	 	{
-    	 	 	 if(go.spriteId && go.spriteId=="BossFightTriggGO")
-    	 	 	 	go.bossHasDiedRemoveBars();
-    	 	 	}
-    	 	}
 		 takeDamage(dmg,dir=0)
 		 	{
 		 	//this.acceleration.add(new CreateVector(dir,0));
@@ -2337,11 +2319,8 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 	 		this.health-=dmg;
 	 		this.fkHealthBar.updateValue(this.health);
 	 		this.fkHealthBar.onScreen=true;
-	 		if(this.health <= 5)
+	 		if(this.health<0)
 	 			{
-	 			capraMusic.src="";
-	 			fogGateSound.play();
-	 			this.removeBars();
 	 			this.tgt.giveExp(this.expVal);
 	 			SpawnClouds(this.position);
 	 			destroySelf(this);
@@ -2446,15 +2425,8 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	}
     	update()
     		{
-    		 if(!this.isActive)
-    		 	return false;
-    		 if(!this.fkMusicStarted)
-    		 {
-    		  this.fkMusicStarted=true;
-    		  capraMusic.play();	
-    		 }
     		 this.stateMachine();
-    		 
+    		 this.runAnimation();
     		 this.move(); 
     		 this.updateHealthBarPos();  
     		 this.manageInvincibility(); 		 
@@ -2462,7 +2434,6 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	display()
 		 	{		 	 
 		 	 if(!this.onScreen) return false;
-		 	 this.runAnimation();
 		 	 ctx.save();
 		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
 		 	 	 		   this.position.y-gameManager.camera.position.y);
@@ -2555,8 +2526,8 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	runup()
     		{
     		 this.switchAnimation("run");
-    		 let playerSep=this.tgt.position.x - this.position.x;    		 
-    		 if(Math.abs(playerSep) > this.fkPlayerFarDistance*0.7)
+    		 let playerSep=this.tgt.position.x - this.position.x;
+    		 if(Math.abs(playerSep) > this.fkPlayerFarDistance*0.5)
     		 	this.acceleration.add(this.horiForce.copy().mult(this.sx*2));    		 
     		 else
     		 	{
@@ -3396,11 +3367,6 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 														     // gameManager.visible_sprites                                                
 			 	                                                        ],'treehitbox');
 		 	}
-		 burn()
-		 	{
-		 		destroySelf(this.hit_box);
-		 		destroySelf(this);
-		 	}
 		 display()
 		 	{
 		 	 if(!this.onScreen) return false;		 	 
@@ -3435,14 +3401,6 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			  this.spriteId=spriteId;
 			  this.sprite_type="BossFightTriggGO";
 			  this.angle=0;
-			  this.tree1=null;
-			  this.tree2=null;
-    	 	}
-    	 bossHasDiedRemoveBars()
-    	 	{
-    	 		this.tree1.burn();
-    	 		this.tree2.burn();
-    	 		destroySelf(this);
     	 	}
     	 update()
     	 	{    	 	 
@@ -3450,21 +3408,16 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	 	  {
     	 	   this.triggered=true;
     	 	   console.log('player has made contact');
-    	 	   this.tree1= new BarrierTree(this.br1pos.x+this.position.x,
+    	 	   new BarrierTree(this.br1pos.x+this.position.x,
     	 	   				   this.br1pos.y+this.position.y,
     	 	   				   230*xscale,355*yscale,
     	 	   				   [gameManager.visible_sprites]
     	 	   				  );
-    	 	   this.tree2= new BarrierTree(this.br2pos.x+this.position.x,
+    	 	   new BarrierTree(this.br2pos.x+this.position.x,
     	 	   				   this.br2pos.y+this.position.y,
     	 	   				   230*xscale,355*yscale,
     	 	   				   [gameManager.visible_sprites]
     	 	   				  );
-    	 	   for(let go of gameManager.visible_sprites)
-    	 	   {
-    	 	   	if(go.spriteId && go.spriteId.split('_')[0]=='boss')
-    	 	   		go.isActive=true;
-    	 	   }
     	 	  }
     	    }
     	 display()

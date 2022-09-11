@@ -13,6 +13,7 @@ EntireProjectFromClearCode/
 
 # production
 /build
+/ThePigGame
 
 # misc
 .DS_Store
