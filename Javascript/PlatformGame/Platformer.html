@@ -2293,7 +2293,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 this.image_offset=new CreateVector(-30*xscale,-15*yscale);
 			 this.image_offset_fixed=this.image_offset.copy();
 			 this.fkHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,'#222222','#FF0000',[gameManager.visible_sprites],false,'fkhealth');
-			 this.fkHealthBar.onScreen=true;
+			 this.fkHealthBar.onScreen=false;
 			 this.uiBarTimer=0;
 			 this.uiBarMaxTime=2000;
 			 this.healthBarOffset=new CreateVector(-30*xscale,-120*yscale);
@@ -2815,17 +2815,17 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 this.animInQueue= null;
 			 this.animationFrame= 0;
 			 this.sprite_type= 'husk_miner';
-			 this.state= 'miner_idle';
+			 this.state= 'miner_agro';
 			 this.maxHealth= 100;
 			 this.health= this.maxHealth;
 			 this.spriteGroups= spriteGroups;
 			 for(let grp of spriteGroups)
 			 	grp.push(this);
 			 this.hit_box=new HitBox(x,y,this.width*0.4,this.height*0.8,[
-                                                        gameManager.collission_sprites
-                                                        // gameManager.active_sprites
+                                                        gameManager.collission_sprites,
+                                                        // gameManager.visible_sprites
                                                         ],'huskminerhitbox');
-			 this.image_offset=new CreateVector(-30*xscale,-15*yscale);
+			 this.image_offset=new CreateVector(-1*xscale,-15*yscale);
 			 this.image_offset_fixed=this.image_offset.copy();
  			 this.minerHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,
  			 								'#222222','#FF0000',[gameManager.visible_sprites],
@@ -2858,16 +2858,16 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	 	}
 		updateHealthBarPos()
 			{
-				if(this.minerHealthBar.onScreen)
-					{	
-					this.uiBarTimer+=deltaTime;
-					if(this.uiBarTimer > this.uiBarMaxTime)
-						{
-					 	this.uiBarTimer=0;
-					 	this.minerHealthBar.onScreen=false;
-						}
+			if(this.minerHealthBar.onScreen)
+				{	
+				this.uiBarTimer+=deltaTime;
+				if(this.uiBarTimer > this.uiBarMaxTime)
+					{
+				 	this.uiBarTimer=0;
+				 	this.minerHealthBar.onScreen=false;
 					}
-				this.minerHealthBar.position.setVec(this.position.copy().add(this.healthBarOffset));
+				}
+			this.minerHealthBar.position.setVec(this.position.copy().add(this.healthBarOffset));
 			}
 		manageInvincibility()
 			{
@@ -2962,16 +2962,39 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	 	 	case 'miner_idle':	
     	 	 		this.hmidle();
     	 	 		break;
+    	 	 	case 'miner_agro':
+    	 	 		this.hmAgro();
+    	 	 		break;
     	 	 	}
+    	 	}
+    	 hmidle()
+    	 	{
+    	 	 if(!this.tgt.isActive)
+    	 	 	return false;    	 	 
+    	 	}
+    	 hmAgro()
+    	 	{
+    	 	 if(!this.tgt.isActive)
+    	 	 	return false;  
+    	 	 let playerSep=this.tgt.position.x - this.position.x;
+    	 	 this.sx=Math.sign(playerSep);
+    	 	}
+    	 hmSlash()
+    	 	{
+    	 		
     	 	}
     	 update()
     	 	{
+ 			 this.move(); 
+    		 this.updateHealthBarPos();  
+    		 this.manageInvincibility();
     	 	 this.stateMachine();
     	 	}
     	 display()
     	 	{
 		 	 if(!this.onScreen) return false;
 		 	 this.runAnimation();
+		 	 // console.log('here at 2976');
 		 	 ctx.save();
 		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
 		 	 	 		   this.position.y-gameManager.camera.position.y);
