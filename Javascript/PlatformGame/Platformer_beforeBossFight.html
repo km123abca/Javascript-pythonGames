@@ -38,7 +38,7 @@
 			{
 			 this.x=x;
 			 this.y=y;	
-			}
+			}		
 		set(x,y)
 			{
 			 this.x=x;
@@ -140,10 +140,12 @@
     	}
     function Raycast(originx,direction,lenx,objToCheck)
     	{
-		//graphic		 	 
+		//graphic	
+		/*	 	 
 	 	 Draw_a_line(originx.copy().add(new CreateVector(0,0)),
 	 	 	 		 originx.copy().add(new CreateVector(0,0)).add(direction.copy().mult(lenx))
-	 	 	 		);	 	 
+	 	 	 		);	
+	 	*/ 	 
 	 	//graphic
 
 		let origin=originx.copy();
@@ -408,8 +410,55 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 </head>
 <body style='background-color:black;'>
 <canvas style='border:3px solid black;' onmousemove="trackMouse(event)">
+<!--audio list-->
+	<audio id="backgroundMusic" onended="resetMusicVar()">
+		<source src="./sounds/techno_bg_music.mp3" type="audio/mpeg">
+	</audio>
+	<audio id="fogGate" >
+		<source src="./sounds/fogGate.wav" type="audio/mpeg">
+	</audio>
+	<audio id="GetCoin" >
+		<source src="./sounds/GetCoin.wav" type="audio/mpeg">
+	</audio>
+	<audio id="GoalBloop" >
+		<source src="./sounds/GoalBloop.wav" type="audio/mpeg">
+	</audio>
+	<audio id="HitPaddleBloop" >
+		<source src="./sounds/HitPaddleBloop.wav" type="audio/mpeg">
+	</audio>
+	<audio id="Jump" >
+		<source src="./sounds/Jump.wav" type="audio/mpeg">
+	</audio> 
+	<audio id="RockSmash" >
+		<source src="./sounds/RockSmash.wav" type="audio/mpeg">
+	</audio>
+	<audio id="LossBuzz" >
+		<source src="./sounds/LossBuzz.wav" type="audio/mpeg">
+	</audio>
+	<audio id="whoosh" >
+		<source src="./sounds/whoosh.wav" type="audio/mpeg">
+	</audio>
+<!--audio list ends-->
 <script>
 	var canvas = document.querySelector('canvas');
+	//music starts
+	var bgMusic= document.querySelector('#backgroundMusic');
+	var fogGateSound= document.querySelector('#fogGate');
+
+	let musicStarted=false;
+	var startMusic=()=>{
+						if(!musicStarted)
+							{
+							 musicStarted=true;
+							 // bgMusic.play();
+							}	
+						};
+	var resetMusicVar=()=>{
+		musicStarted=false;
+		startMusic();
+	}
+	//music ends
+	
    	ctx = canvas.getContext('2d');
    	canvas.width = window.innerWidth-35;
   	canvas.height = window.innerHeight-100;
@@ -457,6 +506,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 	                 {
 	                 	// console.log(e.keyCode);
 	                 	// CapturePressedKey(e.keyCode);
+	                 	startMusic();
 	                 	if(e.keyCode==37) leftArrow=true;
 	                 	if(e.keyCode==38) upArrow=true;
 	                 	if(e.keyCode==39) rightArrow=true;
@@ -561,6 +611,21 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			ctx.restore();
 			}
 		}
+	//start of dummy point
+	class MarkedSpot extends IndicatorObjs
+		{
+		constructor(x,y,sprite_type,spriteGroups)
+			{
+			  super(x,y,'#0000FF',spriteGroups);
+			  this.sprite_type=sprite_type;
+			}
+		 update()
+		  {	
+		  	return false;
+		  }
+		}
+	//end of dummy point
+
 	class SceneChanger extends IndicatorObjs
 		{
 		constructor(x,y,sprite_type,spriteGroups)
@@ -917,7 +982,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			  go.takeDamage(this.dmg,this.hitback);
 			  if(this.parentx.hitBoxMadeContact)
 			  	{
-			  	 this.parentx.hitBoxMadeContact("lanceSpear");
+			  	 this.parentx.hitBoxMadeContact(this.hitboxName);
 			  	}
 			  this.destroySelf();
 			}
@@ -1370,11 +1435,12 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 	//Lance starts
 	class Lance
 		{
-		 constructor(x,y,wid,hei,spriteGroups)
+		 constructor(x,y,wid,hei,spriteGroups,spriteId='lance0')
 		    {
 		     this.position=new CreateVector(x,y);
 		     this.width = wid * xscale;
 		     this.height = hei * yscale;
+		     this.spriteId=spriteId;
 		     let folderPath='sprites/lanceSentry/';
 		     this.onScreen= true;
 			 this.isActive=true;
@@ -1507,7 +1573,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	this.uiBarTimer=0;
 		 	this.uiBarMaxTime=3000;
 		 	this.healthBarOffset=new CreateVector(-30*xscale,-150*yscale);
-		 	this.lanceHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,'#222222','#FF0000',[gameManager.visible_sprites],false);
+		 	this.lanceHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,'#222222','#FF0000',[gameManager.visible_sprites],false,'lancehealth');
 		 	this.ballTimer=0;
 		 	this.ballGapMax=1000;
 		 	this.expVal=50;
@@ -1537,7 +1603,9 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 	 			this.tgt.giveExp(this.expVal);
 	 			SpawnClouds(this.position);
 	 			destroySelf(this);
+	 			destroySelf(this.hit_box);
 	 			destroySelf(this.lanceHealthBar);
+	 			gameManager.listOfDestroyedSprites.push(this.spriteId);
 	 			this.isActive=false;
 	 			}	
 		 	}
@@ -1713,6 +1781,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 else if(this.animation=='throw' && parseInt(this.animationFrame)==8 && !this.spearThrown)
 		 	 	{
 		 	 	this.spearThrown=true;
+		 	 	document.querySelector('#whoosh').play();
  	 			new Spear(this.position.x,this.position.y,200*xscale,50*yscale,
  	  	 		   	  this.tgtVec,
  	  	 			  [gameManager.visible_sprites,gameManager.active_sprites],
@@ -1760,7 +1829,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	  else if(this.animation=='throw' && parseInt(this.animationFrame)==8 && !this.spearThrown)
 		 	  	 {
 		 	  	 	// let dirx=this.tgt.position.copy().sub(this.position).normalized();
-
+		 	  	 	document.querySelector('#whoosh').play();
 		 	  	 	new Spear(this.position.x,this.position.y,200*xscale,50*yscale,
 		 	  	 		   	  this.tgtVec,
 		 	  	 			  [gameManager.visible_sprites,gameManager.active_sprites],
@@ -1960,7 +2029,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 	  	 this.phase2Rush=false;
 		 	 	  	 this.phase1Rush=false;
 		 	 	  	 this.lastAttackTime=gameManager.runningClock;
-	 	  			 this.state='agro';
+	 	  			 this.state='agro';	 	  			 
 	 	  			 this.maxVelocity.x=this.normalvx;
 	 	  			 this.spearPointSpawned=false;
 	 	  			 this.switchAnimation('idle');
@@ -2068,10 +2137,549 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		  	}
 		}
 
+    //false knight starts
+    class FalseKnight
+    	{
+    	constructor(x,y,wid,hei,spriteGroups,spriteId='falseknight')
+    		{
+    		 this.position= new CreateVector(x,y);
+    		 this.width = wid * xscale;
+    		 this.height = hei * yscale;
+    		 let folderPath='sprites/FalseKnight';
+    		 this.onScreen=true;
+    		 this.angle=0;
+    		 this.sx=1;
+    		 this.sy=1;
+    		 this.startx=0;
+			 this.starty=0;
+			 this.imgWidth=0;
+			 this.imgHeight=0;
+			 this.spriteId=spriteId;
+			 this.acceleration=new CreateVector(0,0);
+			 this.velocity=new CreateVector(0,0);
+			 this.maxVelocity=new CreateVector(3*xscale,12*yscale);		
+			 this.horiForce=new CreateVector(2*xscale,0);	 
+			 this.fkJumpForce=new CreateVector(0,-250*yscale);
+			 this.gravityScale=2*yscale;			 	
+			 this.expVal=200; 
+			 this.attackStarted=false;
 
+			 this.animations={
+						 	'attack':{'imgsheet':LoadImagex(folderPath,'attack.png'),
+						  		    'width':2118,
+						  		    'height':590,			  		    
+						  		    'rows':1,
+						  		    'cols':3,
+						  		    'maxFrames':3,
+						  		    'width_extend':1.25,
+						  		    'height_extend':1.25,
+						  		    'anim_speed':0.15
+						  		     },
+				'attack_anticipate':{'imgsheet':LoadImagex(folderPath,'attack_anticipate.png'),
+						  		    'width':2881,
+						  		    'height':795,			  		    
+						  		    'rows':2,
+						  		    'cols':5,
+						  		    'maxFrames':6,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.2
+						  		     },
+				    'attack_recover':{'imgsheet':LoadImagex(folderPath,'attack_recover.png'),
+						  		    'width':3300,
+						  		    'height':564,			  		    
+						  		    'rows':1,
+						  		    'cols':5,
+						  		    'maxFrames':5,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.2
+						  		     },
+				    'idle':{'imgsheet':LoadImagex(folderPath,'idle.png'),
+						  		    'width':3117,
+						  		    'height':396,			  		    
+						  		    'rows':1,
+						  		    'cols':5,
+						  		    'maxFrames':5,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.2
+						  		     },
+				              'jump':{'imgsheet':LoadImagex(folderPath,'jump.png'),
+						  		    'width':2414,
+						  		    'height':339,			  		    
+						  		    'rows':1,
+						  		    'cols':4,
+						  		    'maxFrames':4,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.2
+						  		     },
+				   'jump_anticipate':{'imgsheet':LoadImagex(folderPath,'jump_anticipate.png'),
+						  		    'width':1830,
+						  		    'height':381,			  		    
+						  		    'rows':1,
+						  		    'cols':3,
+						  		    'maxFrames':3,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.2
+						  		     },
+				   'jump_attack_1':{'imgsheet':LoadImagex(folderPath,'jump_attack_1.png'),
+						  		    'width':1689,
+						  		    'height':618,			  		    
+						  		    'rows':1,
+						  		    'cols':2,
+						  		    'maxFrames':2,
+						  		    'width_extend':1.25,
+						  		    'height_extend':1.25,
+						  		    'anim_speed':0.1
+						  		     },
+				     'jump_attack_2':{'imgsheet':LoadImagex(folderPath,'jump_attack_2.png'),
+						  		    'width':861,
+						  		    'height':589,			  		    
+						  		    'rows':1,
+						  		    'cols':2,
+						  		    'maxFrames':2,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.2
+						  		     },
+				     'jump_attack_3':{'imgsheet':LoadImagex(folderPath,'jump_attack_3.png'),
+						  		    'width':1236,
+						  		    'height':399,			  		    
+						  		    'rows':1,
+						  		    'cols':2,
+						  		    'maxFrames':2,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.2
+						  		     },
+				     'run':{'imgsheet':LoadImagex(folderPath,'run.png'),
+						  		    'width':3120,
+						  		    'height':483,			  		    
+						  		    'rows':1,
+						  		    'cols':5,
+						  		    'maxFrames':5,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.2
+						  		     },
+			  		         };			  		
+			  	this.animation='idle';
+			  	this.animInQueue=null;
+			  	this.animationFrame=0;
+			  	this.sprite_type='false_knight';
+			  	this.state='fkagro';
+			  	this.maxHealth=20;
+			  	this.health=this.maxHealth;
+			  	this.spriteGroups=spriteGroups;
+			 	for(let grp of spriteGroups)
+			 		grp.push(this);
+			    this.hit_box=new HitBox(x,y,this.width*0.4,this.height*0.8,[
+                                                        gameManager.collission_sprites
+                                                        // gameManager.active_sprites
+                                                        ],'falseknighthitbox');
+			 this.image_offset=new CreateVector(-30*xscale,-15*yscale);
+			 this.image_offset_fixed=this.image_offset.copy();
+			 this.fkHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,'#222222','#FF0000',[gameManager.visible_sprites],false,'fkhealth');
+			 this.fkHealthBar.onScreen=true;
+			 this.uiBarTimer=0;
+			 this.uiBarMaxTime=2000;
+			 this.healthBarOffset=new CreateVector(-30*xscale,-120*yscale);
+			 this.hitBoxSpawned=false;
+			 if(gameManager.player)
+			 	this.tgt= gameManager.player;	
+
+			 this.invincibleState=false;
+		 	 this.invin_count=0;
+		 	 this.max_invin_time=2000;
+		 	 this.flickerCount=0;
+			 this.maxFlickerTime=100;
+
+			 this.gravityScale=2*yscale;
+			 this.fkLastAttackTime=0;
+    		 this.fkMinAttackGap=800;
+    		 this.fkPlayerFarDistance=280*xscale;
+    		 this.fkJumpInDistance=400*xscale;    		
+
+    		 this.closeAttacks=['fkattack'];
+    	     this.longAttacks =['runup'];
+    	     this.randomAttacks=['fkjumpattack'];
+    	     this.jumpForceApplied=false;
+    	     this.attackClock=0;
+    	     this.freeToJump=true;
+    	     
+    		} 
+		 takeDamage(dmg,dir=0)
+		 	{
+		 	//this.acceleration.add(new CreateVector(dir,0));
+		 	if(this.invincibleState) return false;	
+		 	this.invincibleState=true;	
+	 		this.health-=dmg;
+	 		this.fkHealthBar.updateValue(this.health);
+	 		this.fkHealthBar.onScreen=true;
+	 		if(this.health<0)
+	 			{
+	 			this.tgt.giveExp(this.expVal);
+	 			SpawnClouds(this.position);
+	 			destroySelf(this);
+	 			destroySelf(this.hit_box);
+	 			destroySelf(this.fkHealthBar);	 			
+	 			}	
+		 	}   
+		updateHealthBarPos()
+			{
+				if(this.fkHealthBar.onScreen)
+					{	
+					this.uiBarTimer+=deltaTime;
+					if(this.uiBarTimer > this.uiBarMaxTime)
+						{
+					 	this.uiBarTimer=0;
+					 	this.fkHealthBar.onScreen=false;
+						}
+					}
+				this.fkHealthBar.position.setVec(this.position.copy().add(this.healthBarOffset));
+			}
+		manageInvincibility()
+			{
+			if(!this.invincibleState) return false;
+			this.invin_count+= deltaTime;
+			if(this.invin_count > this.max_invin_time)
+				{
+				 this.invin_count=0;
+				 this.invincibleState=false;
+				} 
+			}		
+		flickerControl()
+			{
+			  if(!this.invincibleState) return true;
+			  this.flickerCount+=deltaTime;
+			  if(this.flickerCount > this.maxFlickerTime)
+			  	{
+			  	 this.flickerCount=0;
+			  	 return true;
+			  	}
+			  return false;
+			}
+		 applyGravity()
+		 	{
+		 	 this.acceleration.y+=this.gravityScale;
+		 	}
+		 applyVelocity()
+		 	{		 	 	 	 
+		 	 this.hit_box.position.x+=this.velocity.x;		 	
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(x==this.hit_box) continue;
+		 	 	 
+		 	 	 if(b_collision(this.hit_box,x)) 
+		 	 	 	{		 	 	 	
+		 	 	 	 if(this.velocity.x > 0)
+		 	 	 	 	this.hit_box.position.x=x.position.x-x.width/2-this.hit_box.width/2-2;
+		 	 	 	 else 
+		 	 	 	 	this.hit_box.position.x=x.position.x+x.width/2+this.hit_box.width/2+2;
+		 	 	 	}
+		 	 	 		 	 	
+		 	 	}
+
+		 	 this.hit_box.position.y+=this.velocity.y;
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(x==this.hit_box) continue;
+		 	 	 if(b_collision(this.hit_box,x)) 
+		 	 	 	{
+		 	 	 	
+		 	 	 	if(this.velocity.y > 0)
+		 	 	 		this.hit_box.position.y=x.position.y-x.height/2-this.hit_box.height/2-2;
+		 	 	 	else
+		 	 	 		this.hit_box.position.y=x.position.y+x.height/2+this.hit_box.height/2+2;	
+		 	 	 	}
+		 	 	}
+		 	}
+		 applyVelocityRestrictions()
+		 	{
+		 	 let xdir=this.velocity.x/Math.abs(this.velocity.x);
+		 	 let ydir=this.velocity.y/Math.abs(this.velocity.y);
+		 	 if(Math.abs(this.velocity.y) > this.maxVelocity.y)
+		 	 	this.velocity.y=ydir*this.maxVelocity.y;
+		 	 if(Math.abs(this.velocity.x) > this.maxVelocity.x)
+		 	 	this.velocity.x=xdir*this.maxVelocity.x;
+		 	}
+		update_and_display_hitbox()
+		 	{
+	 		// this.hit_box.updatePosition(this.position);
+	 		this.position.setVec(this.hit_box.position.copy().add(this.image_offset));
+		 	}
+		 move()
+		 	{		
+		 	 this.applyGravity(); 	 
+		 	 this.velocity.add(this.acceleration);
+		 	 this.acceleration.set(0,0);		 	
+		 	 this.applyVelocity();
+		 	 this.applyVelocityRestrictions();
+		 	 this.update_and_display_hitbox();
+		 	 this.spawnHitBoxOnHit_fknight();
+		 	}
+    	update()
+    		{
+    		 this.stateMachine();
+    		 this.runAnimation();
+    		 this.move(); 
+    		 this.updateHealthBarPos();  
+    		 this.manageInvincibility(); 		 
+    		}
+    	display()
+		 	{		 	 
+		 	 if(!this.onScreen) return false;
+		 	 ctx.save();
+		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
+		 	 	 		   this.position.y-gameManager.camera.position.y);
+		 	 ctx.rotate(d2r(this.angle));
+		 	 ctx.scale(this.sx,this.sy);
+		 	 if(this.flickerControl())
+		 	 ctx.drawImage(this.animations[this.animation]['imgsheet'],
+		 	 				this.startx,this.starty,this.imgWidth,this.imgHeight,
+		 	 			   -this.width/2,
+		 	 			   -this.height/2,
+		 	 			   this.width*this.animations[this.animation]['width_extend'],
+		 	 			   this.height*this.animations[this.animation]['height_extend']
+		 	 			  );
+		 	 // context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
+		 	 ctx.restore();
+		 	 w2screen(this.state,this.position.x-gameManager.camera.position.x,this.position.y-50*yscale-gameManager.camera.position.y);
+		 	}
+    	stateMachine()
+    		{
+    		 switch(this.state)
+    		 	{
+    		 	 case 'idle':
+    		 	  this.fkidle();
+    		 	  break;
+    		 	 case 'fkagro':
+    		 	  // console.log('agro');
+    		 	  this.fkagro();
+    		 	  break;
+    		 	 case 'runup':
+    		 	  // console.log('runup');
+    		 	  this.runup();
+    		 	  break;
+    		 	 case 'fkattack':
+    		 	  // console.log('attack');
+    		 	  this.fkattack();
+    		 	  break;
+    		 	 case 'fkjumpattack':
+    		 	  // console.log('jump');
+    		 	  this.fkjumpattack();
+    		 	  break;
+    		 	 default:
+    		 	  console.log('warning: unknown state');
+    		 	  break;
+    		 	}
+    		}
+    	fkidle()
+    		{
+    		 return false;
+    		}  
+
+    	
+    	fkjumpattack()
+    		{
+    		 if(!this.jumpForceApplied)
+    		 	{
+    		 	 this.velocity.x=0;
+    		 	 this.animInQueue='jump_attack_1';
+    		 	 this.switchAnimation('jump_anticipate');
+    		 	 this.jumpForceApplied=true;
+    		 	 this.acceleration.add(this.fkJumpForce);
+    		 	 this.attackClock=gameManager.runningClock;
+    		 	 this.maxVelocity.x=10*xscale;
+    		 	}
+    		 else if(this.animation=='jump_attack_1')
+    		 	{
+ 					this.animInQueue='attack_recover';
+    		 	}
+    		 else if(this.animation=='attack_recover')
+    		 	{
+    		 		this.animInQueue='idle';
+    		 	}
+    		 if(gameManager.runningClock - this.attackClock < 500)
+    		 	{
+    		 	this.velocity.x=Lerp(this.velocity.x,10*xscale*this.sx,16);
+    		 	}
+    		 else
+    		 	{
+    		 	this.velocity.x=Lerp(this.velocity.x,0,16);
+    		 	}
+    		 if(gameManager.runningClock - this.attackClock > 3000)
+    		 	{
+    		 	 this.fkLastAttackTime=gameManager.runningClock;
+    		 	 this.state='fkagro';
+    		 	 this.jumpForceApplied=false;  
+    		 	 this.maxVelocity.x=3*xscale; 
+    		 	 this.hitBoxSpawned=false; 		 	 
+    		 	}
+
+    		}
+    	runup()
+    		{
+    		 this.switchAnimation("run");
+    		 let playerSep=this.tgt.position.x - this.position.x;
+    		 if(Math.abs(playerSep) > this.fkPlayerFarDistance*0.5)
+    		 	this.acceleration.add(this.horiForce.copy().mult(this.sx*2));    		 
+    		 else
+    		 	{
+    		 	this.velocity.x=0;
+    		 	this.state="fkagro"; 
+    		 	this.switchAnimation('idle');    		 	
+    		 	}
+    		 if(Math.abs(playerSep) < this.fkJumpInDistance && this.freeToJump )
+    		 	{    		 
+    		 	 this.freeToJump=false;	
+    		 	 if(Math.random()<0.9)
+    		 	 	{
+    		 	 	this.velocity.x=0;
+    		 	 	this.state="fkjumpattack";   
+    		 	 	} 		 	
+    		 	}
+    		 for(let sp of gameManager.markedSpots)
+    		 	{
+    		 	  if(sp.sprite_type=="fkjumpup" &&  b_collision(this.hit_box,sp))
+    		 	  	{
+    		 	  	this.velocity.x=0;
+    		 	 	this.state="fkjumpattack"; 
+    		 	  	}
+    		 	}
+    		 
+    		}
+ 	
+    	fkagro()
+    		{
+    		 if(!this.tgt.isActive)
+    		 	return false;
+
+    		 let playerSep=this.tgt.position.x - this.position.x;
+    		 this.sx=Math.sign(playerSep);
+    		 if(Math.abs(playerSep) > this.fkJumpInDistance)
+    		 	{
+    		 	 if(!this.freeToJump) 
+    		    	{
+    		    	this.freeToJump=true;    		    		
+    		    	}
+    			 }
+
+    		 if(Math.abs(playerSep) > this.fkPlayerFarDistance) 
+    		 	{   		 	
+    		    this.state=this.longAttacks[Math.floor(Math.random()*this.longAttacks.length)];    		   
+    			}
+    		 if(gameManager.runningClock - this.fkLastAttackTime > this.fkMinAttackGap)    	
+    		    {    		    
+    		 	this.state=this.closeAttacks[Math.floor(Math.random()*this.closeAttacks.length)];   
+    		 	}		 
+    		}
+    	fkattack()
+    		{
+    		 if(!this.attackStarted && this.animation!="attack" && this.animation!="attack_anticipate" && this.animation!="attack_recover")
+    		 	{
+    		 	 this.switchAnimation("attack_anticipate");
+    		 	 this.animInQueue="attack";
+    		 	 this.attackStarted=true;
+    		 	}
+    		 else if(this.animation=="attack" && this.animInQueue!="attack_recover")
+    		 	{
+    		 	 this.animInQueue="attack_recover";
+    		 	}
+    		 else if(this.animation=="attack_recover" && this.animInQueue!="idle")
+    		 	{
+    		 	 this.animInQueue="idle";    		 	 
+    		 	}
+    		 if(this.animation=="idle" && this.attackStarted)
+    		 	{
+    		 	 this.state="fkagro";
+    		 	 this.attackStarted=false;
+    		 	 this.hitBoxSpawned=false;
+    		 	 this.fkLastAttackTime=gameManager.runningClock;
+    		 	}
+    		 if(this.animation=="attack" )
+    		 	{
+    		 	 if(this.image_offset.y!=-30*yscale) this.image_offset.y=-60*yscale;
+    		 	}
+    		 else if(this.image_offset.y!=this.image_offset_fixed.y)
+    		 	{
+    		 	 this.image_offset.y=this.image_offset_fixed.y;
+    		 	}
+
+    		}
+    	spawnHitBoxOnHit_fknight()
+    		{
+    		 let hbWidthRatio=0.2;
+    		 let hbHeightRatio=0.3;    		 
+    		 if(this.animation=="attack" && parseInt(this.animationFrame)==2 && !this.hitBoxSpawned)
+    		 	{    
+    		 	hbWidthRatio=0.4;
+    		 	this.hitBoxSpawned=true;		 	
+	 			new DamageHitBox(this.position.x,
+								 this.position.y,
+								 this.width*hbWidthRatio,
+								 this.height*hbHeightRatio,
+								 [gameManager.active_sprites,gameManager.hitbox_sprites],
+								 'enemy_hitbox',
+								 this,
+								 150*xscale,50*yscale,10,this.sx*1.5,50); //xoffset,yoffset,dmg=10,dmghitback=0,life=50
+    		 	}
+    		else if(this.animation=="jump_attack_1" && parseInt(this.animationFrame)==1 && !this.hitBoxSpawned)
+    		 	{  
+    		 	hbWidthRatio=0.8;  
+    		 	this.hitBoxSpawned=true;		 	
+	 			new DamageHitBox(this.position.x,
+								 this.position.y,
+								 this.width*hbWidthRatio,
+								 this.height*hbHeightRatio,
+								 [gameManager.active_sprites,gameManager.hitbox_sprites],
+								 'enemy_hitbox',
+								 this,
+								 120*xscale,50*yscale,10,this.sx*1.5,50); //xoffset,yoffset,dmg=10,dmghitback=0,life=50
+    		 	}
+
+
+    		}
+    	runAnimation()
+    		{
+			  this.animationFrame+=this.animations[this.animation]['anim_speed'];
+			  if(this.animationFrame >= this.animations[this.animation]['maxFrames'])
+			  	{
+		  		this.animationFrame=0;
+		  		if(this.animInQueue) 
+		  			{
+		  			this.animation=this.animInQueue;
+		  			//console.log('back to '+this.animation);
+		  			this.animInQueue=null;
+		  			}
+			  	}
+			  let rowIndex=parseInt(parseInt(this.animationFrame)/this.animations[this.animation]['cols']);
+			  let colIndex=parseInt(this.animationFrame)%this.animations[this.animation]['cols'];
+			  this.startx=colIndex * this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
+			  this.starty=rowIndex * this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
+			  this.imgWidth = this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
+			  this.imgHeight = this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
+			}
+		switchAnimation(animx)
+			{
+			 if(this.animation != animx)
+			 	{
+			 	this.animationFrame=0;
+			 	this.animation=animx;			 	
+			 	}
+			}
+
+    	}
+    //false knight ends
+    
 	class Husk
 		{
-		constructor(x,y,wid,hei,spriteGroups)
+		constructor(x,y,wid,hei,spriteGroups,spriteId='husk0')
 			{
 			 this.position= new CreateVector(x,y);
 			 this.width = wid * xscale;
@@ -2086,6 +2694,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 this.starty=0;
 			 this.imgWidth=0;
 			 this.imgHeight=0;
+			 this.spriteId=spriteId;
 
 			 this.acceleration=new CreateVector(0,0);
 			 this.velocity=new CreateVector(0,0);
@@ -2093,7 +2702,8 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 this.horiForce=new CreateVector(1*xscale,0);	 
 			 this.gravityScale=2*yscale;	
 			 this.longRangeAttacks=['throw','rush'];	
-			 	 
+			 this.expVal=200; 
+			 this.soundPlayed=false;
 
 			 this.animations={
 			 	'walking':{'imgsheet':LoadImagex(folderPath,'WalkingSheet.png'),
@@ -2158,7 +2768,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 this.startled=false;
 			 this.lastAttackTime=0;
 			 this.maxAttackGap=1000;
-			 this.maxHealth=200;
+			 this.maxHealth=20;
 			 this.health=this.maxHealth;
 			 this.spriteGroups=spriteGroups;
 			 for(let grp of spriteGroups)
@@ -2168,7 +2778,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 	                                                        // gameManager.active_sprites
 			 	                                                        ],'huskhitbox');
 			 this.image_offset=new CreateVector(0,-45*xscale);
-			 this.huskHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,'#222222','#FF0000',[gameManager.visible_sprites],false);
+			 this.huskHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,'#222222','#FF0000',[gameManager.visible_sprites],false,'huskhealth');
 			 this.huskHealthBar.onScreen=false;
 			 this.uiBarTimer=0;
 			 this.uiBarMaxTime=2000;
@@ -2203,7 +2813,6 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 				 this.invincibleState=false;
 				} 
 			}
-
 
 		flickerControl()
 			{
@@ -2246,6 +2855,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 takeDamage(dmg,dir=0)
 		 	{
 		 	//this.acceleration.add(new CreateVector(dir,0));
+
 		 	if(this.invincibleState) return false;	
 		 	this.invincibleState=true;	
 	 		this.health-=dmg;
@@ -2253,8 +2863,12 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 	 		this.huskHealthBar.onScreen=true;
 	 		if(this.health<0)
 	 			{
+	 			this.tgt.giveExp(this.expVal);
 	 			SpawnClouds(this.position);
 	 			destroySelf(this);
+	 			destroySelf(this.hit_box);
+	 			destroySelf(this.huskHealthBar);
+	 			gameManager.listOfDestroyedSprites.push(this.spriteId);
 	 			this.isActive=false;
 	 			}	
 		 	}
@@ -2303,7 +2917,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 	 			if(this.state=="rush")
 	 				{
 	 				 hbWidthRatio=1;
-	 				 hbHeightRatio=0.5;
+	 				 hbHeightRatio=0.5;	 				 
 	 				}
 	 			if(this.state=="attack" || this.state=="rush")
 		 			new DamageHitBox(this.position.x,
@@ -2315,6 +2929,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 							 this,
 		 							 70,0,10,this.sx*1.5);	
 		 		else if(this.state=='throw')
+		 			{		 			
 		 			new ThornyBall(this.position.x,
 		 						   this.position.y,
 		 						   30*xscale,
@@ -2322,6 +2937,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 						   this,70*xscale,0,
 		 						   [gameManager.visible_sprites,gameManager.active_sprites]
 		 				          );
+		 			}
 
 	 			}
 	 		else if(this.animation!="attack2" && this.hitBoxSpawned)
@@ -2357,6 +2973,11 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		Rush()
 			{
 			 //constructor(x,y,wid,hei,spriteGroups,hitboxName="unknown hitbox",parentx,xoffset,yoffset,dmg=10,dmghitback=0)
+			 if(!this.soundPlayed)
+			 	{
+			 	 document.querySelector('#whoosh').play();
+			 	 this.soundPlayed=true;
+			 	}
 			 this.SpawnAttackSequence();
 			 if(this.meleeOver)
 			 	{
@@ -2401,6 +3022,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 // this.velocity.x=Lerp(this.velocity.x,0,2*xscale);	
 			 this.velocity.x=0;
 			 this.state='agro';
+			 this.soundPlayed=false;
 			 this.meleeOver=false;
 			}
 		IdleBehav()
@@ -2460,13 +3082,18 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 
 			}
 		Throw()
-			{	
+			{			 
 			 this.velocity.x=Lerp(this.velocity.x,0,2*xscale);		 
 			 this.Melee();
 			}
 
 		Melee()
 			{
+			 if(!this.soundPlayed)
+			 	{
+			 	 document.querySelector('#whoosh').play();
+			 	 this.soundPlayed=true;
+			 	}
 			 if(this.meleeOver)
 			 	{
 			 	 this.performPostMeleeRitual();
@@ -2476,10 +3103,12 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 	{
 			 	 this.animInQueue='attack1';
 			 	 this.switchAnimation('attack0');
+			 	 // document.querySelector('#RockSmash').play();
 			 	}
 			 else if(this.animation=="attack1" && this.animInQueue!="attack2")
 			 	{
-			 	this.animInQueue="attack2";			 		
+			 	this.animInQueue="attack2";	
+			 			 		
 			 	}
 			 else if(this.animation=="attack2")
 			 	{
@@ -2504,6 +3133,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 this.switchAnimation('idle');
 			 this.meleeOver=false;
 			 this.waitTimerMeleeEnd=0;
+			 this.soundPlayed=false;
 			}
 		PlayerInHitRange()
 			{
@@ -2655,11 +3285,12 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 
 	class UIBar
 		{
-		constructor(x,y,wid,hei,val,maxVal,backgroundColor,mainColor,spriteGroups,screenOverlay=true)
+		constructor(x,y,wid,hei,val,maxVal,backgroundColor,mainColor,spriteGroups,screenOverlay=true,sprite_type="un_uibar")
 			{
 			 this.position = new CreateVector(x,y);
 			 this.width = wid * xscale;
 			 this.height = hei * yscale;
+			 this.fixedWidth= this.width;
 			 this.onScreen = true;
 			 // this.backgroundColor='#222222';
 			 this.backgroundColor = backgroundColor;
@@ -2667,16 +3298,18 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 this.val = val;
 			 this.maxVal = maxVal;
 			 this.fixedMaxVal=maxVal;
-			 for(let grp of spriteGroups)
+			 this.spriteGroups=spriteGroups;
+			 for(let grp of this.spriteGroups)
 			 	grp.push(this);
 			 this.screenOverlay=screenOverlay;
+			 this.sprite_type=sprite_type;
 			}
 		setValues(val,maxVal)
 			{
 			 this.val = val;
 			 this.maxVal = maxVal;
 			 if(this.maxVal > this.fixedMaxVal)
-			 	this.width*=this.maxVal/this.fixedMaxVal;
+			 	this.width=this.fixedWidth*this.maxVal/this.fixedMaxVal;
 			}
 		updateValue(val)
 			{
@@ -2715,6 +3348,96 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 return false;
 		 	}
 		}
+	class BarrierTree
+		{
+		 constructor(x,y,wid,hei,spriteGroups)
+		 	{
+		 	 console.log('spawned at '+x+','+y);
+		 	 this.position=new CreateVector(x,y);
+		 	 this.width=wid*xscale;
+		 	 this.height=hei*yscale;
+		 	 this.spriteGroups=spriteGroups;
+		 	 for(let grp of this.spriteGroups)
+			 	grp.push(this); 
+			 this.onScreen=true;
+			 this.angle=0;
+			 this.imgx=LoadImagex('sprites/misc/','Tree.png');
+			 this.sprite_type='barrierTree';
+			 this.hit_box=new HitBox(x,y,this.width*0.3,this.height*0.9,[gameManager.collission_sprites,
+			 														     // gameManager.visible_sprites                                                
+			 	                                                        ],'treehitbox');
+		 	}
+		 display()
+		 	{
+		 	 if(!this.onScreen) return false;		 	 
+		 	 ctx.save();
+		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
+		 	 	 		   this.position.y-gameManager.camera.position.y);
+		 	 // ctx.rotate(d2r(this.angle));
+		 	 ctx.drawImage(this.imgx,-this.width/2,-this.height/2,this.width,this.height);
+		 	 ctx.restore();	
+		 	}
+		  update()
+		  	{
+		  	 return false;
+		  	}
+		}
+
+    class BossFightTriggGO
+    	{
+    	 constructor(x,y,br1posx,br1posy,br2posx,br2posy,spriteGroups,spriteId)
+    	 	{
+    	 	  console.log(`${x},${y}`);
+    	 	  this.position=new CreateVector(x,y);
+    	 	  this.width=40*xscale;
+    	 	  this.height=40*yscale;
+    	 	  this.br1pos=new CreateVector(br1posx*xscale,br1posy*yscale);
+    	 	  this.br2pos=new CreateVector(br2posx*xscale,br2posy*yscale);     	 	  	 	  
+    	 	  this.spriteGroups=spriteGroups;
+    	 	  for(let grp of this.spriteGroups)
+			 	grp.push(this); 
+			  this.onScreen=true;
+			  this.triggered=false;
+			  this.spriteId=spriteId;
+			  this.sprite_type="BossFightTriggGO";
+			  this.angle=0;
+    	 	}
+    	 update()
+    	 	{    	 	 
+    	 	  if(!this.triggered && b_collision(this,gameManager.player))
+    	 	  {
+    	 	   this.triggered=true;
+    	 	   console.log('player has made contact');
+    	 	   new BarrierTree(this.br1pos.x+this.position.x,
+    	 	   				   this.br1pos.y+this.position.y,
+    	 	   				   230*xscale,355*yscale,
+    	 	   				   [gameManager.visible_sprites]
+    	 	   				  );
+    	 	   new BarrierTree(this.br2pos.x+this.position.x,
+    	 	   				   this.br2pos.y+this.position.y,
+    	 	   				   230*xscale,355*yscale,
+    	 	   				   [gameManager.visible_sprites]
+    	 	   				  );
+    	 	  }
+    	    }
+    	 display()
+    	 	{
+    	 	 if(!this.onScreen)
+    	 	 	return false;
+    	 	 ctx.save();
+    	 	 ctx.translate(
+    	 	 	           this.position.x - gameManager.camera.position.x,
+    	 	 	           this.position.y - gameManager.camera.position.y
+    	 	 	          );
+    	 	 ctx.fillStyle="#b3ffff";
+    	 	 ctx.strokeStyle="#b3ffff";
+    	 	 ctx.beginPath();
+    	 	 ctx.rect(-this.width/2,-this.height/2,this.width,this.height);
+    	 	 ctx.stroke();
+    	 	 ctx.fill();
+    	 	 ctx.restore();
+    	 	}
+    	}
 
 
 	class Player
@@ -2732,6 +3455,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 				  'run' :LoadImages(folderPath+'Run',run_images),
 			 				  'slash':LoadImages(folderPath+'Slash',slash_images)
 							 };
+			 this.healFlash= LoadImages('sprites/protagonist',['drinkup.png'])[0];
 			 this.animationFractions={'idle':0.8,'run':0.4,'slash':0.2};
 			 this.animation='idle';
 			 this.animationFrame=0;
@@ -2786,14 +3510,53 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 this.flickerCount=0;
 			 this.maxFlickerTime=100;
 			 this.experience=100;
+			 this.expNeeded=10;
+		     this.healing=false;
+		     this.lastHealTime=0;
+		     this.healCoolDown=2000;
+			 this.healTimeMax=3000;
+			 this.healDelta=100;
+			 this.flashOn=true;
+			 this.healTimer=0;
+			 this.healTimer2=0;
+			 this.soundPlayed=false;
 		 	 // this.damHitBox = new DamageHitBox(x-100,y,this.width*0.2,this.height*0.2,[gameManager.visible_sprites],'sample',this,70,0);
 		 	 
 			}
-		
-
+		handleHealing()
+			{
+			 if(gameManager.runningClock - this.lastHealTime < this.healCoolDown)
+			 	return false;
+			 if(GetKeyPressedx('q'))
+			 	{
+			 	 if(!this.healing)	 this.healing=true;			 	 
+			 	 if(this.health < this.maxHealth && this.experience > 0)
+			 	 	{
+			 	 	this.health+=0.2;			 	 	
+			 	 	this.experience-=1;
+			 	 	gameManager.playerHealthBar.setValues(this.health,this.maxHealth);
+			 	 	}
+			 	}
+			 else if(this.healing)
+			 	{
+			 	  this.healing = false;
+			 	  this.lastHealTime= gameManager.runningClock;
+			 	}
+			}
 		giveExp(expVal)
 			{
 			 this.experience+=expVal;
+			}
+		receiveParams(health,maxHealth,maxEnergy,weaponDamage,experience)
+			{
+			console.log(`player received health:${health},maxHealth:${maxHealth} and maxEnergy:${maxEnergy}`);
+			this.maxHealth = maxHealth;
+			this.maxEnergy = maxEnergy;
+			this.weaponDamage = weaponDamage;
+			this.experience = experience;
+			this.health = health;
+			gameManager.playerHealthBar.setValues(this.health,this.maxHealth);
+		 	gameManager.playerEnergyBar.setValues(this.energy,this.maxEnergy);	
 			}
 
 		 updateParams(maxHealth,maxEnergy,weaponDamage)
@@ -2850,8 +3613,11 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		
 
 		takeDamage(dmg,dir=0)
-		 	{		 	
-		 	if(this.invincibleState) return false;	
+		 	{	
+		 	this.acceleration.add(new CreateVector(dir,0));	 	
+		 	// return false;
+		 	if(this.invincibleState) return false;
+		 	document.querySelector('#LossBuzz').play();	
 		 	this.invincibleState=true;	 	
 		 	this.acceleration.add(new CreateVector(dir,0));
 	 		this.health-=dmg;
@@ -2892,15 +3658,18 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	
 	 		if(this.animation=="slash" && parseInt(this.animationFrame)==6 && !this.hitBoxSpawned)
 	 			{
+	 			document.querySelector('#RockSmash').play();
 	 			this.hitBoxSpawned=true;
 	 			new DamageHitBox(this.position.x,
 	 							 this.position.y,
 	 							 this.width*0.2,
 	 							 this.height*0.2,
-	 							 [gameManager.hitbox_sprites,gameManager.active_sprites],
+	 							 [//gameManager.visible_sprites,
+	 							 	gameManager.hitbox_sprites,
+	 							 	gameManager.active_sprites],
 	 							 'player_hitbox',
 	 							 this,
-	 							 70,0,this.weaponDamage,this.sx*1.5);
+	 							 40,0,this.weaponDamage,this.sx*1.5);
 	 			/*
 	 			new ThornyBall(this.position.x,
 							   this.position.y,
@@ -2946,6 +3715,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 	 	this.energy-=this.energyCosts["jump"];
 		 	 	 	this.spaceTrigger=false;
 		 	 	 	this.jumping=true;
+		 	 	 	document.querySelector('#GetCoin').play();
 		 	 	 	this.jumpTimer=0;
 		 	 	 	}
 		 	 	 else if(this.jumping)
@@ -2980,6 +3750,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	{	
 		 	 // DisplayInGaps(`${this.position.x},${this.position.y}`);	 	 
 		 	 // this.checkDeath();
+		 	 this.handleHealing();
 		 	 this.applyGravity();
 		 	 this.manualControls();
 		 	 this.jumpingContols();
@@ -3030,6 +3801,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 	 			 this.slashTrigger=false;
 	 			 this.animInQueue="idle";
 	 			 this.changeAnimation("slash");	
+	 			 
 	 			}
 	 		else if(!GetKeyPressedx("z")&& !this.slashTrigger)
 	 			{
@@ -3112,6 +3884,27 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 if(Math.abs(this.velocity.x) > this.maxVelocity.x)
 		 	 	this.velocity.x=xdir*this.maxVelocity.x;
 		 	}
+
+		 flashThis()
+		 	{
+		 	 if(!this.healing) return false;
+		 	 this.healTimer+= deltaTime;
+		 	 this.healTimer2+=deltaTime;
+		 	 if(this.healTimer > this.healDelta)
+		 	 	{
+		 	 	 this.healTimer=0;
+		 	 	 this.flashOn=!this.flashOn;
+		 	 	}
+		 	 if(this.healTimer2 > this.healTimeMax)
+		 	 	{
+		 	 	 this.flashOn=true;
+		 	 	 this.healing=false;
+		 	 	 this.healTimer=0;
+		 		 this.healTimer2=0;
+		 		 this.lastHealTime= gameManager.runningClock;
+		 	 	}
+		 	 return this.flashOn;
+		 	}
 		 update()
 		 	{
 		 	 if(!this.onScreen) return false;
@@ -3133,6 +3926,13 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 			   -this.height/2,
 		 	 			   this.width,
 		 	 			   this.height
+		 	 			  );
+		 	 if(this.flashThis())
+		 	 ctx.drawImage(this.healFlash,
+						  -this.width/2,
+		   				  -this.height/2,
+		   				  this.width,
+		   				  this.height
 		 	 			  );
 		 	 ctx.restore(); 
 		 	}
@@ -3182,10 +3982,94 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		  	}
 
 		}
+	class Button
+		{
+		constructor(x,y,tex,btnGroups)
+			{
+			 this.position=new CreateVector(x,y);
+			 this.tex=tex;
+			 this.width=140;
+			 this.height=50;
+			 this.onScreen=true;
+			 this.mouseTrigger=false;
+			 this.fillColor='#a3a375';
+			 this.clickColor='#ccccb3';
+			 this.presentColor=this.fillColor;
+			 this.btnGroups=btnGroups;
+			 this.btnGroups.push(this);
+			}
+		colorSwitch()
+			{			
+			let leftx=this.position.x - this.width/2;
+		 	let rightx = this.position.x + this.width/2;
+		 	let lefty=this.position.y - this.height/2;
+		 	let righty = this.position.y + this.height/2;		 
+			if(mouseX > leftx && mouseX <rightx && mouseY > lefty && mouseY < righty )
+				{				
+				this.presentColor = this.clickColor;
+				}
+			else
+				{				
+				this.presentColor=this.fillColor;
+				}
+			}
+		update()
+			{
+			 this.colorSwitch();
+			 if(mousePressed && !this.mouseTrigger)
+			 	{
+			 	 this.mouseTrigger=true;
+			 	 let leftx=this.position.x - this.width/2;
+			 	 let rightx = this.position.x + this.width/2;
+			 	 let lefty=this.position.y - this.height/2;
+			 	 let righty = this.position.y + this.height/2;
+			 	 if(mouseX > leftx && mouseX <rightx && mouseY > lefty && mouseY < righty )
+			 	 	{
+			 	 	// this.presentColor = this.clickColor;
+			 	 	 switch(this.tex)
+			 	 	 	{
+			 	 	 	case 'Save':				 	 		
+				 	 		gameManager.saveStatusToLocalStoragex();
+				 	 		gameManager.gamePaused = false;
+				 	 		break;
+				 	 	case 'Restart':
+				 	 	    if(confirm("Press Ok to delete progress and restart game from start"))
+				 	 	    {
+				 	 		localStorage.removeItem("GameSaveData");
+				 	 		window.location.href='Platformer.html';
+				 	 		}
+				 	 		break;
+			 	 		}
+
+			 	 	}
+			 	}
+			 else if(!mousePressed && this.mouseTrigger)
+			 	{
+			 	 this.mouseTrigger=false;			 	 
+			 	}
+			 // else if(!mousePressed)
+			 // 	{
+				// this.presentColor=this.fillColor;
+			 // 	}
+			}
+		display()
+			{			 	 
+			 ctx.save();
+			 ctx.translate(this.position.x,this.position.y);
+			 ctx.fillStyle=this.presentColor;//#ccccb3
+			 ctx.strokeStyle='#000000';
+			 ctx.beginPath();
+			 ctx.rect(-this.width/2,-this.height/2,this.width,this.height);
+			 ctx.stroke();
+			 ctx.fill();			 
+			 ctx.restore();
+			 w2screen(this.tex,this.position.x-40,this.position.y+10);
+			}
+		}
 
 	class LevelUpBox
 		{
-		 constructor()
+		 constructor(go)
 		 	{		 	  
 		 	  this.position=new CreateVector(canvas.width/2,canvas.height/2);
 		 	  this.width=800;
@@ -3198,12 +4082,28 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	  this.focussed=1;
 		 	  this.coolDownTimer=0;
 		 	  this.coolDownMaxTime=200;
+		 	  this.btnGroups=[];
+		 	  this.go=go;
+		 	  new Button(this.position.x,this.position.y+200,"Save",this.btnGroups);
+		 	  new Button(this.position.x+300,this.position.y-175,"Restart",this.btnGroups);
 		 	}
 		 update()
 		 	{
-		 	 if(!gameManager.gamePaused || !gameManager.player) return false;
+		 	 if(!gameManager.gamePaused || !gameManager.player) return false;		 	 
 		 	 this.runCoolDown();
-		 	 this.checkForKeyPress();
+		 	 this.checkForKeyPress();		 	 
+		 	}
+		 receiveGameObject(obj)
+		 	{
+		 	 this.go=obj;
+		 	}
+		 displayAndUpdateButtons()
+		 	{
+		 	 for(let btn of this.btnGroups)
+		 	 	{
+		 	 	btn.update();
+		 	 	btn.display();	
+		 		}		 	 
 		 	}
 		 runCoolDown()
 		 	{
@@ -3216,25 +4116,25 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	}
 		 changeParam()
 		 	{
-		 	 if(this.experience < this.expNeeded)
+		 	 if(this.go.experience < this.go.expNeeded)
 		 	 	return false;
 		 	 switch(this.focussed)
 		 	 	{
 		 	 		case 1:
-		 	 			this.maxHealth+=1;		 	 			
+		 	 			this.go.maxHealth+=1;		 	 			
 		 	 			break;
 		 	 		case 2:
-		 	 			this.maxEnergy+=1;
+		 	 			this.go.maxEnergy+=1;
 		 	 			break;
 		 	 		case 3:
-		 	 			this.weaponDamage+=1;
+		 	 			this.go.weaponDamage+=1;
 		 	 			break;
 		 	 		default:
 		 	 		break;
 		 	 	}
-		 	 this.experience-=this.expNeeded;		 	 
-		 	 gameManager.player.updateParams(this.maxHealth,this.maxEnergy,this.weaponDamage);
-		 	 this.expNeeded=parseInt(1.1*this.expNeeded);
+		 	 this.go.experience-=this.go.expNeeded;		 	 
+		 	 // gameManager.player.updateParams(this.maxHealth,this.maxEnergy,this.weaponDamage);
+		 	 this.go.expNeeded=parseInt(1.1*this.go.expNeeded);
 		 	}
 		 checkForKeyPress()
 		 	{
@@ -3275,24 +4175,26 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 ctx.fill();		 	 
 		 	 ctx.restore();
 		 	 this.showStats();
+		 	 this.displayAndUpdateButtons();
 		 	}
+
 		 showStats()
 		 	{
 		 	 let startx=this.position.x -this.width*0.4;
 		 	 let starty=this.position.y - this.height*0.4;
-		 	 let shifts=[[100,0],[-100,80],[0,80],[0,80],[0,280],[500,0]];
+		 	 let shifts=[[100,0],[-100,80],[0,80],[0,80],[0,220],[500,0]];
 		 	 let dialogues=["Use Arrow keys to navigate",
-		 	 			    "Health :"+this.maxHealth,
-		 	 			    "Energy :"+this.maxEnergy,
-		 	 			    "Weapon Damage:"+this.weaponDamage,
-		 	 			    "Exp Needed:"+this.expNeeded,
-		 	 			    "Exp:"+this.experience
+		 	 			    "Health :"+this.go.maxHealth,
+		 	 			    "Energy :"+this.go.maxEnergy,
+		 	 			    "Weapon Damage:"+this.go.weaponDamage,
+		 	 			    "Exp Needed:"+this.go.expNeeded,
+		 	 			    "Exp:"+this.go.experience
 		 	 			   ];
 		 	 for(let i in dialogues)
 		 	 	{	
 		 	 	 startx+=shifts[i][0];
 		 	 	 starty+=shifts[i][1];
-		 	 	 if(i==this.focussed ||(this.experience < this.expNeeded && i==5))
+		 	 	 if(i==this.focussed ||(this.go.experience < this.expNeeded && i==5))
 		 	 	 w2screen(dialogues[i],startx,starty,'#FF0000');
 		 	 	 else
 		 	 	 w2screen(dialogues[i],startx,starty); 
@@ -3308,6 +4210,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 this.visible_sprites=[];
 		 	 this.active_sprites=[];		 	 		 	 
 		 	 this.collission_sprites=[];
+		 	 this.markedSpots=[];
 		 	 this.hitbox_sprites=[];
 		 	 this.enemy_sprites=[];
 		 	 this.camera_stop_sprites=[];
@@ -3315,6 +4218,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 this.camera=new Camera(0,0);
 		 	 this.scenesReady=[];
 		 	 this.scenesLoaded=[];
+		 	 this.listOfDestroyedSprites=[];
 		 	 this.testing=false;
 		 	 this.runningClock=0;		 	 
 		 	 this.player=null;
@@ -3324,18 +4228,54 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 this.sceneForward=true;
 		 	 this.positionAdjuster=new PositionAdjuster(null,[this.visible_sprites,this.active_sprites]);
 
-		 	 this.playerHealthBar= new UIBar(50,20,300,30,100,100,'#222222','#FF0000',[this.visible_sprites,this.active_sprites]);
-			 this.playerEnergyBar= new UIBar(50,100,300,30,100,100,'#222222','#0000FF',[this.visible_sprites,this.active_sprites]);
-			 this.levelUpBox=new LevelUpBox();
+		 	 this.playerHealthBar= new UIBar(50,20,300,30,100,100,'#222222','#FF0000',[this.visible_sprites,this.active_sprites],true,'playerhealth');
+			 this.playerEnergyBar= new UIBar(50,100,300,30,100,100,'#222222','#0000FF',[this.visible_sprites,this.active_sprites],true,'playerenergy');
+			 this.levelUpBox=new LevelUpBox(this.player);			 
+			 this.localStorageChecked=false;
 		 	}
+		 getLocalStoragex(){
+		 	/*
+		 	let localStorage_local={"sceneNo":2,
+		 						    "player":{"health":80,"maxHealth":200,"weaponDamage":20,"exp":100,"maxEnergy":100}
+		 	                       };
+		 	*/
+		 	let localStorage_local = localStorage.getItem("GameSaveData");
+		 	if(!localStorage_local) return false;
+		 	localStorage_local= JSON.parse(localStorage_local);
+		 	return localStorage_local; 
+		 }
+
+		 saveStatusToLocalStoragex(){
+		 	let sceneNo= this.scenesLoaded.filter(x=>x).length;
+		 	let datum={"sceneNo":sceneNo,
+					   "player":{"health":this.player.health,
+					             "maxHealth":this.player.maxHealth,
+					             "weaponDamage":this.player.weaponDamage,
+					             "exp":this.player.experience,
+					             "maxEnergy":this.player.maxEnergy
+					            },
+					   "listOfDestroyedSprites":this.listOfDestroyedSprites
+                      };
+            localStorage.setItem("GameSaveData",JSON.stringify(datum));
+		 }
+
 
 		 unload_components()
 		 	{
 		 	this.collission_sprites=[];
 		 	this.camera_stop_sprites=[];
 		 	this.entryexit_sprites=[];
-		 	this.visible_sprites=[this.player,this.positionAdjuster,this.playerHealthBar,this.playerEnergyBar];
-		 	this.active_sprites=[this.player,this.positionAdjuster,this.playerHealthBar,this.playerEnergyBar];		 	
+		 	if(!this.player)
+		 		{
+		 		this.visible_sprites=[this.playerHealthBar,this.playerEnergyBar,this.positionAdjuster];
+		 		this.active_sprites=[this.playerHealthBar,this.playerEnergyBar,this.positionAdjuster];	
+		 		}
+		 	else{
+		 		this.visible_sprites=[this.player,this.positionAdjuster,this.playerHealthBar,this.playerEnergyBar];
+		 		this.active_sprites=[this.player,this.positionAdjuster,this.playerHealthBar,this.playerEnergyBar];
+		 		this.collission_sprites=[this.player.hit_box];
+		 		}
+		 			 	
 		 	}
 
 		 runClock()
@@ -3353,12 +4293,12 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 
 		 update()
 		 	{
-		 	 //DisplayInGaps(this.collission_sprites.map(x=>x.sprite_type).reduce((s,x)=>s+x+',',''));
+		 	 //DisplayInGaps(this.collission_sprites.map(x=>x.sprite_type).reduce((s,x)=>s+x+',',''));		 	 
 		 	 this.runClock();
-		 	 this.runGame();
-		 	 this.showLevelUpBox();
+		 	 this.runGame();		 	 
 		 	 this.checkScenes();	
-		 	 this.showExperience();	 
+		 	 this.showExperience();	
+		 	 this.showLevelUpBox(); 
 		 	}
 		 showLevelUpBox()
 		 	{
@@ -3452,12 +4392,52 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 	 	  	hb.causeDamage(gameManager.player);
 		 	 	 	}
 		 	 	}
+		 	}
+		 alterSceneData()
+		 	{
+		 	 if(this.localStorageChecked)
+		 	 	{		 	 	
+		 	 	return false;
+		 	    }
+		 	 this.localStorageChecked=true;		 	 
+		 	 let localStoragex=this.getLocalStoragex();
+		 	 if(!localStoragex) 
+		 	 	{
+		 	 	console.log('nothing in localstorage..returning');
+		 	 	return true;
+		 	 	}
+		 	let scene=localStoragex.sceneNo;
 
+ 	 	 	this.player=new Player(100*xscale,
+		   	   					   200*yscale,
+							   	   150*xscale,
+							   	   100*yscale,
+							   	   [this.visible_sprites,this.active_sprites]
+		   	   					  );
+ 	 	 	this.levelUpBox.receiveGameObject(this.player);
+ 	 	 	if(localStoragex.listOfDestroyedSprites)
+ 	 	 		this.listOfDestroyedSprites=localStoragex.listOfDestroyedSprites;
+ 	 	 	this.player.receiveParams(localStoragex.player.health,
+ 	 	 		                      localStoragex.player.maxHealth,
+ 	 	 		                      localStoragex.player.maxEnergy,
+ 	 	 		                      localStoragex.player.weaponDamage,
+ 	 	 		                      localStoragex.player.exp 	 	 		                      
+ 	 	 		                     );
+
+		 	 for(let i=0;i < scene;i++)
+		 	 	{
+		 	 	 this.scenesReady[i]=true;
+		 	 	 this.scenesLoaded[i]=true;
+		 	 	}
+		 	 this.scenesLoaded[this.scenesLoaded.length-1]=false;
+
+		 	 console.log(JSON.stringify(this.scenesReady));
+		 	 console.log(JSON.stringify(this.scenesLoaded));
 		 	}
 		 checkScenes()
 		 	{
-		 	  
-		 	 let n=this.scenesReady.length;
+		 	 this.alterSceneData();
+		 	 let n=this.scenesReady.length;		 	 
 		 	 if(n==0)
 		 	 	{
 		 	 	 this.scenesReady[0]=true;
@@ -3468,8 +4448,8 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 	 {
 			 	 if(this.scenesReady[i]==true && this.scenesLoaded[i]==false)
 			 	 	{
-			 	 	if(!(n==1 && this.sceneForward) && !this.testing)
-			 	 		this.unload_components();
+			 	 	// if(!(n==1 && this.sceneForward) && !this.testing)
+			 	 	this.unload_components();
 			 	 	this.loadScene(i);
 			 	 	break;
 			 	 	}
@@ -3483,12 +4463,15 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 		{
 		 		console.log('something is wrong');
 		 		return false;
-		 		}	
-
+		 		}
 		 	 // this.unload_components();		 	 
 		 	 for(let elem of scenes[n])
 		 	 	{
-		 	 	 if(!this.testing && elem['sprite']=='player' && (n!=0 || !this.sceneForward) )
+		 	 	/*
+		 	 	 if (this.player || (!this.testing && elem['sprite']=='player' && (n!=0 || !this.sceneForward) ) )
+		 	 	 	continue;
+		 	 	 */
+		 	 	 if(elem['sprite']=='player' && (this.player) )
 		 	 	 	continue;
 		 	 	 if(elem['sprite']=='platform')
 		 	 	 	new Platform(elem['x']*xscale,
@@ -3497,13 +4480,16 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 	 				 elem['height']*yscale,
 		 	 	 				 [this.visible_sprites,this.collission_sprites]
 		 	 	 				);
-		 	 	 else if(elem['sprite']=='player')		 	 	 	
+		 	 	 else if(elem['sprite']=='player')	
+		 	 	 	{		 	 	 		 	 	 	
 		 	 	 	this.player=new Player(elem['x']*xscale,
 		 	 	 		   	   elem['y']*yscale,
 		 	 	 		   	   elem['width']*xscale,
 		 	 	 		   	   elem['height']*yscale,
 		 	 	 		   	   [this.visible_sprites,this.active_sprites]
-		 	 	 		   	   );			 	 	 
+		 	 	 		   	   );	
+		 	 	   this.levelUpBox.receiveGameObject(this.player);
+		 	 	   }		 	 	 
 		 	 	 else if(elem['sprite'].split('_')[0]=='camstopper')
 		 	 	 	new CameraStopper(elem['x']*xscale,
 		 	 	 		   	   elem['y']*yscale,
@@ -3522,19 +4508,46 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 	 		   	   elem['sprite'].split('_')[1],
 		 	 	 		   	   [this.visible_sprites,this.active_sprites]
 		 	 	 		   	   );
-		 	 	 else if(elem['sprite']=='husk')		 	 	 	
+		 	 	 else if(elem['sprite']=='husk' && this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)		 	 	 	
 		 	 	 	  new Husk(elem['x']*xscale,
 		 	 	 		   	   elem['y']*yscale,
 		 	 	 		   	   elem['width']*xscale,
 		 	 	 		   	   elem['height']*yscale,
-		 	 	 		   	   [this.visible_sprites,this.enemy_sprites,this.active_sprites]
+		 	 	 		   	   [this.visible_sprites,this.enemy_sprites,this.active_sprites],
+		 	 	 		   	   elem['spriteId']
 		 	 	 		   	   );
-		 	 	 else if(elem['sprite']=='lance')		 	 	 	
+		 	 	 else if(elem['sprite']=='lance' &&  this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)		 	 	 	
 		 	 	 	  new Lance(elem['x']*xscale,
 		 	 	 		   	   elem['y']*yscale,
 		 	 	 		   	   elem['width']*xscale,
 		 	 	 		   	   elem['height']*yscale,
-		 	 	 		   	   [this.visible_sprites,this.enemy_sprites,this.active_sprites]
+		 	 	 		   	   [this.visible_sprites,this.enemy_sprites,this.active_sprites],
+		 	 	 		   	   elem['spriteId']
+		 	 	 		   	   );
+		 	 	 else if(elem['sprite']=='falseknight' &&  this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)		 	 	 	
+		 	 	 	  new FalseKnight(elem['x']*xscale,
+		 	 	 		   	   elem['y']*yscale,
+		 	 	 		   	   elem['width']*xscale,
+		 	 	 		   	   elem['height']*yscale,
+		 	 	 		   	   [this.visible_sprites,this.enemy_sprites,this.active_sprites],
+		 	 	 		   	   elem['spriteId']
+		 	 	 		   	   );
+		 	 	 else if(elem['sprite'].split('_')[0]=='MarkedSpot')
+		 	 	 	new MarkedSpot(elem['x']*xscale,
+		 	 	 		   	   elem['y']*yscale,
+		 	 	 		   	   elem['sprite'].split('_')[1],
+		 	 	 		   	   [this.visible_sprites,this.markedSpots]
+		 	 	 		   	   );
+		 	 	 else if(elem['sprite']=='BossFightTriggGO' &&  
+		 	 	 		 this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)
+		 	 	 	new BossFightTriggGO(elem['x']*xscale,
+		 	 	 		   	   elem['y']*yscale,
+		 	 	 		   	   elem['br1posx']*xscale,
+		 	 	 		   	   elem['br1posy']*yscale,
+		 	 	 		   	   elem['br2posx']*xscale,
+		 	 	 		   	   elem['br2posy']*yscale,		 	 	 		   	   
+		 	 	 		   	   [this.active_sprites],
+		 	 	 		   	   elem['spriteId']
 		 	 	 		   	   );
 
 		 	 	}

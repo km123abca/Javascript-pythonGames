@@ -2705,6 +2705,320 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 
     	}
     //false knight ends
+    //husk miner starts    
+    class HuskMiner
+    	{
+    	constructor(x,y,wid,hei,spriteGroups,spriteId)	
+    		{
+    		 this.position= new CreateVector(x,y);
+    		 this.width= wid;
+    		 this.height=hei;
+    		 let folderPath= "sprites/huskMiner";
+    		 this.onScreen=true;
+    		 this.angle=0;
+    		 this.sx=1;
+    		 this.sy=1;
+    		 this.startx=0;
+			 this.starty=0;
+			 this.imgWidth=0;
+			 this.imgHeight=0;
+			 this.spriteId=spriteId;
+			 this.acceleration=new CreateVector(0,0);
+			 this.velocity=new CreateVector(0,0);
+			 this.maxVelocity=new CreateVector(3*xscale,12*yscale);		
+			 this.horiForce=new CreateVector(2*xscale,0);
+			 this.gravityScale=2*yscale;
+			 this.expVal=100;
+			 this.animations= {
+			 				   'idle':{'imgsheet':LoadImagex(folderPath,'idle.png'),
+						  		       'width':1170,
+						  		       'height':174,			  		    
+						  		       'rows':1,
+						  		       'cols':9,
+						  		       'maxFrames':9,
+						  		       'width_extend':1,
+						  		       'height_extend':1,
+						  		       'anim_speed':0.15
+						  		      },
+			 				   'startle':{'imgsheet':LoadImagex(folderPath,'startle.png'),
+						  		       'width':976,
+						  		       'height':178,			  		    
+						  		       'rows':1,
+						  		       'cols':5,
+						  		       'maxFrames':5,
+						  		       'width_extend':1,
+						  		       'height_extend':1,
+						  		       'anim_speed':0.5
+						  		         },
+			 				   'run':{'imgsheet':LoadImagex(folderPath,'run.png'),
+						  		       'width':1210,
+						  		       'height':175,			  		    
+						  		       'rows':1,
+						  		       'cols':8,
+						  		       'maxFrames':8,
+						  		       'width_extend':1,
+						  		       'height_extend':1,
+						  		       'anim_speed':0.5
+						  		     },
+			 				   'throwAnticipate':{'imgsheet':LoadImagex(folderPath,'throwAnticipate.png'),
+						  		       'width':804,
+						  		       'height':179,			  		    
+						  		       'rows':1,
+						  		       'cols':5,
+						  		       'maxFrames':5,
+						  		       'width_extend':1,
+						  		       'height_extend':1,
+						  		       'anim_speed':0.5
+						  		                  },
+			 				   'Throw':{'imgsheet':LoadImagex(folderPath,'Throw.png'),
+						  		       'width':409,
+						  		       'height':171,			  		    
+						  		       'rows':1,
+						  		       'cols':3,
+						  		       'maxFrames':3,
+						  		       'width_extend':1,
+						  		       'height_extend':1,
+						  		       'anim_speed':0.5
+						  		        },
+			 				   'Slash':{'imgsheet':LoadImagex(folderPath,'Slash.png'),
+						  		       'width':387,
+						  		       'height':176,			  		    
+						  		       'rows':1,
+						  		       'cols':1,
+						  		       'maxFrames':1,
+						  		       'width_extend':1,
+						  		       'height_extend':1,
+						  		       'anim_speed':1
+						  		        },
+			 				   'slashRecover':{'imgsheet':LoadImagex(folderPath,'slashRecover.png'),
+						  		       'width':352,
+						  		       'height':170,			  		    
+						  		       'rows':1,
+						  		       'cols':2,
+						  		       'maxFrames':2,
+						  		       'width_extend':1,
+						  		       'height_extend':1,
+						  		       'anim_speed':0.5
+						  		        },
+			 				   'mining':{'imgsheet':LoadImagex(folderPath,'mining.png'),
+						  		       'width':1389,
+						  		       'height':391,			  		    
+						  		       'rows':1,
+						  		       'cols':6,
+						  		       'maxFrames':11,
+						  		       'width_extend':1,
+						  		       'height_extend':1,
+						  		       'anim_speed':0.5
+						  		        },
+			 				  };
+			 this.animation= 'idle';
+			 this.animInQueue= null;
+			 this.animationFrame= 0;
+			 this.sprite_type= 'husk_miner';
+			 this.state= 'miner_idle';
+			 this.maxHealth= 100;
+			 this.health= this.maxHealth;
+			 this.spriteGroups= spriteGroups;
+			 for(let grp of spriteGroups)
+			 	grp.push(this);
+			 this.hit_box=new HitBox(x,y,this.width*0.4,this.height*0.8,[
+                                                        gameManager.collission_sprites
+                                                        // gameManager.active_sprites
+                                                        ],'huskminerhitbox');
+			 this.image_offset=new CreateVector(-30*xscale,-15*yscale);
+			 this.image_offset_fixed=this.image_offset.copy();
+ 			 this.minerHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,
+ 			 								'#222222','#FF0000',[gameManager.visible_sprites],
+ 			 								false,'fkhealth');
+			 this.minerHealthBar.onScreen=true;
+			 this.uiBarTimer=0;
+			 this.uiBarMaxTime=2000;
+			 this.healthBarOffset=new CreateVector(-30*xscale,-120*yscale);
+			 this.hitBoxSpawned=false;
+			 if(gameManager.player)
+			 	this.tgt= gameManager.player;	
+
+			 this.invincibleState=false;
+		 	 this.invin_count=0;
+		 	 this.max_invin_time=2000;
+		 	 this.flickerCount=0;
+			 this.maxFlickerTime=100;
+			 
+			 this.minerLastAttackTime=0;
+    		 this.minerMinAttackGap=800;
+    		 this.minerPlayerFarDistance=280*xscale;    		     		
+
+    		 this.closeAttacks=[];
+    	     this.longAttacks =[];
+    	     this.randomAttacks=[];
+    		}
+    	 hmidle()
+    	 	{
+    	 	 return false;
+    	 	}
+		updateHealthBarPos()
+			{
+				if(this.minerHealthBar.onScreen)
+					{	
+					this.uiBarTimer+=deltaTime;
+					if(this.uiBarTimer > this.uiBarMaxTime)
+						{
+					 	this.uiBarTimer=0;
+					 	this.minerHealthBar.onScreen=false;
+						}
+					}
+				this.minerHealthBar.position.setVec(this.position.copy().add(this.healthBarOffset));
+			}
+		manageInvincibility()
+			{
+			if(!this.invincibleState) return false;
+			this.invin_count+= deltaTime;
+			if(this.invin_count > this.max_invin_time)
+				{
+				 this.invin_count=0;
+				 this.invincibleState=false;
+				} 
+			}		
+		flickerControl()
+			{
+			  if(!this.invincibleState) return true;
+			  this.flickerCount+=deltaTime;
+			  if(this.flickerCount > this.maxFlickerTime)
+			  	{
+			  	 this.flickerCount=0;
+			  	 return true;
+			  	}
+			  return false;
+			}
+		applyGravity()
+		 	{
+		 	 this.acceleration.y+=this.gravityScale;
+		 	}
+		 applyVelocity()
+		 	{		 	 	 	 
+		 	 this.hit_box.position.x+=this.velocity.x;		 	
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(x==this.hit_box) continue;
+		 	 	 
+		 	 	 if(b_collision(this.hit_box,x)) 
+		 	 	 	{		 	 	 	
+		 	 	 	 if(this.velocity.x > 0)
+		 	 	 	 	this.hit_box.position.x=x.position.x-x.width/2-this.hit_box.width/2-2;
+		 	 	 	 else 
+		 	 	 	 	this.hit_box.position.x=x.position.x+x.width/2+this.hit_box.width/2+2;
+		 	 	 	}
+		 	 	 		 	 	
+		 	 	}
+
+		 	 this.hit_box.position.y+=this.velocity.y;
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(x==this.hit_box) continue;
+		 	 	 if(b_collision(this.hit_box,x)) 
+		 	 	 	{
+		 	 	 	
+		 	 	 	if(this.velocity.y > 0)
+		 	 	 		this.hit_box.position.y=x.position.y-x.height/2-this.hit_box.height/2-2;
+		 	 	 	else
+		 	 	 		this.hit_box.position.y=x.position.y+x.height/2+this.hit_box.height/2+2;	
+		 	 	 	}
+		 	 	}
+		 	}
+		 applyVelocityRestrictions()
+		 	{
+		 	 let xdir=this.velocity.x/Math.abs(this.velocity.x);
+		 	 let ydir=this.velocity.y/Math.abs(this.velocity.y);
+		 	 if(Math.abs(this.velocity.y) > this.maxVelocity.y)
+		 	 	this.velocity.y=ydir*this.maxVelocity.y;
+		 	 if(Math.abs(this.velocity.x) > this.maxVelocity.x)
+		 	 	this.velocity.x=xdir*this.maxVelocity.x;
+		 	}
+		update_and_display_hitbox()
+		 	{
+	 		// this.hit_box.updatePosition(this.position);
+	 		this.position.setVec(this.hit_box.position.copy().add(this.image_offset));
+		 	}
+		 move()
+		 	{		
+		 	 this.applyGravity(); 	 
+		 	 this.velocity.add(this.acceleration);
+		 	 this.acceleration.set(0,0);		 	
+		 	 this.applyVelocity();
+		 	 this.applyVelocityRestrictions();
+		 	 this.update_and_display_hitbox();
+		 	 this.spawnHitBoxOnHit_huskMiner();
+		 	}
+		 spawnHitBoxOnHit_huskMiner()
+		 	{
+		 	 return false;
+		 	} 	
+    	 stateMachine()
+    	 	{
+    	 	 switch(this.state)
+    	 	 	{
+    	 	 	case 'miner_idle':	
+    	 	 		this.hmidle();
+    	 	 		break;
+    	 	 	}
+    	 	}
+    	 update()
+    	 	{
+    	 	 this.stateMachine();
+    	 	}
+    	 display()
+    	 	{
+		 	 if(!this.onScreen) return false;
+		 	 this.runAnimation();
+		 	 ctx.save();
+		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
+		 	 	 		   this.position.y-gameManager.camera.position.y);
+		 	 ctx.rotate(d2r(this.angle));
+		 	 ctx.scale(this.sx,this.sy);
+		 	 if(this.flickerControl())
+		 	 ctx.drawImage(this.animations[this.animation]['imgsheet'],
+		 	 				this.startx,this.starty,this.imgWidth,this.imgHeight,
+		 	 			   -this.width/2,
+		 	 			   -this.height/2,
+		 	 			   this.width*this.animations[this.animation]['width_extend'],
+		 	 			   this.height*this.animations[this.animation]['height_extend']
+		 	 			  );
+		 	 // context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
+		 	 ctx.restore();
+		 	 w2screen(this.state,this.position.x-gameManager.camera.position.x,this.position.y-50*yscale-gameManager.camera.position.y);
+    	 	}
+    	runAnimation()
+    		{
+			  this.animationFrame+=this.animations[this.animation]['anim_speed'];
+			  if(this.animationFrame >= this.animations[this.animation]['maxFrames'])
+			  	{
+		  		this.animationFrame=0;
+		  		if(this.animInQueue) 
+		  			{
+		  			this.animation=this.animInQueue;
+		  			//console.log('back to '+this.animation);
+		  			this.animInQueue=null;
+		  			}
+			  	}
+			  let rowIndex=parseInt(parseInt(this.animationFrame)/this.animations[this.animation]['cols']);
+			  let colIndex=parseInt(this.animationFrame)%this.animations[this.animation]['cols'];
+			  this.startx=colIndex * this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
+			  this.starty=rowIndex * this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
+			  this.imgWidth = this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
+			  this.imgHeight = this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
+			}
+		switchAnimation(animx)
+			{
+			 if(this.animation != animx)
+			 	{
+			 	this.animationFrame=0;
+			 	this.animation=animx;			 	
+			 	}
+			}
+    	}
+    //husk miner ends
     
 	class Husk
 		{
@@ -3425,8 +3739,8 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	 	  this.position=new CreateVector(x,y);
     	 	  this.width=40*xscale;
     	 	  this.height=40*yscale;
-    	 	  this.br1pos=new CreateVector(br1posx*xscale,br1posy*yscale);
-    	 	  this.br2pos=new CreateVector(br2posx*xscale,br2posy*yscale);     	 	  	 	  
+    	 	  this.br1pos=new CreateVector(br1posx,br1posy);
+    	 	  this.br2pos=new CreateVector(br2posx,br2posy);     	 	  	 	  
     	 	  this.spriteGroups=spriteGroups;
     	 	  for(let grp of this.spriteGroups)
 			 	grp.push(this); 
@@ -4596,7 +4910,15 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 	 		   	   [this.active_sprites],
 		 	 	 		   	   elem['spriteId']
 		 	 	 		   	   );
-
+		 	 	 else if(elem['sprite']=='huskMiner' &&  
+		 	 	 	     this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)		 	 	 	
+		 	 	 	  new HuskMiner(elem['x']*xscale,
+		 	 	 		   	   elem['y']*yscale,
+		 	 	 		   	   elem['width']*xscale,
+		 	 	 		   	   elem['height']*yscale,
+		 	 	 		   	   [this.visible_sprites,this.enemy_sprites,this.active_sprites],
+		 	 	 		   	   elem['spriteId']
+		 	 	 		   	   );
 		 	 	}
 		 	 this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');		 	 
 		 	 this.camera.tgt=this.camera_stop_sprites[this.sceneForward?0:1];

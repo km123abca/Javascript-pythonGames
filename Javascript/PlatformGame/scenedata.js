@@ -12,9 +12,10 @@ let scenes=[
 				{"sprite":"MarkedSpot_fkjumpup","x":825,"y":526},
 				{"sprite":"MarkedSpot_fkjumpup","x":2112,"y":614},
 				{"sprite":"BossFightTriggGO","x":1450,"y":448,
-				 "br1posx":-500,"br1posy":-161,"br2posx":500,"br2posy":-161,"spriteId":"BossFightTriggGO"
+				 "br1posx":-500,"br1posy":-111,"br2posx":500,"br2posy":-111,"spriteId":"BossFightTriggGO"
 				},
-				{"sprite":"falseknight","x":1050,"y":-367,"width":368,"height":223,"spriteId":"boss_fknight1"}
+				{"sprite":"falseknight","x":1100,"y":-367,"width":368,"height":223,"spriteId":"boss_fknight1"}
+				// {"sprite":"huskMiner","x":1100,"y":-367,"width":368,"height":223,"spriteId":"boss_huskminer1"}
 				// {"sprite":"lance","x":300,"y":200,"width":250,"height":200,spriteId:"lance1"},
 				// {"sprite":"husk","x":1714,"y":200,"width":150,"height":200,"spriteId":"husk1"}
 				// {"sprite":"falseknight","x":125,"y":319,"width":368,"height":223,spriteId:"fknight1"},
