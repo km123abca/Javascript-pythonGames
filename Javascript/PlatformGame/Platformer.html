@@ -2780,7 +2780,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 						  		       'height_extend':1,
 						  		       'anim_speed':0.5
 						  		        },
-			 				   'Slash':{'imgsheet':LoadImagex(folderPath,'Slash.png'),
+			 				   'slash':{'imgsheet':LoadImagex(folderPath,'Slash.png'),
 						  		       'width':387,
 						  		       'height':176,			  		    
 						  		       'rows':1,
@@ -2831,10 +2831,11 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
  			 								'#222222','#FF0000',[gameManager.visible_sprites],
  			 								false,'fkhealth');
 			 this.minerHealthBar.onScreen=true;
+			 this.minerAttackStarted=false;
 			 this.uiBarTimer=0;
 			 this.uiBarMaxTime=2000;
 			 this.healthBarOffset=new CreateVector(-30*xscale,-120*yscale);
-			 this.hitBoxSpawned=false;
+			 this.minerHitBoxSpawned=false;
 			 if(gameManager.player)
 			 	this.tgt= gameManager.player;	
 
@@ -2979,9 +2980,33 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	 	 let playerSep=this.tgt.position.x - this.position.x;
     	 	 this.sx=Math.sign(playerSep);
     	 	}
+    	
     	 hmSlash()
     	 	{
-    	 		
+    	 	 if(!this.minerAttackStarted && this.animation!='throwAnticipate' &&
+    	 	 	 this.animation!='slash' && this.animation!='slashRecover'
+    	 	 	)
+    	 	 	{
+    	 	 	 this.minerAttackStarted=true;
+    	 	 	 this.switchAnimation('throwAnticipate');
+    	 	 	 this.animInQueue='slash';	
+    	 	 	}
+    	 	 else if(this.animation=='slash' && this.animInQueue!='slashRecover')
+    	 	 	{
+    	 	 	 this.animInQueue='slashRecover';	
+    	 	 	}
+    	 	 else if(this.animation=='slashRecover' && this.animInQueue!='idle')
+    	 	 	{
+    	 	 	 this.animInQueue='idle';
+    	 	 	}
+    	 	 if(this.animation=='idle' && this.minerAttackStarted)
+    	 	 	 {
+    	 	 	 	this.state='miner_agro';
+    	 	 	 	this.minerAttackStarted= false;
+    	 	 	 	this.minerLastAttackTime= gameManager.runningClock;
+    	 	 	 	this.minerHitBoxSpawned= false; 
+    	 	 	 }
+
     	 	}
     	 update()
     	 	{
