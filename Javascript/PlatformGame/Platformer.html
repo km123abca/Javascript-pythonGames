@@ -2726,7 +2726,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 this.acceleration=new CreateVector(0,0);
 			 this.velocity=new CreateVector(0,0);
 			 this.maxVelocity=new CreateVector(3*xscale,12*yscale);		
-			 this.horiForce=new CreateVector(2*xscale,0);
+			 this.horiForce=new CreateVector(1*xscale,0);
 			 this.gravityScale=2*yscale;
 			 this.expVal=100;
 			 this.animations= {
@@ -2768,7 +2768,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 						  		       'maxFrames':5,
 						  		       'width_extend':1,
 						  		       'height_extend':1,
-						  		       'anim_speed':0.5
+						  		       'anim_speed':0.1
 						  		                  },
 			 				   'Throw':{'imgsheet':LoadImagex(folderPath,'Throw.png'),
 						  		       'width':409,
@@ -2778,7 +2778,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 						  		       'maxFrames':3,
 						  		       'width_extend':1,
 						  		       'height_extend':1,
-						  		       'anim_speed':0.5
+						  		       'anim_speed':0.1
 						  		        },
 			 				   'slash':{'imgsheet':LoadImagex(folderPath,'Slash.png'),
 						  		       'width':387,
@@ -2788,7 +2788,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 						  		       'maxFrames':1,
 						  		       'width_extend':1,
 						  		       'height_extend':1,
-						  		       'anim_speed':1
+						  		       'anim_speed':0.2
 						  		        },
 			 				   'slashRecover':{'imgsheet':LoadImagex(folderPath,'slashRecover.png'),
 						  		       'width':352,
@@ -2798,7 +2798,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 						  		       'maxFrames':2,
 						  		       'width_extend':1,
 						  		       'height_extend':1,
-						  		       'anim_speed':0.5
+						  		       'anim_speed':0.1
 						  		        },
 			 				   'mining':{'imgsheet':LoadImagex(folderPath,'mining.png'),
 						  		       'width':1389,
@@ -2846,11 +2846,11 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 this.maxFlickerTime=100;
 			 
 			 this.minerLastAttackTime=0;
-    		 this.minerMinAttackGap=800;
-    		 this.minerPlayerFarDistance=280*xscale;    		     		
+    		 this.minerMinAttackGap=1200;
+    		 this.minerPlayerFarDistance=180*xscale;    		     		
 
-    		 this.closeAttacks=[];
-    	     this.longAttacks =[];
+    		 this.closeAttacks=['miner_slash'];
+    	     this.longAttacks =['miner_runup'];
     	     this.randomAttacks=[];
     		}
     	 hmidle()
@@ -2954,7 +2954,23 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	}
 		 spawnHitBoxOnHit_huskMiner()
 		 	{
-		 	 return false;
+		 	 let hbWidthRatio=0.2;//these can be modified to increase/ decrease the hitbox range
+    		 let hbHeightRatio=0.3;
+		 	 if(this.animation == 'slash' && 
+		 	 	parseInt(this.animationFrame)==0 &&
+		 	 	!this.minerHitBoxSpawned
+		 	 	)
+		 	 	{
+		 	 	 this.hitBoxSpawned= true;
+	 	 		 new DamageHitBox(this.position.x,
+				 				  this.position.y,
+				 				  this.width*hbWidthRatio,
+				 				  this.height*hbHeightRatio,
+				 				  [gameManager.active_sprites,gameManager.hitbox_sprites],
+				     			  'enemy_hitbox',
+				 				  this,
+				 				  130*xscale,50*yscale,10,this.sx*1.5,50);
+		 	 	}
 		 	} 	
     	 stateMachine()
     	 	{
@@ -2966,6 +2982,12 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	 	 	case 'miner_agro':
     	 	 		this.hmAgro();
     	 	 		break;
+    	 	 	case 'miner_slash':
+    	 	 		this.hmSlash();
+    	 	 		break;
+    	 	 	case 'miner_runup':
+    	 	 	 	this.hmRunUp();
+    	 	 	 	break;
     	 	 	}
     	 	}
     	 hmidle()
@@ -2978,7 +3000,27 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	 	 if(!this.tgt.isActive)
     	 	 	return false;  
     	 	 let playerSep=this.tgt.position.x - this.position.x;
-    	 	 this.sx=Math.sign(playerSep);
+    	 	 this.sx=Math.sign(playerSep);    	 	 
+    	 	 if(Math.abs(playerSep) < this.minerPlayerFarDistance)
+    	 	 	{
+    	 	 	 if(gameManager.runningClock - this.minerLastAttackTime > this.minerMinAttackGap)
+    	 	 	 	this.state= this.closeAttacks[Math.floor(Math.random()*this.closeAttacks.length)];
+    	 	 	}
+    	 	 else
+    	 	 	this.state= this.longAttacks[Math.floor(Math.random()*this.longAttacks.length)];
+    	 	}
+    	 hmRunUp()
+    	 	{
+    	 	 this.switchAnimation('run');
+    	 	 let playerSep=this.tgt.position.x - this.position.x;
+    	 	 if(Math.abs(playerSep) > this.minerPlayerFarDistance)
+    		 	this.acceleration.add(this.horiForce.copy().mult(this.sx*2)); 
+    		 else
+    		 	{
+    		 	 this.velocity.x= 0;
+    		 	 this.state= 'miner_agro';
+    		 	 this.switchAnimation('idle');
+    		 	}
     	 	}
     	
     	 hmSlash()
