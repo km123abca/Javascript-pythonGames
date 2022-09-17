@@ -2803,19 +2803,19 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 				   'mining':{'imgsheet':LoadImagex(folderPath,'mining.png'),
 						  		       'width':1389,
 						  		       'height':391,			  		    
-						  		       'rows':1,
+						  		       'rows':2,
 						  		       'cols':6,
 						  		       'maxFrames':11,
 						  		       'width_extend':1,
 						  		       'height_extend':1,
-						  		       'anim_speed':0.5
+						  		       'anim_speed':0.25
 						  		        },
 			 				  };
 			 this.animation= 'idle';
 			 this.animInQueue= null;
 			 this.animationFrame= 0;
 			 this.sprite_type= 'husk_miner';
-			 this.state= 'miner_agro';
+			 this.state= 'miner_idle';
 			 this.maxHealth= 100;
 			 this.health= this.maxHealth;
 			 this.spriteGroups= spriteGroups;
@@ -2847,16 +2847,14 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 
 			 this.minerLastAttackTime=0;
     		 this.minerMinAttackGap=1200;
-    		 this.minerPlayerFarDistance=180*xscale;    		     		
+    		 this.minerPlayerFarDistance=180*xscale; 
+    		 this.minerAgroDistance= 330 * xscale;   		     		
 
     		 this.closeAttacks=['miner_slash'];
     	     this.longAttacks =['miner_runup'];
     	     this.randomAttacks=[];
     		}
-    	 hmidle()
-    	 	{
-    	 	 return false;
-    	 	}
+
 		updateHealthBarPos()
 			{
 			if(this.minerHealthBar.onScreen)
@@ -2992,9 +2990,19 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	 	}
     	 hmidle()
     	 	{
+    	 	 this.switchAnimation('mining');
     	 	 if(!this.tgt.isActive)
-    	 	 	return false;    	 	 
-    	 	}
+    	 	 	return false; 
+    	 	 let playerSep=this.tgt.position.x - this.position.x;
+    	 	 if(this.animation=='idle')
+    	 	 	this.state='hmAgro';
+    	 	 else if(this.animation!='startle' && Math.abs(playerSep) < this.minerAgroDistance)
+    	 	 	{
+    	 	 	 this.switchAnimation('startle');
+    	 	 	 this.animInQueue='idle';
+    	 	 	}
+    	 	 return false;
+    	 	}    	
     	 hmAgro()
     	 	{
     	 	 if(!this.tgt.isActive)
