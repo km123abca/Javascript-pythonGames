@@ -2711,6 +2711,11 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	constructor(x,y,wid,hei,spriteGroups,spriteId)	
     		{
     		 this.position= new CreateVector(x,y);
+    		 this.tree2= new BarrierTree(50*xscale+this.position.x,
+    	 	   				   this.position.y,
+    	 	   				   230*xscale,355*yscale,
+    	 	   				   [gameManager.visible_sprites]
+    	 	   				  );
     		 this.width= wid;
     		 this.height=hei;
     		 let folderPath= "sprites/huskMiner";
@@ -2748,7 +2753,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 						  		       'maxFrames':5,
 						  		       'width_extend':1,
 						  		       'height_extend':1,
-						  		       'anim_speed':0.5
+						  		       'anim_speed':0.05
 						  		         },
 			 				   'run':{'imgsheet':LoadImagex(folderPath,'run.png'),
 						  		       'width':1210,
@@ -2848,7 +2853,10 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 this.minerLastAttackTime=0;
     		 this.minerMinAttackGap=1200;
     		 this.minerPlayerFarDistance=180*xscale; 
-    		 this.minerAgroDistance= 330 * xscale;   		     		
+    		 this.minerAgroDistance= 330 * xscale;   
+    		 this.miningStarted = false;
+    		 this.tree1=null;
+    		 this.tree2=null;		     		
 
     		 this.closeAttacks=['miner_slash'];
     	     this.longAttacks =['miner_runup'];
@@ -2988,16 +2996,33 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	 	 	 	break;
     	 	 	}
     	 	}
+    	 Spawnbarriers()
+    	 	{
+    	 	 this.tree1= new BarrierTree(-300*xscale+this.position.x,
+    	 	   				   -30*yscale+this.position.y,
+    	 	   				   230*xscale,355*yscale,
+    	 	   				   [gameManager.visible_sprites]
+    	 	   				  );    	 	   
+    	 	}
     	 hmidle()
     	 	{
+    	 	 if(!this.miningStarted)
+    	 	 {
     	 	 this.switchAnimation('mining');
+    	 	 this.miningStarted=true;
+    	 	 }
     	 	 if(!this.tgt.isActive)
     	 	 	return false; 
     	 	 let playerSep=this.tgt.position.x - this.position.x;
+
     	 	 if(this.animation=='idle')
-    	 	 	this.state='hmAgro';
-    	 	 else if(this.animation!='startle' && Math.abs(playerSep) < this.minerAgroDistance)
     	 	 	{
+    	 	 	this.state='miner_agro';    	
+    	 	 	this.miningStarted= false; 	
+    	 	 	this.Spawnbarriers(); 	
+    	 	 	}
+    	 	 else if(this.animation!='startle' && Math.abs(playerSep) < this.minerAgroDistance)
+    	 	 	{    	 	 	 
     	 	 	 this.switchAnimation('startle');
     	 	 	 this.animInQueue='idle';
     	 	 	}
