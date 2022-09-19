@@ -2711,8 +2711,12 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	constructor(x,y,wid,hei,spriteGroups,spriteId)	
     		{
     		 this.position= new CreateVector(x,y);
-    		 this.tree2= new BarrierTree(50*xscale+this.position.x,
-    	 	   				   this.position.y,
+    		 this.tree_left=null;
+    		 this.tree_right=null;
+    		 this.isBoss= spriteId.split('_')[0]=='boss';
+    		 if(this.isBoss)
+    		 this.tree_right= new BarrierTree(100*xscale+this.position.x,
+    	 	   				   this.position.y+300*xscale,
     	 	   				   230*xscale,355*yscale,
     	 	   				   [gameManager.visible_sprites]
     	 	   				  );
@@ -2753,7 +2757,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 						  		       'maxFrames':5,
 						  		       'width_extend':1,
 						  		       'height_extend':1,
-						  		       'anim_speed':0.05
+						  		       'anim_speed':0.1
 						  		         },
 			 				   'run':{'imgsheet':LoadImagex(folderPath,'run.png'),
 						  		       'width':1210,
@@ -2855,8 +2859,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     		 this.minerPlayerFarDistance=180*xscale; 
     		 this.minerAgroDistance= 330 * xscale;   
     		 this.miningStarted = false;
-    		 this.tree1=null;
-    		 this.tree2=null;		     		
+    		 		     		
 
     		 this.closeAttacks=['miner_slash'];
     	     this.longAttacks =['miner_runup'];
@@ -2998,19 +3001,22 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	 	}
     	 Spawnbarriers()
     	 	{
-    	 	 this.tree1= new BarrierTree(-300*xscale+this.position.x,
-    	 	   				   -30*yscale+this.position.y,
+    	 	 if(this.isBoss)
+    	 	 this.tree_left= new BarrierTree(-1400*xscale+this.position.x,
+    	 	   				   -15*yscale+this.position.y,
     	 	   				   230*xscale,355*yscale,
     	 	   				   [gameManager.visible_sprites]
     	 	   				  );    	 	   
     	 	}
     	 hmidle()
     	 	{
+
     	 	 if(!this.miningStarted)
     	 	 {
     	 	 this.switchAnimation('mining');
     	 	 this.miningStarted=true;
     	 	 }
+    	 	 // return false;
     	 	 if(!this.tgt.isActive)
     	 	 	return false; 
     	 	 let playerSep=this.tgt.position.x - this.position.x;
@@ -5038,7 +5044,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 	 	  new HuskMiner(elem['x']*xscale,
 		 	 	 		   	   elem['y']*yscale,
 		 	 	 		   	   elem['width']*xscale,
-		 	 	 		   	   elem['height']*yscale,
+		 	 	 		   	   elem['height']*yscale,		 	 	 		   	   
 		 	 	 		   	   [this.visible_sprites,this.enemy_sprites,this.active_sprites],
 		 	 	 		   	   elem['spriteId']
 		 	 	 		   	   );

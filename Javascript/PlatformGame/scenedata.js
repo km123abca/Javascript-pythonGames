@@ -43,7 +43,7 @@ let scenes=[
 				{"sprite":"entryexit_entry","x":-457,"y":464},
 				{"sprite":"entryexit_exit","x":4950,"y":1252},
 				{"sprite":"scenechanger_scleft","x":-794,"y":464},
-				{"sprite":"huskMiner","x":2363,"y":500,"width":170,"height":220,"spriteId":"boss_huskminer1"}
+				{"sprite":"huskMiner","x":2900,"y":500,"width":170,"height":220,"spriteId":"boss_huskminer1"}
 				// {"sprite":"scenechanger_scright","x":1275,"y":468}
 			]
 		   ];
