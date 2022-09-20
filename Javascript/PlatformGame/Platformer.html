@@ -405,6 +405,7 @@
 let BLACKCLOUD= LoadImagex('sprites','cloud-1dark.png');
 let WHITECLOUD= LoadImagex('sprites','cloud-1.png');
 let THORNYBALL = LoadImagex('sprites','Thornyball.png');
+let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
     
 </script>
 </head>
@@ -2705,6 +2706,17 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 
     	}
     //false knight ends
+    //pickaxe starts (inherits from thorny ball)
+    class PickAxe extends ThornyBall
+    	{
+    	 constructor(x,y,wid,hei,parentx,offsetx,offsety,spriteGroups,horiVel=14)
+    	 	{
+    	 		super(x,y,wid,hei,parentx,offsetx,offsety,spriteGroups,horiVel);
+    	 		this.imagex=PICKAXEIMG;
+    	 		this.gravityScale=0;
+    	 	}
+    	}
+    //pickaxe ends
     //husk miner starts    
     class HuskMiner
     	{
@@ -2716,7 +2728,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     		 this.isBoss= spriteId.split('_')[0]=='boss';
     		 if(this.isBoss)
     		 this.tree_right= new BarrierTree(100*xscale+this.position.x,
-    	 	   				   this.position.y+300*xscale,
+    	 	   				   this.position.y+350*yscale,
     	 	   				   230*xscale,355*yscale,
     	 	   				   [gameManager.visible_sprites]
     	 	   				  );
@@ -2757,7 +2769,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 						  		       'maxFrames':5,
 						  		       'width_extend':1,
 						  		       'height_extend':1,
-						  		       'anim_speed':0.1
+						  		       'anim_speed':0.4
 						  		         },
 			 				   'run':{'imgsheet':LoadImagex(folderPath,'run.png'),
 						  		       'width':1210,
@@ -2797,7 +2809,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 						  		       'maxFrames':1,
 						  		       'width_extend':1,
 						  		       'height_extend':1,
-						  		       'anim_speed':0.2
+						  		       'anim_speed':0.4
 						  		        },
 			 				   'slashRecover':{'imgsheet':LoadImagex(folderPath,'slashRecover.png'),
 						  		       'width':352,
@@ -2961,9 +2973,14 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 this.update_and_display_hitbox();
 		 	 this.spawnHitBoxOnHit_huskMiner();
 		 	}
+		 hmThrow()
+		 	{
+		 	 this.velocity.x=Lerp(this.velocity.x,0,2*xscale);
+		 	 this.hmSlash();
+		 	}
 		 spawnHitBoxOnHit_huskMiner()
 		 	{
-		 	 let hbWidthRatio=0.2;//these can be modified to increase/ decrease the hitbox range
+		 	 let hbWidthRatio=0.5;//these can be modified to increase/ decrease the hitbox range
     		 let hbHeightRatio=0.3;
 		 	 if(this.animation == 'slash' && 
 		 	 	parseInt(this.animationFrame)==0 &&
@@ -2996,6 +3013,9 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	 	 		break;
     	 	 	case 'miner_runup':
     	 	 	 	this.hmRunUp();
+    	 	 	 	break;
+    	 	 	 case 'miner_throw':
+    	 	 	 	this.hmThrow();
     	 	 	 	break;
     	 	 	}
     	 	}
@@ -3057,8 +3077,8 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     		 else
     		 	{
     		 	 this.velocity.x= 0;
-    		 	 this.state= 'miner_agro';
-    		 	 this.switchAnimation('idle');
+    		 	 this.state= 'miner_slash';
+    		 	 // this.switchAnimation('idle');
     		 	}
     	 	}
     	
