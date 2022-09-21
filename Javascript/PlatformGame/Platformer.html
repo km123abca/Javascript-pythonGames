@@ -1087,6 +1087,7 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 			 this.isActive=true;
 			 this.angle=0;
 			 this.rotAngle=0;
+			 this.rotSpeed=5;
 			 this.imagex=THORNYBALL;
 			 if(!parentx)	
 			 	this.velocity=new CreateVector(0,0);
@@ -1133,7 +1134,7 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 		 	}
 		 rotateself()
 		 	{
-		 	 this.rotAngle+=5;
+		 	 this.rotAngle+=this.rotSpeed;
 		 	 if(this.rotAngle > 360) this.rotAngle=0;
 		 	}
 
@@ -2711,9 +2712,26 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
     	{
     	 constructor(x,y,wid,hei,parentx,offsetx,offsety,spriteGroups,horiVel=14)
     	 	{
-    	 		super(x,y,wid,hei,parentx,offsetx,offsety,spriteGroups,horiVel);
-    	 		this.imagex=PICKAXEIMG;
-    	 		this.gravityScale=0;
+	 		super(x,y,wid,hei,parentx,offsetx,offsety,spriteGroups,horiVel);
+	 		this.imagex=PICKAXEIMG;
+	 		this.gravityScale=0.4*yscale;
+		 	this.maxVelocity=new CreateVector(horiVel*xscale,1*yscale);
+		 	this.rotSpeed=10;
+		 	this.lifeTime=3000;
+    	 	}
+    	 mindHealth()
+    	 	{
+    	 	 super.mindHealth();
+    	 	 for(let x of gameManager.collission_sprites) 
+    	 	 	{
+    	 	 	 if(x==this.hit_box || x==this.parentx.hit_box) continue;
+    	 	 	 if(b_collision(this.hit_box,x))
+    	 	 	 	{
+    	 	 	 	SpawnClouds(this.position);
+		 	  	 	destroySelf(this.hit_box);
+		 	  	 	destroySelf(this);
+    	 	 	 	}
+    	 	 	}
     	 	}
     	}
     //pickaxe ends
@@ -2874,7 +2892,7 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
     		 		     		
 
     		 this.closeAttacks=['miner_slash'];
-    	     this.longAttacks =['miner_runup'];
+    	     this.longAttacks =['miner_throw'];
     	     this.randomAttacks=[];
     		}
 
@@ -2987,7 +3005,8 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 		 	 	!this.minerHitBoxSpawned
 		 	 	)
 		 	 	{
-		 	 	 this.hitBoxSpawned= true;
+		 	 	 this.minerHitBoxSpawned= true;
+		 	 	 if(this.state=='miner_slash')
 	 	 		 new DamageHitBox(this.position.x,
 				 				  this.position.y,
 				 				  this.width*hbWidthRatio,
@@ -2996,6 +3015,14 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 				     			  'enemy_hitbox',
 				 				  this,
 				 				  130*xscale,50*yscale,10,this.sx*1.5,50);
+	 	 		else if(this.state=='miner_throw')
+	 	 			new PickAxe(this.position.x,
+		 						   this.position.y,
+		 						   150*xscale,
+		 						   150*yscale,
+		 						   this,70*xscale,0,
+		 						   [gameManager.visible_sprites,gameManager.active_sprites]
+		 				          );
 		 	 	}
 		 	} 	
     	 stateMachine()

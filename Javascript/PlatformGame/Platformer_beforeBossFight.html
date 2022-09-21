@@ -1076,6 +1076,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 this.onScreen=true;
 			 this.isActive=true;
 			 this.angle=0;
+			 this.rotSpeed=5;
 			 this.rotAngle=0;
 			 this.imagex=THORNYBALL;
 			 if(!parentx)	
@@ -1123,7 +1124,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	}
 		 rotateself()
 		 	{
-		 	 this.rotAngle+=5;
+		 	 this.rotAngle+=this.rotSpeed;
 		 	 if(this.rotAngle > 360) this.rotAngle=0;
 		 	}
 
