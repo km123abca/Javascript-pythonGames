@@ -1089,6 +1089,7 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 			 this.rotAngle=0;
 			 this.rotSpeed=5;
 			 this.imagex=THORNYBALL;
+			 this.collidedObj='none';
 			 if(!parentx)	
 			 	this.velocity=new CreateVector(0,0);
 			 else		 
@@ -1164,7 +1165,7 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 		 	 	 if(x==this.hit_box) continue;		 	 	 
 		 	 	 if(b_collision(this.hit_box,x)) 
 		 	 	 	{	 		 
-		 	 	 		 	 
+		 	 	 	 this.collidedObj=x.sprite_type; 	 
 		 	 	 	 if(this.velocity.x > 0)
 		 	 	 	 	{		 	 	 	 
 		 	 	 	 	this.hit_box.position.x=x.position.x - x.width/2-this.hit_box.width/2-2;	
@@ -1180,12 +1181,12 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 		 	 this.hit_box.position.y+=this.velocity.y;
 		 	 for(let x of gameManager.collission_sprites)
 		 	 	{
+
 		 	 	 if(!x.onScreen) continue;
 		 	 	 if(x==this) continue;		 	 	 
 		 	 	 if(b_collision(this.hit_box,x)) 
 		 	 	 	{
-		 	 	 	
-		 	 	    
+		 	 	 	this.collidedObj=x.sprite_type;		 	 	    
 		 	 	 	if(this.velocity.y > 0)
 		 	 	 		{
 		 	 	 		this.hit_box.position.y=x.position.y-x.height/2-this.hit_box.height/2-2;	
@@ -2717,22 +2718,37 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 	 		this.gravityScale=0.4*yscale;
 		 	this.maxVelocity=new CreateVector(horiVel*xscale,1*yscale);
 		 	this.rotSpeed=10;
-		 	this.lifeTime=3000;
+		 	this.lifeTime=30000;
     	 	}
-    	 mindHealth()
+    	 checkCollisions()
     	 	{
-    	 	 super.mindHealth();
+    	 	 
+    	 	 if(this.collidedObj!='none')	
+    	 	 	{
+	    	 	 SpawnClouds(this.position);
+	 	 	 	 destroySelf(this.hit_box);
+		 	  	 destroySelf(this);
+		 	  	 console.log('collision with '+this.collidedObj);
+	 	 	 	 if(this.collidedObj=='playerhitbox')	    	 	 	 	 			 	  	 	 
+		 	  	 	 gameManager.player.takeDamage(10,this.parentx.sx);
+		 	  	 this.collidedObj='none';
+		 	  	 }
+    	 	 /*
     	 	 for(let x of gameManager.collission_sprites) 
     	 	 	{
     	 	 	 if(x==this.hit_box || x==this.parentx.hit_box) continue;
     	 	 	 if(b_collision(this.hit_box,x))
     	 	 	 	{
-    	 	 	 	SpawnClouds(this.position);
-		 	  	 	destroySelf(this.hit_box);
-		 	  	 	destroySelf(this);
+    	 	 	 	 SpawnClouds(this.position);
+    	 	 	 	 destroySelf(this.hit_box);
+			 	  	 destroySelf(this);
+			 	  	 console.log('collision with '+x.sprite_type);
+    	 	 	 	 if(x.sprite_type=='playerhitbox')	    	 	 	 	 			 	  	 	 
+			 	  	 	 gameManager.player.takeDamage(10,this.parentx.sx);	    	 	 	 	   	 	 	 	
     	 	 	 	}
     	 	 	}
-    	 	}
+    	 	 	*/
+    	 	}    	 
     	}
     //pickaxe ends
     //husk miner starts    
@@ -2768,6 +2784,8 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 			 this.horiForce=new CreateVector(1*xscale,0);
 			 this.gravityScale=2*yscale;
 			 this.expVal=100;
+			 this.axesThrown= 0;
+			 this.maxAxes= 1;
 			 this.animations= {
 			 				   'idle':{'imgsheet':LoadImagex(folderPath,'idle.png'),
 						  		       'width':1170,
@@ -3015,14 +3033,17 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 				     			  'enemy_hitbox',
 				 				  this,
 				 				  130*xscale,50*yscale,10,this.sx*1.5,50);
-	 	 		else if(this.state=='miner_throw')
-	 	 			new PickAxe(this.position.x,
+	 	 		else if(this.state=='miner_throw' && this.axesThrown < this.maxAxes)
+	 	 			{	 	 			 
+	 	 			 new PickAxe(this.position.x,
 		 						   this.position.y,
 		 						   150*xscale,
 		 						   150*yscale,
 		 						   this,70*xscale,0,
 		 						   [gameManager.visible_sprites,gameManager.active_sprites]
 		 				          );
+	 	 		     this.axesThrown+=1;
+	 	 			}
 		 	 	}
 		 	} 	
     	 stateMachine()
