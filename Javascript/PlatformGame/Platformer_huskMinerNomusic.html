@@ -405,6 +405,7 @@
 let BLACKCLOUD= LoadImagex('sprites','cloud-1dark.png');
 let WHITECLOUD= LoadImagex('sprites','cloud-1.png');
 let THORNYBALL = LoadImagex('sprites','Thornyball.png');
+let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
     
 </script>
 </head>
@@ -413,6 +414,9 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 <!--audio list-->
 	<audio id="backgroundMusic" onended="resetMusicVar()">
 		<source src="./sounds/techno_bg_music.mp3" type="audio/mpeg">
+	</audio>
+	<audio id="capraMusic" onended="restartCapraMusic()">
+		<source src="./sounds/Capra.mp3" type="audio/mpeg">
 	</audio>
 	<audio id="fogGate" >
 		<source src="./sounds/fogGate.wav" type="audio/mpeg">
@@ -444,6 +448,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 	//music starts
 	var bgMusic= document.querySelector('#backgroundMusic');
 	var fogGateSound= document.querySelector('#fogGate');
+	var capraMusic= document.querySelector('#capraMusic');
 
 	let musicStarted=false;
 	var startMusic=()=>{
@@ -452,10 +457,15 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 							 musicStarted=true;
 							 // bgMusic.play();
 							}	
-						};
+						};						
 	var resetMusicVar=()=>{
 		musicStarted=false;
 		startMusic();
+	}
+
+	var capraMusic= document.querySelector('#capraMusic');
+	var restartCapraMusic=()=>{
+		capraMusic.play();
 	}
 	//music ends
 	
@@ -1076,9 +1086,10 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 this.onScreen=true;
 			 this.isActive=true;
 			 this.angle=0;
-			 this.rotSpeed=5;
 			 this.rotAngle=0;
+			 this.rotSpeed=5;
 			 this.imagex=THORNYBALL;
+			 this.collidedObj='none';
 			 if(!parentx)	
 			 	this.velocity=new CreateVector(0,0);
 			 else		 
@@ -1154,7 +1165,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 	 if(x==this.hit_box) continue;		 	 	 
 		 	 	 if(b_collision(this.hit_box,x)) 
 		 	 	 	{	 		 
-		 	 	 		 	 
+		 	 	 	 this.collidedObj=x.sprite_type; 	 
 		 	 	 	 if(this.velocity.x > 0)
 		 	 	 	 	{		 	 	 	 
 		 	 	 	 	this.hit_box.position.x=x.position.x - x.width/2-this.hit_box.width/2-2;	
@@ -1170,12 +1181,12 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 this.hit_box.position.y+=this.velocity.y;
 		 	 for(let x of gameManager.collission_sprites)
 		 	 	{
+
 		 	 	 if(!x.onScreen) continue;
 		 	 	 if(x==this) continue;		 	 	 
 		 	 	 if(b_collision(this.hit_box,x)) 
 		 	 	 	{
-		 	 	 	
-		 	 	    
+		 	 	 	this.collidedObj=x.sprite_type;		 	 	    
 		 	 	 	if(this.velocity.y > 0)
 		 	 	 		{
 		 	 	 		this.hit_box.position.y=x.position.y-x.height/2-this.hit_box.height/2-2;	
@@ -2143,6 +2154,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	{
     	constructor(x,y,wid,hei,spriteGroups,spriteId='falseknight')
     		{
+    		 this.fkMusicStarted=false;
     		 this.position= new CreateVector(x,y);
     		 this.width = wid * xscale;
     		 this.height = hei * yscale;
@@ -2164,7 +2176,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 this.gravityScale=2*yscale;			 	
 			 this.expVal=200; 
 			 this.attackStarted=false;
-
+			 this.isActive=false;
 			 this.animations={
 						 	'attack':{'imgsheet':LoadImagex(folderPath,'attack.png'),
 						  		    'width':2118,
@@ -2272,7 +2284,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			  	this.animationFrame=0;
 			  	this.sprite_type='false_knight';
 			  	this.state='fkagro';
-			  	this.maxHealth=20;
+			  	this.maxHealth=10;
 			  	this.health=this.maxHealth;
 			  	this.spriteGroups=spriteGroups;
 			 	for(let grp of spriteGroups)
@@ -2284,7 +2296,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 this.image_offset=new CreateVector(-30*xscale,-15*yscale);
 			 this.image_offset_fixed=this.image_offset.copy();
 			 this.fkHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,'#222222','#FF0000',[gameManager.visible_sprites],false,'fkhealth');
-			 this.fkHealthBar.onScreen=true;
+			 this.fkHealthBar.onScreen=false;
 			 this.uiBarTimer=0;
 			 this.uiBarMaxTime=2000;
 			 this.healthBarOffset=new CreateVector(-30*xscale,-120*yscale);
@@ -2312,6 +2324,14 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	     this.freeToJump=true;
     	     
     		} 
+    	 removeBars()
+    	 	{
+    	 	 for(let go of gameManager.active_sprites)
+    	 	 	{
+    	 	 	 if(go.spriteId && go.spriteId=="BossFightTriggGO")
+    	 	 	 	go.bossHasDiedRemoveBars();
+    	 	 	}
+    	 	}
 		 takeDamage(dmg,dir=0)
 		 	{
 		 	//this.acceleration.add(new CreateVector(dir,0));
@@ -2320,8 +2340,11 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 	 		this.health-=dmg;
 	 		this.fkHealthBar.updateValue(this.health);
 	 		this.fkHealthBar.onScreen=true;
-	 		if(this.health<0)
+	 		if(this.health <= 5)
 	 			{
+	 			capraMusic.src="";
+	 			fogGateSound.play();
+	 			this.removeBars();
 	 			this.tgt.giveExp(this.expVal);
 	 			SpawnClouds(this.position);
 	 			destroySelf(this);
@@ -2426,8 +2449,15 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	}
     	update()
     		{
+    		 if(!this.isActive)
+    		 	return false;
+    		 if(!this.fkMusicStarted)
+    		 {
+    		  this.fkMusicStarted=true;
+    		  capraMusic.play();	
+    		 }
     		 this.stateMachine();
-    		 this.runAnimation();
+    		 
     		 this.move(); 
     		 this.updateHealthBarPos();  
     		 this.manageInvincibility(); 		 
@@ -2435,6 +2465,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	display()
 		 	{		 	 
 		 	 if(!this.onScreen) return false;
+		 	 this.runAnimation();
 		 	 ctx.save();
 		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
 		 	 	 		   this.position.y-gameManager.camera.position.y);
@@ -2527,8 +2558,8 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	runup()
     		{
     		 this.switchAnimation("run");
-    		 let playerSep=this.tgt.position.x - this.position.x;
-    		 if(Math.abs(playerSep) > this.fkPlayerFarDistance*0.5)
+    		 let playerSep=this.tgt.position.x - this.position.x;    		 
+    		 if(Math.abs(playerSep) > this.fkPlayerFarDistance*0.7)
     		 	this.acceleration.add(this.horiForce.copy().mult(this.sx*2));    		 
     		 else
     		 	{
@@ -2677,6 +2708,514 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 
     	}
     //false knight ends
+    //pickaxe starts (inherits from thorny ball)
+    class PickAxe extends ThornyBall
+    	{
+    	 constructor(x,y,wid,hei,parentx,offsetx,offsety,spriteGroups,horiVel=14)
+    	 	{
+	 		super(x,y,wid,hei,parentx,offsetx,offsety,spriteGroups,horiVel);
+	 		this.imagex=PICKAXEIMG;
+	 		this.gravityScale=0.4*yscale;
+		 	this.maxVelocity=new CreateVector(horiVel*xscale,1*yscale);
+		 	this.rotSpeed=10;
+		 	this.lifeTime=30000;
+    	 	}
+    	 checkCollisions()
+    	 	{
+    	 	 
+    	 	 if(this.collidedObj!='none')	
+    	 	 	{
+	    	 	 SpawnClouds(this.position);
+	 	 	 	 destroySelf(this.hit_box);
+		 	  	 destroySelf(this);
+		 	  	 console.log('collision with '+this.collidedObj);
+	 	 	 	 if(this.collidedObj=='playerhitbox')	    	 	 	 	 			 	  	 	 
+		 	  	 	 gameManager.player.takeDamage(10,this.parentx.sx);
+		 	  	 this.collidedObj='none';
+		 	  	 }
+    	 	 /*
+    	 	 for(let x of gameManager.collission_sprites) 
+    	 	 	{
+    	 	 	 if(x==this.hit_box || x==this.parentx.hit_box) continue;
+    	 	 	 if(b_collision(this.hit_box,x))
+    	 	 	 	{
+    	 	 	 	 SpawnClouds(this.position);
+    	 	 	 	 destroySelf(this.hit_box);
+			 	  	 destroySelf(this);
+			 	  	 console.log('collision with '+x.sprite_type);
+    	 	 	 	 if(x.sprite_type=='playerhitbox')	    	 	 	 	 			 	  	 	 
+			 	  	 	 gameManager.player.takeDamage(10,this.parentx.sx);	    	 	 	 	   	 	 	 	
+    	 	 	 	}
+    	 	 	}
+    	 	 	*/
+    	 	}    	 
+    	}
+    //pickaxe ends
+    //husk miner starts    
+    class HuskMiner
+    	{
+    	constructor(x,y,wid,hei,spriteGroups,spriteId)	
+    		{
+    		 this.position= new CreateVector(x,y);
+    		 this.tree_left=null;
+    		 this.tree_right=null;
+    		 this.isBoss= spriteId.split('_')[0]=='boss';
+    		 if(this.isBoss)
+    		 this.tree_right= new BarrierTree(100*xscale+this.position.x,
+    	 	   				   this.position.y+350*yscale,
+    	 	   				   230*xscale,355*yscale,
+    	 	   				   [gameManager.visible_sprites]
+    	 	   				  );
+    		 this.width= wid;
+    		 this.height=hei;
+    		 let folderPath= "sprites/huskMiner";
+    		 this.onScreen=true;
+    		 this.angle=0;
+    		 this.sx=1;
+    		 this.sy=1;
+    		 this.startx=0;
+			 this.starty=0;
+			 this.imgWidth=0;
+			 this.imgHeight=0;
+			 this.spriteId=spriteId;
+			 this.acceleration=new CreateVector(0,0);
+			 this.velocity=new CreateVector(0,0);
+			 this.maxVelocity=new CreateVector(3*xscale,12*yscale);		
+			 this.horiForce=new CreateVector(1*xscale,0);
+			 this.gravityScale=2*yscale;
+			 this.expVal=100;
+			 this.axesThrown= 0;
+			 this.maxAxes= 1;
+			 this.animations= {
+			 				   'idle':{'imgsheet':LoadImagex(folderPath,'idle.png'),
+						  		       'width':1170,
+						  		       'height':174,			  		    
+						  		       'rows':1,
+						  		       'cols':9,
+						  		       'maxFrames':9,
+						  		       'width_extend':1,
+						  		       'height_extend':1,
+						  		       'anim_speed':0.15
+						  		      },
+			 				   'startle':{'imgsheet':LoadImagex(folderPath,'startle.png'),
+						  		       'width':976,
+						  		       'height':178,			  		    
+						  		       'rows':1,
+						  		       'cols':5,
+						  		       'maxFrames':5,
+						  		       'width_extend':1,
+						  		       'height_extend':1,
+						  		       'anim_speed':0.4
+						  		         },
+			 				   'run':{'imgsheet':LoadImagex(folderPath,'run.png'),
+						  		       'width':1210,
+						  		       'height':175,			  		    
+						  		       'rows':1,
+						  		       'cols':8,
+						  		       'maxFrames':8,
+						  		       'width_extend':1,
+						  		       'height_extend':1,
+						  		       'anim_speed':0.5
+						  		     },
+			 				   'throwAnticipate':{'imgsheet':LoadImagex(folderPath,'throwAnticipate.png'),
+						  		       'width':804,
+						  		       'height':179,			  		    
+						  		       'rows':1,
+						  		       'cols':5,
+						  		       'maxFrames':5,
+						  		       'width_extend':1,
+						  		       'height_extend':1,
+						  		       'anim_speed':0.1
+						  		                  },
+			 				   'Throw':{'imgsheet':LoadImagex(folderPath,'Throw.png'),
+						  		       'width':409,
+						  		       'height':171,			  		    
+						  		       'rows':1,
+						  		       'cols':3,
+						  		       'maxFrames':3,
+						  		       'width_extend':1,
+						  		       'height_extend':1,
+						  		       'anim_speed':0.1
+						  		        },
+			 				   'slash':{'imgsheet':LoadImagex(folderPath,'Slash.png'),
+						  		       'width':387,
+						  		       'height':176,			  		    
+						  		       'rows':1,
+						  		       'cols':1,
+						  		       'maxFrames':1,
+						  		       'width_extend':1,
+						  		       'height_extend':1,
+						  		       'anim_speed':0.4
+						  		        },
+			 				   'slashRecover':{'imgsheet':LoadImagex(folderPath,'slashRecover.png'),
+						  		       'width':352,
+						  		       'height':170,			  		    
+						  		       'rows':1,
+						  		       'cols':2,
+						  		       'maxFrames':2,
+						  		       'width_extend':1,
+						  		       'height_extend':1,
+						  		       'anim_speed':0.1
+						  		        },
+			 				   'mining':{'imgsheet':LoadImagex(folderPath,'mining.png'),
+						  		       'width':1389,
+						  		       'height':391,			  		    
+						  		       'rows':2,
+						  		       'cols':6,
+						  		       'maxFrames':11,
+						  		       'width_extend':1,
+						  		       'height_extend':1,
+						  		       'anim_speed':0.25
+						  		        },
+			 				  };
+			 this.animation= 'idle';
+			 this.animInQueue= null;
+			 this.animationFrame= 0;
+			 this.sprite_type= 'husk_miner';
+			 this.state= 'miner_idle';
+			 this.maxHealth= 100;
+			 this.health= this.maxHealth;
+			 this.spriteGroups= spriteGroups;
+			 for(let grp of spriteGroups)
+			 	grp.push(this);
+			 this.hit_box=new HitBox(x,y,this.width*0.4,this.height*0.8,[
+                                                        gameManager.collission_sprites,
+                                                        // gameManager.visible_sprites
+                                                        ],'huskminerhitbox');
+			 this.image_offset=new CreateVector(-1*xscale,-15*yscale);
+			 this.image_offset_fixed=this.image_offset.copy();
+ 			 this.minerHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,
+ 			 								'#222222','#FF0000',[gameManager.visible_sprites],
+ 			 								false,'fkhealth');
+			 this.minerHealthBar.onScreen=true;
+			 this.minerAttackStarted=false;
+			 this.uiBarTimer=0;
+			 this.uiBarMaxTime=2000;
+			 this.healthBarOffset=new CreateVector(-30*xscale,-120*yscale);
+			 this.minerHitBoxSpawned=false;
+			 if(gameManager.player)
+			 	this.tgt= gameManager.player;	
+
+			 this.invincibleState=false;
+		 	 this.invin_count=0;
+		 	 this.max_invin_time=2000;
+		 	 this.flickerCount=0;
+			 this.maxFlickerTime=100;
+			 
+			 this.minerLastAttackTime=0;
+    		 this.minerMinAttackGap=1200;
+    		 this.minerPlayerFarDistance=180*xscale; 
+    		 this.minerAgroDistance= 330 * xscale;   
+    		 this.miningStarted = false;
+    		 		     		
+
+    		 this.closeAttacks=['miner_slash'];
+    	     this.longAttacks =['miner_throw'];
+    	     this.randomAttacks=[];
+    		}
+
+		updateHealthBarPos()
+			{
+			if(this.minerHealthBar.onScreen)
+				{	
+				this.uiBarTimer+=deltaTime;
+				if(this.uiBarTimer > this.uiBarMaxTime)
+					{
+				 	this.uiBarTimer=0;
+				 	this.minerHealthBar.onScreen=false;
+					}
+				}
+			this.minerHealthBar.position.setVec(this.position.copy().add(this.healthBarOffset));
+			}
+		manageInvincibility()
+			{
+			if(!this.invincibleState) return false;
+			this.invin_count+= deltaTime;
+			if(this.invin_count > this.max_invin_time)
+				{
+				 this.invin_count=0;
+				 this.invincibleState=false;
+				} 
+			}		
+		flickerControl()
+			{
+			  if(!this.invincibleState) return true;
+			  this.flickerCount+=deltaTime;
+			  if(this.flickerCount > this.maxFlickerTime)
+			  	{
+			  	 this.flickerCount=0;
+			  	 return true;
+			  	}
+			  return false;
+			}
+		applyGravity()
+		 	{
+		 	 this.acceleration.y+=this.gravityScale;
+		 	}
+		 applyVelocity()
+		 	{		 	 	 	 
+		 	 this.hit_box.position.x+=this.velocity.x;		 	
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(x==this.hit_box) continue;
+		 	 	 
+		 	 	 if(b_collision(this.hit_box,x)) 
+		 	 	 	{		 	 	 	
+		 	 	 	 if(this.velocity.x > 0)
+		 	 	 	 	this.hit_box.position.x=x.position.x-x.width/2-this.hit_box.width/2-2;
+		 	 	 	 else 
+		 	 	 	 	this.hit_box.position.x=x.position.x+x.width/2+this.hit_box.width/2+2;
+		 	 	 	}
+		 	 	 		 	 	
+		 	 	}
+
+		 	 this.hit_box.position.y+=this.velocity.y;
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(x==this.hit_box) continue;
+		 	 	 if(b_collision(this.hit_box,x)) 
+		 	 	 	{
+		 	 	 	
+		 	 	 	if(this.velocity.y > 0)
+		 	 	 		this.hit_box.position.y=x.position.y-x.height/2-this.hit_box.height/2-2;
+		 	 	 	else
+		 	 	 		this.hit_box.position.y=x.position.y+x.height/2+this.hit_box.height/2+2;	
+		 	 	 	}
+		 	 	}
+		 	}
+		 applyVelocityRestrictions()
+		 	{
+		 	 let xdir=this.velocity.x/Math.abs(this.velocity.x);
+		 	 let ydir=this.velocity.y/Math.abs(this.velocity.y);
+		 	 if(Math.abs(this.velocity.y) > this.maxVelocity.y)
+		 	 	this.velocity.y=ydir*this.maxVelocity.y;
+		 	 if(Math.abs(this.velocity.x) > this.maxVelocity.x)
+		 	 	this.velocity.x=xdir*this.maxVelocity.x;
+		 	}
+		update_and_display_hitbox()
+		 	{
+	 		// this.hit_box.updatePosition(this.position);
+	 		this.position.setVec(this.hit_box.position.copy().add(this.image_offset));
+		 	}
+		 move()
+		 	{		
+		 	 this.applyGravity(); 	 
+		 	 this.velocity.add(this.acceleration);
+		 	 this.acceleration.set(0,0);		 	
+		 	 this.applyVelocity();
+		 	 this.applyVelocityRestrictions();
+		 	 this.update_and_display_hitbox();
+		 	 this.spawnHitBoxOnHit_huskMiner();
+		 	}
+		 hmThrow()
+		 	{
+		 	 this.velocity.x=Lerp(this.velocity.x,0,2*xscale);
+		 	 this.hmSlash();
+		 	}
+		 spawnHitBoxOnHit_huskMiner()
+		 	{
+		 	 let hbWidthRatio=0.5;//these can be modified to increase/ decrease the hitbox range
+    		 let hbHeightRatio=0.3;
+		 	 if(this.animation == 'slash' && 
+		 	 	parseInt(this.animationFrame)==0 &&
+		 	 	!this.minerHitBoxSpawned
+		 	 	)
+		 	 	{
+		 	 	 this.minerHitBoxSpawned= true;
+		 	 	 if(this.state=='miner_slash')
+	 	 		 new DamageHitBox(this.position.x,
+				 				  this.position.y,
+				 				  this.width*hbWidthRatio,
+				 				  this.height*hbHeightRatio,
+				 				  [gameManager.active_sprites,gameManager.hitbox_sprites],
+				     			  'enemy_hitbox',
+				 				  this,
+				 				  130*xscale,50*yscale,10,this.sx*1.5,50);
+	 	 		else if(this.state=='miner_throw' && this.axesThrown < this.maxAxes)
+	 	 			{	 	 			 
+	 	 			 new PickAxe(this.position.x,
+		 						   this.position.y,
+		 						   150*xscale,
+		 						   150*yscale,
+		 						   this,70*xscale,0,
+		 						   [gameManager.visible_sprites,gameManager.active_sprites]
+		 				          );
+	 	 		     this.axesThrown+=1;
+	 	 			}
+		 	 	}
+		 	} 	
+    	 stateMachine()
+    	 	{
+    	 	 switch(this.state)
+    	 	 	{
+    	 	 	case 'miner_idle':	
+    	 	 		this.hmidle();
+    	 	 		break;
+    	 	 	case 'miner_agro':
+    	 	 		this.hmAgro();
+    	 	 		break;
+    	 	 	case 'miner_slash':
+    	 	 		this.hmSlash();
+    	 	 		break;
+    	 	 	case 'miner_runup':
+    	 	 	 	this.hmRunUp();
+    	 	 	 	break;
+    	 	 	 case 'miner_throw':
+    	 	 	 	this.hmThrow();
+    	 	 	 	break;
+    	 	 	}
+    	 	}
+    	 Spawnbarriers()
+    	 	{
+    	 	 if(this.isBoss)
+    	 	 this.tree_left= new BarrierTree(-1400*xscale+this.position.x,
+    	 	   				   -15*yscale+this.position.y,
+    	 	   				   230*xscale,355*yscale,
+    	 	   				   [gameManager.visible_sprites]
+    	 	   				  );    	 	   
+    	 	}
+    	 hmidle()
+    	 	{
+
+    	 	 if(!this.miningStarted)
+    	 	 {
+    	 	 this.switchAnimation('mining');
+    	 	 this.miningStarted=true;
+    	 	 }
+    	 	 // return false;
+    	 	 if(!this.tgt.isActive)
+    	 	 	return false; 
+    	 	 let playerSep=this.tgt.position.x - this.position.x;
+
+    	 	 if(this.animation=='idle')
+    	 	 	{
+    	 	 	this.state='miner_agro';    	
+    	 	 	this.miningStarted= false; 	
+    	 	 	this.Spawnbarriers(); 	
+    	 	 	}
+    	 	 else if(this.animation!='startle' && Math.abs(playerSep) < this.minerAgroDistance)
+    	 	 	{    	 	 	 
+    	 	 	 this.switchAnimation('startle');
+    	 	 	 this.animInQueue='idle';
+    	 	 	}
+    	 	 return false;
+    	 	}    	
+    	 hmAgro()
+    	 	{
+    	 	 if(!this.tgt.isActive)
+    	 	 	return false;  
+    	 	 let playerSep=this.tgt.position.x - this.position.x;
+    	 	 this.sx=Math.sign(playerSep);    	 	 
+    	 	 if(Math.abs(playerSep) < this.minerPlayerFarDistance)
+    	 	 	{
+    	 	 	 if(gameManager.runningClock - this.minerLastAttackTime > this.minerMinAttackGap)
+    	 	 	 	this.state= this.closeAttacks[Math.floor(Math.random()*this.closeAttacks.length)];
+    	 	 	}
+    	 	 else
+    	 	 	this.state= this.longAttacks[Math.floor(Math.random()*this.longAttacks.length)];
+    	 	}
+    	 hmRunUp()
+    	 	{
+    	 	 this.switchAnimation('run');
+    	 	 let playerSep=this.tgt.position.x - this.position.x;
+    	 	 if(Math.abs(playerSep) > this.minerPlayerFarDistance)
+    		 	this.acceleration.add(this.horiForce.copy().mult(this.sx*2)); 
+    		 else
+    		 	{
+    		 	 this.velocity.x= 0;
+    		 	 this.state= 'miner_slash';
+    		 	 // this.switchAnimation('idle');
+    		 	}
+    	 	}
+    	
+    	 hmSlash()
+    	 	{
+    	 	 if(!this.minerAttackStarted && this.animation!='throwAnticipate' &&
+    	 	 	 this.animation!='slash' && this.animation!='slashRecover'
+    	 	 	)
+    	 	 	{
+    	 	 	 this.minerAttackStarted=true;
+    	 	 	 this.switchAnimation('throwAnticipate');
+    	 	 	 this.animInQueue='slash';	
+    	 	 	}
+    	 	 else if(this.animation=='slash' && this.animInQueue!='slashRecover')
+    	 	 	{
+    	 	 	 this.animInQueue='slashRecover';	
+    	 	 	}
+    	 	 else if(this.animation=='slashRecover' && this.animInQueue!='idle')
+    	 	 	{
+    	 	 	 this.animInQueue='idle';
+    	 	 	}
+    	 	 if(this.animation=='idle' && this.minerAttackStarted)
+    	 	 	 {
+    	 	 	 	this.state='miner_agro';
+    	 	 	 	this.minerAttackStarted= false;
+    	 	 	 	this.minerLastAttackTime= gameManager.runningClock;
+    	 	 	 	this.minerHitBoxSpawned= false; 
+    	 	 	 }
+
+    	 	}
+    	 update()
+    	 	{
+ 			 this.move(); 
+    		 this.updateHealthBarPos();  
+    		 this.manageInvincibility();
+    	 	 this.stateMachine();
+    	 	}
+    	 display()
+    	 	{
+		 	 if(!this.onScreen) return false;
+		 	 this.runAnimation();
+		 	 // console.log('here at 2976');
+		 	 ctx.save();
+		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
+		 	 	 		   this.position.y-gameManager.camera.position.y);
+		 	 ctx.rotate(d2r(this.angle));
+		 	 ctx.scale(this.sx,this.sy);
+		 	 if(this.flickerControl())
+		 	 ctx.drawImage(this.animations[this.animation]['imgsheet'],
+		 	 				this.startx,this.starty,this.imgWidth,this.imgHeight,
+		 	 			   -this.width/2,
+		 	 			   -this.height/2,
+		 	 			   this.width*this.animations[this.animation]['width_extend'],
+		 	 			   this.height*this.animations[this.animation]['height_extend']
+		 	 			  );
+		 	 // context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
+		 	 ctx.restore();
+		 	 w2screen(this.state,this.position.x-gameManager.camera.position.x,this.position.y-50*yscale-gameManager.camera.position.y);
+    	 	}
+    	runAnimation()
+    		{
+			  this.animationFrame+=this.animations[this.animation]['anim_speed'];
+			  if(this.animationFrame >= this.animations[this.animation]['maxFrames'])
+			  	{
+		  		this.animationFrame=0;
+		  		if(this.animInQueue) 
+		  			{
+		  			this.animation=this.animInQueue;
+		  			//console.log('back to '+this.animation);
+		  			this.animInQueue=null;
+		  			}
+			  	}
+			  let rowIndex=parseInt(parseInt(this.animationFrame)/this.animations[this.animation]['cols']);
+			  let colIndex=parseInt(this.animationFrame)%this.animations[this.animation]['cols'];
+			  this.startx=colIndex * this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
+			  this.starty=rowIndex * this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
+			  this.imgWidth = this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
+			  this.imgHeight = this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
+			}
+		switchAnimation(animx)
+			{
+			 if(this.animation != animx)
+			 	{
+			 	this.animationFrame=0;
+			 	this.animation=animx;			 	
+			 	}
+			}
+    	}
+    //husk miner ends
     
 	class Husk
 		{
@@ -3368,6 +3907,11 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			 														     // gameManager.visible_sprites                                                
 			 	                                                        ],'treehitbox');
 		 	}
+		 burn()
+		 	{
+		 		destroySelf(this.hit_box);
+		 		destroySelf(this);
+		 	}
 		 display()
 		 	{
 		 	 if(!this.onScreen) return false;		 	 
@@ -3392,8 +3936,8 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	 	  this.position=new CreateVector(x,y);
     	 	  this.width=40*xscale;
     	 	  this.height=40*yscale;
-    	 	  this.br1pos=new CreateVector(br1posx*xscale,br1posy*yscale);
-    	 	  this.br2pos=new CreateVector(br2posx*xscale,br2posy*yscale);     	 	  	 	  
+    	 	  this.br1pos=new CreateVector(br1posx,br1posy);
+    	 	  this.br2pos=new CreateVector(br2posx,br2posy);     	 	  	 	  
     	 	  this.spriteGroups=spriteGroups;
     	 	  for(let grp of this.spriteGroups)
 			 	grp.push(this); 
@@ -3402,6 +3946,14 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 			  this.spriteId=spriteId;
 			  this.sprite_type="BossFightTriggGO";
 			  this.angle=0;
+			  this.tree1=null;
+			  this.tree2=null;
+    	 	}
+    	 bossHasDiedRemoveBars()
+    	 	{
+    	 		this.tree1.burn();
+    	 		this.tree2.burn();
+    	 		destroySelf(this);
     	 	}
     	 update()
     	 	{    	 	 
@@ -3409,16 +3961,21 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
     	 	  {
     	 	   this.triggered=true;
     	 	   console.log('player has made contact');
-    	 	   new BarrierTree(this.br1pos.x+this.position.x,
+    	 	   this.tree1= new BarrierTree(this.br1pos.x+this.position.x,
     	 	   				   this.br1pos.y+this.position.y,
     	 	   				   230*xscale,355*yscale,
     	 	   				   [gameManager.visible_sprites]
     	 	   				  );
-    	 	   new BarrierTree(this.br2pos.x+this.position.x,
+    	 	   this.tree2= new BarrierTree(this.br2pos.x+this.position.x,
     	 	   				   this.br2pos.y+this.position.y,
     	 	   				   230*xscale,355*yscale,
     	 	   				   [gameManager.visible_sprites]
     	 	   				  );
+    	 	   for(let go of gameManager.visible_sprites)
+    	 	   {
+    	 	   	if(go.spriteId && go.spriteId.split('_')[0]=='boss')
+    	 	   		go.isActive=true;
+    	 	   }
     	 	  }
     	    }
     	 display()
@@ -4550,7 +5107,15 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 		 	 	 		   	   [this.active_sprites],
 		 	 	 		   	   elem['spriteId']
 		 	 	 		   	   );
-
+		 	 	 else if(elem['sprite']=='huskMiner' &&  
+		 	 	 	     this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)		 	 	 	
+		 	 	 	  new HuskMiner(elem['x']*xscale,
+		 	 	 		   	   elem['y']*yscale,
+		 	 	 		   	   elem['width']*xscale,
+		 	 	 		   	   elem['height']*yscale,		 	 	 		   	   
+		 	 	 		   	   [this.visible_sprites,this.enemy_sprites,this.active_sprites],
+		 	 	 		   	   elem['spriteId']
+		 	 	 		   	   );
 		 	 	}
 		 	 this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');		 	 
 		 	 this.camera.tgt=this.camera_stop_sprites[this.sceneForward?0:1];

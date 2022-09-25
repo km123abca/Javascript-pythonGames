@@ -595,10 +595,9 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 
 	class IndicatorObjs
 		{
-		constructor(x,y,colorx,sprite_type,spriteGroups)
+		constructor(x,y,colorx,spriteGroups)
 			{
 			 this.position=new CreateVector(x,y);
-			 this.sprite_type=sprite_type;
 			 this.angle=0;
 			 this.colorx=colorx;
 			 this.rad=20*xscale;
@@ -620,9 +619,6 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 			ctx.fill();
 			ctx.stroke();
 			ctx.restore();
-			w2screen(this.sprite_type,
-				     this.position.x-gameManager.camera.position.x,
-				     this.position.y-50*yscale-gameManager.camera.position.y);
 			}
 		}
 	//start of dummy point
@@ -630,8 +626,8 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 		{
 		constructor(x,y,sprite_type,spriteGroups)
 			{
-			  super(x,y,'#0000FF',sprite_type,spriteGroups);
-			  // this.sprite_type=sprite_type;
+			  super(x,y,'#0000FF',spriteGroups);
+			  this.sprite_type=sprite_type;
 			}
 		 update()
 		  {	
@@ -644,8 +640,8 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 		{
 		constructor(x,y,sprite_type,spriteGroups)
 			{
-			  super(x,y,'#00FFFF',sprite_type,spriteGroups);
-			  // this.sprite_type=sprite_type;
+			  super(x,y,'#00FFFF',spriteGroups);
+			  this.sprite_type=sprite_type;
 			  this.width=50*xscale;
 			  this.height=200*yscale;
 			  this.cornerPts=[[-1,-1],[1,-1],[1,1],[-1,1]];
@@ -682,8 +678,8 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 		{
 		constructor(x,y,sprite_type,spriteGroups)
 			{
-			  super(x,y,'#0000FF',sprite_type,spriteGroups);
-			  // this.sprite_type=sprite_type;
+			  super(x,y,'#0000FF',spriteGroups);
+			  this.sprite_type=sprite_type;
 			}
 		 update()
 		  {	
@@ -712,8 +708,8 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 		{
 		constructor(x,y,sprite_type,spriteGroups)
 		  {
-		  	super(x,y,'#00FF00',sprite_type,spriteGroups);
-		  	// this.sprite_type=sprite_type;
+		  	super(x,y,'#00FF00',spriteGroups);
+		  	this.sprite_type=sprite_type;
 		  }
 		cameraCanFollow(objx)
 		  {
@@ -2761,7 +2757,6 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
     	constructor(x,y,wid,hei,spriteGroups,spriteId)	
     		{
     		 this.position= new CreateVector(x,y);
-    		 this.huskMusicStarted= false;
     		 this.tree_left=null;
     		 this.tree_right=null;
     		 this.isBoss= spriteId.split('_')[0]=='boss';
@@ -2879,7 +2874,7 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 			 this.sprite_type= 'husk_miner';
 			 this.state= 'miner_idle';
 			 this.maxHealth= 100;
-			 this.health= 20;
+			 this.health= this.maxHealth;
 			 this.spriteGroups= spriteGroups;
 			 for(let grp of spriteGroups)
 			 	grp.push(this);
@@ -2891,7 +2886,7 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 			 this.image_offset_fixed=this.image_offset.copy();
  			 this.minerHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,
  			 								'#222222','#FF0000',[gameManager.visible_sprites],
- 			 								false,'huskminerhealth');
+ 			 								false,'fkhealth');
 			 this.minerHealthBar.onScreen=true;
 			 this.minerAttackStarted=false;
 			 this.uiBarTimer=0;
@@ -3081,12 +3076,6 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
     	 	   				   [gameManager.visible_sprites]
     	 	   				  );    	 	   
     	 	}
-    	 Burnbarriers()
-    	 	{
-	 		this.tree_left.burn();
-	 		this.tree_right.burn();
-	 		destroySelf(this);
-    	 	}
     	 hmidle()
     	 	{
 
@@ -3110,12 +3099,6 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
     	 	 	{    	 	 	 
     	 	 	 this.switchAnimation('startle');
     	 	 	 this.animInQueue='idle';
-    	 	 	 if(!this.huskMusicStarted)
-	    	 	 	{
-	    	 	 	 this.huskMusicStarted= true;
-	    	 	 	 capraMusic.src="./sounds/Capra.mp3";
-	    	 	 	 capraMusic.play();
-	    	 	 	}
     	 	 	}
     	 	 return false;
     	 	}    	
@@ -3175,7 +3158,7 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 
     	 	}
     	 update()
-    	 	{    	 	 
+    	 	{
  			 this.move(); 
     		 this.updateHealthBarPos();  
     		 this.manageInvincibility();
@@ -3231,28 +3214,6 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 			 	this.animation=animx;			 	
 			 	}
 			}
-
-		 takeDamage(dmg,dir=0)
-		 	{
-		 	//this.acceleration.add(new CreateVector(dir,0));
-		 	if(this.invincibleState) return false;	
-		 	this.invincibleState=true;	
-	 		this.health-=dmg;
-	 		this.minerHealthBar.updateValue(this.health);
-	 		this.minerHealthBar.onScreen=true;
-	 		if(this.health <= 5)
-	 			{
-	 			capraMusic.src="";
-	 			fogGateSound.play();
-	 			this.Burnbarriers();
-	 			this.tgt.giveExp(this.expVal);
-	 			SpawnClouds(this.position);
-	 			destroySelf(this);
-	 			destroySelf(this.hit_box);
-	 			destroySelf(this.minerHealthBar);	 			
-	 			}	
-		 	} 
-
     	}
     //husk miner ends
     
@@ -4823,8 +4784,6 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 		 	 this.gamePaused=false;
 		 	 this.inTransition=false;
 		 	 this.sceneForward=true;
-		 	 this.followMouse= true;
-		 	 this.sceneStartTime= 0;
 		 	 this.positionAdjuster=new PositionAdjuster(null,[this.visible_sprites,this.active_sprites]);
 
 		 	 this.playerHealthBar= new UIBar(50,20,300,30,100,100,'#222222','#FF0000',[this.visible_sprites,this.active_sprites],true,'playerhealth');
@@ -4959,17 +4918,7 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 		 	{
 		 	 // this.camera.runWithMouse();
 		 	 const [hori,vert]=this.camChecker();
-		 	 if(!this.followMouse)
-			 	 {			 	 
-			 	 this.camera.smoothFocus(hori,vert);
-			 	 }
-			 else
-			 	 {
-			 	 	if(this.runningClock - this.sceneStartTime < 2000)			 	 	
-			 	 	 this.camera.smoothFocus(hori,vert);
-			 	 	else
-			 	 	 this.camera.runWithMouse();
-			 	 }
+		 	 this.camera.smoothFocus(hori,vert);
 
 		 	 for(let sprite of this.visible_sprites)
 		 	 	{			 	 	
@@ -5171,8 +5120,7 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 		 	 this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');		 	 
 		 	 this.camera.tgt=this.camera_stop_sprites[this.sceneForward?0:1];
 		 	 this.scenesLoaded[n]=true;
-		 	 this.inTransition=false;
-		 	 this.sceneStartTime= this.runningClock;		 	 
+		 	 this.inTransition=false;		 	 
 		 	 console.log('scene No'+n+' loaded');
 		 	}
 		}
