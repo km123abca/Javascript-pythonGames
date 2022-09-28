@@ -30,19 +30,25 @@ let scenes=[
 				{"sprite":"entryexit_exit","x":2925,"y":394},
 				{"sprite":"scenechanger_scleft","x":-794,"y":464},
 				{"sprite":"scenechanger_scright","x":3238,"y":460},
-				{"sprite":"MarkedSpot_fkjumpup","x":1932,"y":685},
-				{"sprite":"MarkedSpot_fkjumpup","x":845,"y":685},
+				{"sprite":"MarkedSpot_fkjumpup","x":1882,"y":685},
+				{"sprite":"MarkedSpot_fkjumpup","x":895,"y":685},
+				{"sprite":"BossFightTriggGO","x":2224,"y":523,
+				 "br1posx":-2301,"br1posy":-111,"br2posx":631,"br2posy":-111,"spriteId":"BossFightTriggGO"
+				},
+				{"sprite":"falseknight","x":1289,"y":-367,"width":368,"height":223,"spriteId":"boss_fknight1"}
 			],
 			[
 			    // {"sprite":"player","x":200,"y":200,"width":150,"height":100},
-			    {"sprite":"husk","x":200,"y":500,"width":150,"height":200,"spriteId":"husk2"},
-				{"sprite":"platform","x":200,"y":600,"width":2200,"height":50},				
+			    // {"sprite":"lance","x":1060,"y":200,"width":250,"height":200,spriteId:"lance1"},
+			    {"sprite":"husk","x":1062,"y":500,"width":150,"height":200,"spriteId":"husk2"},
+				{"sprite":"platform","x":563,"y":600,"width":2200,"height":50},				
 				{"sprite":"camstopper_left","x":-115,"y":394},
-				{"sprite":"camstopper_right","x":625,"y":447},
+				{"sprite":"camstopper_right","x":925,"y":447},
 				{"sprite":"entryexit_entry","x":-457,"y":464},
-				{"sprite":"entryexit_exit","x":775,"y":394},
+				{"sprite":"entryexit_exit","x":1262,"y":394},
 				{"sprite":"scenechanger_scleft","x":-794,"y":464},
-				{"sprite":"scenechanger_scright","x":1275,"y":468}
+				{"sprite":"scenechanger_scright","x":1637,"y":468},
+				{"sprite":"MarkedSpot_huskstop_left","x":280,"y":523}
 			],
 			[
 			    // {"sprite":"player","x":200,"y":200,"width":150,"height":100},

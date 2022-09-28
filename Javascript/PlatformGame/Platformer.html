@@ -1468,7 +1468,7 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 			 this.imgWidth=0;
 			 this.imgHeight=0;
 			 this.raycastLength=520*xscale;
-			 this.playerOutDistance= 2000*xscale;
+			 this.playerOutDistance= 500*xscale;
 			 this.playerGap=800*xscale;
 			 this.throwDone=false;
 
@@ -2549,7 +2549,7 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
     		 	{
     		 	this.velocity.x=Lerp(this.velocity.x,0,16);
     		 	}
-    		 if(gameManager.runningClock - this.attackClock > 3000)
+    		 if(gameManager.runningClock - this.attackClock > 1500)
     		 	{
     		 	 this.fkLastAttackTime=gameManager.runningClock;
     		 	 this.state='fkagro';
@@ -3261,6 +3261,7 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 		constructor(x,y,wid,hei,spriteGroups,spriteId='husk0')
 			{
 			 this.position= new CreateVector(x,y);
+			 this.permPosition= this.position.copy();
 			 this.width = wid * xscale;
 			 this.height= hei * yscale;
 			 let folderPath='sprites/husk/';
@@ -3343,7 +3344,7 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 			 this.state='idle';
 			 this.raycastLength=320*xscale;
 			 this.attackProxim=150*xscale;
-			 this.playerOutDistance=1200*xscale;
+			 this.playerOutDistance=500*xscale;
 			 this.startled=false;
 			 this.lastAttackTime=0;
 			 this.maxAttackGap=1000;
@@ -3380,6 +3381,7 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 
 			 this.initSetupDone=false;
 		 	 this.maxRushTime=1500;
+		 	 this.retreatDirSet=false;
 			}
 
 		manageInvincibility()
@@ -3482,6 +3484,9 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
                	case 'rush':
                	    this.Rush();
                	    break;
+               	case 'retreat':
+               		this.RetreatBehav();
+               		break;
                	default:
                		break;
                }
@@ -3618,7 +3623,25 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 		  		this.state='agro';
 		  		this.sx=-1;
 			  	}
-
+			}
+		
+		RetreatBehav()
+			{
+			if(!this.retreatDirSet)
+				{
+				 this.sx= Math.sign(this.permPosition.x - this.position.x);
+				 this.retreatDirSet= true;
+				}
+			else
+				{
+				 if(Math.abs(this.permPosition.x - this.position.x)<5*xscale)
+				 	{
+				 	 this.retreatDirSet= false;
+				 	 this.state='idle';
+				 	}
+				}
+			this.switchAnimation('walking');
+ 			this.acceleration.add(this.horiForce.copy().mult(this.sx));	
 			}
 
 		AgroBehav()
@@ -3651,14 +3674,29 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
  				 	 this.longAttackCount=0;
  				 	}
 				}
-			
-			if(!this.tgt || Math.abs(this.position.x - this.tgt.position.x) > this.playerOutDistance)
+			//earlier, Math.abs(this.position.x - this.tgt.position.x) > this.playerOutDistance
+			if(!this.tgt || this.StrayedTooFar())
 				{
 				 this.startled=false;				 
-				 this.state='idle';
+				 this.state='retreat';
 				 this.longAttackCount=0;
 				}
 
+			}
+		StrayedTooFar()
+			{
+			  for(let mspot of gameManager.markedSpots)
+			  {
+			  	if(mspot.sprite_type.split('_')[1]!='huskstop') continue;			  	
+			  	if(mspot.sprite_type.split('_')[2]=='right')
+			  		{
+			  		 if(this.position.x > mspot.position.x) return true;
+			  		}
+			  	else
+			  		{
+					if(this.position.x < mspot.position.x) return true;
+			  		}
+			  }
 			}
 		Throw()
 			{			 
@@ -4804,7 +4842,7 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 		{
 		 constructor()
 		 	{
-		 	 this.visible_sprites=[];
+		 	 this.visible_sprites=[];		 	 
 		 	 this.active_sprites=[];		 	 		 	 
 		 	 this.collission_sprites=[];
 		 	 this.markedSpots=[];
@@ -4823,7 +4861,7 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 		 	 this.gamePaused=false;
 		 	 this.inTransition=false;
 		 	 this.sceneForward=true;
-		 	 this.followMouse= true;
+		 	 this.followMouse= false;
 		 	 this.sceneStartTime= 0;
 		 	 this.positionAdjuster=new PositionAdjuster(null,[this.visible_sprites,this.active_sprites]);
 
@@ -5116,8 +5154,8 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 		 	 	 		   	   elem['y']*yscale,
 		 	 	 		   	   elem['sprite'].split('_')[1],
 		 	 	 		   	   [this.visible_sprites,this.active_sprites]
-		 	 	 		   	   );
-		 	 	 else if(elem['sprite']=='husk' && this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)		 	 	 	
+		 	 	 		   	   );		 	 	 
+		 	 	 else if(elem['sprite']=='husk' && this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)	 	 	 	
 		 	 	 	  new Husk(elem['x']*xscale,
 		 	 	 		   	   elem['y']*yscale,
 		 	 	 		   	   elem['width']*xscale,
