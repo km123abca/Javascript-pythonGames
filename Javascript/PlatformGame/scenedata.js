@@ -1,5 +1,7 @@
 let scenes=[
 			[
+			    {"sprite":"thorn","x":1870,"y":924,"width":600,"height":250,"xoffset":0,"yoffset":0},
+				{"sprite":"tree","x":-950,"y":424,"width":361,"height":343},
 				{"sprite":"platform","x":-150,"y":600,"width":1987,"height":50},
 				{"sprite":"platform","x":1459,"y":479,"width":1200,"height":50},
 				{"sprite":"platform","x":3228,"y":696,"width":2313,"height":50},				
@@ -10,15 +12,24 @@ let scenes=[
 				{"sprite":"entryexit_exit","x":4059,"y":610},
 				{"sprite":"scenechanger_scright","x":4315,"y":572},
 				{"sprite":"MarkedSpot_fkjumpup","x":825,"y":526},
-				{"sprite":"MarkedSpot_fkjumpup","x":2112,"y":614},
-				// {"sprite":"BossFightTriggGO","x":1450,"y":448,
-				//  "br1posx":-500,"br1posy":-111,"br2posx":500,"br2posy":-111,"spriteId":"BossFightTriggGO"
-				// },
-				// {"sprite":"falseknight","x":1100,"y":-367,"width":368,"height":223,"spriteId":"boss_fknight1"}
+				{"sprite":"MarkedSpot_fkjumpup","x":2112,"y":614},				
 				// {"sprite":"huskMiner","x":73,"y":431,"width":170,"height":220,"spriteId":"boss_huskminer1"}
 				// {"sprite":"lance","x":300,"y":200,"width":250,"height":200,spriteId:"lance1"},
 				// {"sprite":"husk","x":1714,"y":200,"width":150,"height":200,"spriteId":"husk1"}
-				// {"sprite":"falseknight","x":125,"y":319,"width":368,"height":223,spriteId:"fknight1"},
+				
+			],
+			[
+			    // {"sprite":"player","x":200,"y":200,"width":150,"height":100},
+			    // {"sprite":"lance","x":1060,"y":200,"width":250,"height":200,spriteId:"lance1"},
+			    // {"sprite":"husk","x":1062,"y":500,"width":150,"height":200,"spriteId":"husk2"},
+				{"sprite":"platform","x":563,"y":600,"width":2200,"height":50},				
+				{"sprite":"camstopper_left","x":-115,"y":394},
+				{"sprite":"camstopper_right","x":925,"y":447},
+				{"sprite":"entryexit_entry","x":-457,"y":464},
+				{"sprite":"entryexit_exit","x":1262,"y":394},
+				{"sprite":"scenechanger_scleft","x":-794,"y":464},
+				{"sprite":"scenechanger_scright","x":1637,"y":468},
+				{"sprite":"MarkedSpot_enemystopleft","x":280,"y":523}
 			],
 			[			    
 				{"sprite":"platform","x":-12,"y":600,"width":1625,"height":50},		
@@ -37,19 +48,7 @@ let scenes=[
 				},
 				{"sprite":"falseknight","x":1289,"y":-367,"width":368,"height":223,"spriteId":"boss_fknight1"}
 			],
-			[
-			    // {"sprite":"player","x":200,"y":200,"width":150,"height":100},
-			    // {"sprite":"lance","x":1060,"y":200,"width":250,"height":200,spriteId:"lance1"},
-			    {"sprite":"husk","x":1062,"y":500,"width":150,"height":200,"spriteId":"husk2"},
-				{"sprite":"platform","x":563,"y":600,"width":2200,"height":50},				
-				{"sprite":"camstopper_left","x":-115,"y":394},
-				{"sprite":"camstopper_right","x":925,"y":447},
-				{"sprite":"entryexit_entry","x":-457,"y":464},
-				{"sprite":"entryexit_exit","x":1262,"y":394},
-				{"sprite":"scenechanger_scleft","x":-794,"y":464},
-				{"sprite":"scenechanger_scright","x":1637,"y":468},
-				{"sprite":"MarkedSpot_huskstop_left","x":280,"y":523}
-			],
+			
 			[
 			    // {"sprite":"player","x":200,"y":200,"width":150,"height":100},
 				{"sprite":"platform","x":200,"y":600,"width":2200,"height":50},		
