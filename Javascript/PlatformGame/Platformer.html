@@ -407,6 +407,7 @@ let WHITECLOUD= LoadImagex('sprites','cloud-1.png');
 let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 let THORNIMAGE = LoadImagex('sprites/misc','thorn.png');
+let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     
 </script>
 </head>
@@ -1079,8 +1080,7 @@ let THORNIMAGE = LoadImagex('sprites/misc','thorn.png');
 	class GeneralSprite
 		{
 		constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups)
-			{
-			 console.log(`x:${x},y:${y},wid:${wid},hei:${hei}`);
+			{			 
 			 this.position= new CreateVector(x,y);			 
 			 this.hitboxOffset= new CreateVector(hitboxoffsetx,hitboxoffsety);
 			 this.width = wid * xscale;
@@ -1113,7 +1113,7 @@ let THORNIMAGE = LoadImagex('sprites/misc','thorn.png');
 		  	{
 		  	 super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
 		  	 this.sprite_type='thorn';
-  		 	 this.hit_box=new HitBox(this.position.x,this.position.y,this.width*0.5,this.height*0.5,
+  		 	 this.hit_box=new HitBox(this.position.x,this.position.y,this.width*0.9,this.height*0.5,
                          [ gameManager.kill_plants,
                           // gameManager.visible_sprites
                          ],
@@ -1128,6 +1128,15 @@ let THORNIMAGE = LoadImagex('sprites/misc','thorn.png');
 		 	{	 		
 	 		this.position.setVec(this.hit_box.position.copy().add(this.hitboxOffset));
 		 	}
+		}
+	class GrassShrub extends GeneralSprite
+		{
+		  constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups)
+		  	{
+		  	 super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
+		  	 this.sprite_type='shrub';  		 	 
+  		 	 this.imagex= FORESTIMAGE;
+		  	}		 
 		}
 	class ThornyBall
 		{
@@ -3224,6 +3233,7 @@ let THORNIMAGE = LoadImagex('sprites/misc','thorn.png');
     	 	 	 	this.minerAttackStarted= false;
     	 	 	 	this.minerLastAttackTime= gameManager.runningClock;
     	 	 	 	this.minerHitBoxSpawned= false; 
+    	 	 	 	this.axesThrown=0;
     	 	 	 }
 
     	 	}
@@ -4159,7 +4169,7 @@ let THORNIMAGE = LoadImagex('sprites/misc','thorn.png');
 			 this.angle=0;
 			 this.acceleration=new CreateVector(0,0);
 			 this.velocity=new CreateVector(0,0);
-			 this.maxVelocity=new CreateVector(7*xscale,12*yscale);
+			 this.maxVelocity=new CreateVector(14*xscale,12*yscale);
 			 this.horiForce=new CreateVector(1*xscale,0);
 			 this.gravityScale=1*yscale;
 			 this.sx=1;
@@ -4314,13 +4324,13 @@ let THORNIMAGE = LoadImagex('sprites/misc','thorn.png');
 	 		gameManager.playerHealthBar.updateValue(this.health);	 		
 	 		if(this.health<=0)
 	 			{
+	 			console.log('destroyed');
 	 			SpawnClouds(this.position);	 			
 	 			destroySelf(this.hit_box);
 	 			destroySelf(this);	 			
 	 			this.isActive=false;
-	 			gameManager.player=null;
-	 			gameManager.playerDiedClock= gameManager.runningClock;	
-	 			 			
+	 			gameManager.player=null;	 			
+	 			gameManager.playerDiedClock= gameManager.runningClock;		 			 			
 	 			}
 		 	}
 		refillEnergy()
@@ -4529,7 +4539,8 @@ let THORNIMAGE = LoadImagex('sprites/misc','thorn.png');
 	 		for(let x of gameManager.kill_plants)
 	 			{
 	 			if(b_collision(this.hit_box,x))
-	 				{
+	 				{	
+ 					 console.log('here here');
 	 				 this.takeDamage(this.health);
 	 				}
 	 			}
@@ -4612,7 +4623,7 @@ let THORNIMAGE = LoadImagex('sprites/misc','thorn.png');
 		 	 if(!this.onScreen) return false;
 		 	 this.runAnimation();
 		 	 this.move();
-		 	 this.fallDamage();//obsolete
+		 	 // this.fallDamage();//obsolete
 		 	 this.testCollisionWithKillPlants();
 		 	}
 		 display()
@@ -4978,6 +4989,7 @@ let THORNIMAGE = LoadImagex('sprites/misc','thorn.png');
 		 	this.collission_sprites=[];
 		 	this.camera_stop_sprites=[];
 		 	this.entryexit_sprites=[];
+		 	this.kill_plants=[];
 		 	if(!this.player)
 		 		{
 		 		this.visible_sprites=[this.playerHealthBar,this.playerEnergyBar,this.positionAdjuster];
@@ -5298,7 +5310,16 @@ let THORNIMAGE = LoadImagex('sprites/misc','thorn.png');
  	   				          elem['xoffset']*xscale,
  	   				          elem['yoffset']*yscale,
  	   				   		  [gameManager.visible_sprites]
-    	 	   				  	 	);		 	 	 	
+    	 	   				  	 	);	
+    	 	   	 else if(elem['sprite']=='shrub')
+    	 	   	 	new GrassShrub(elem['x']*xscale,
+ 	   				          elem['y']*yscale,
+ 	   				          elem['width']*xscale,
+ 	   				          elem['height']*yscale,
+ 	   				          elem['xoffset']*xscale,
+ 	   				          elem['yoffset']*yscale,
+ 	   				   		  [gameManager.visible_sprites]
+    	 	   				  	 	);	 	 	 	
 		 	 	}
 		 	 this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');		 	 
 		 	 this.camera.tgt=this.camera_stop_sprites[this.sceneForward?0:1];
