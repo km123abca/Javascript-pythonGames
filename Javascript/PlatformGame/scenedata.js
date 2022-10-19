@@ -17,7 +17,7 @@ let scenes=[
 				{"sprite":"MarkedSpot_fkjumpup","x":2112,"y":614},				
 				// {"sprite":"huskMiner","x":73,"y":431,"width":170,"height":220,"spriteId":"boss_huskminer1"}
 				// {"sprite":"lance","x":300,"y":200,"width":250,"height":200,spriteId:"lance1"},
-				// {"sprite":"husk","x":1714,"y":200,"width":150,"height":200,"spriteId":"husk1"}
+				{"sprite":"husk","x":1616,"y":300,"width":150,"height":200,"spriteId":"husk1"}
 				
 			],
 			[

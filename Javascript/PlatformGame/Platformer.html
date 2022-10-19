@@ -385,15 +385,15 @@
 		}
 
 	function destroySelf(objx)
-		{
-		 
+		{	
+		 	 
 		 for(let i in objx.spriteGroups)
 		 {		  
 	 	  for(let j in objx.spriteGroups[i])
 	 		{
 
 	 		 if(objx.spriteGroups[i][j]==objx)
-	 		 	{
+	 		 	{ 	  
 	 		 	  objx.spriteGroups[i].splice(j,1);
 	 		 	  break;
 	 		 	}	
@@ -1043,6 +1043,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	{
 		 	 this.position = new CreateVector(x,y);
 		 	 this.width= 15 * xscale;
+		 	 this.sprite_type='cloud';
 		 	 this.height= 15 * yscale;
 		 	 this.imagex= WHITECLOUD;
 		 	 this.onScreen=true;
@@ -3341,7 +3342,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 
 			 this.acceleration=new CreateVector(0,0);
 			 this.velocity=new CreateVector(0,0);
-			 this.maxVelocity=new CreateVector(2*xscale,12*yscale);		
+			 this.maxVelocity=new CreateVector(6*xscale,12*yscale);		
 			 this.horiForce=new CreateVector(1*xscale,0);	 
 			 this.gravityScale=2*yscale;	
 			 this.longRangeAttacks=['throw','rush'];	
@@ -3528,6 +3529,38 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 	 			}	
 			}
 
+		huskJump()
+			{
+			 let jumpForce= new CreateVector(this.sx* 10*xscale,-250*yscale);
+			 if(!this.jumpForceApplied_husk)
+			 	{
+			 	this.jumpForceApplied_husk= true;
+			 	this.acceleration.add(jumpForce);
+			 	this.animInQueue='idle';
+			 	this.switchAnimation('startle');
+			 	this.startTimeHusk= gameManager.runningClock;	
+			 	}
+			 else if(gameManager.runningClock - this.startTimeHusk > 1000)
+			 	{
+			 		this.state='agro';
+			 		this.velocity.x=0;
+			 		this.jumpForceApplied_husk=false;
+			 	}	
+
+			}
+		checkJumpPos()
+			{
+			 for(let sp of gameManager.markedSpots)
+    		 	{
+    		 	  if(sp.sprite_type=="fkjumpup" &&  b_collision(this.hit_box,sp))
+    		 	  	{
+    		 	  	this.velocity.x=0;
+    		 	 	this.state='huskJump';
+
+    		 	  	}
+    		 	}
+			}
+
 		stateMachine()
 			{
               switch(this.state)
@@ -3549,6 +3582,9 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
                	    break;
                	case 'retreat':
                		this.RetreatBehav();
+               		break;
+               	case 'huskJump':
+               		this.huskJump();
                		break;
                	default:
                		break;
@@ -3730,6 +3766,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 				{				
 				 this.switchAnimation('walking');
  				 this.acceleration.add(this.horiForce.copy().mult(this.sx));
+ 				 this.checkJumpPos();
  				 this.longAttackCount+=deltaTime;
  				 if(this.longAttackCount > this.maxLongAttackCount)
  				 	{
@@ -3766,7 +3803,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			}
 		Throw()
 			{			 
-			 this.velocity.x=Lerp(this.velocity.x,0,2*xscale);		 
+			 this.velocity.x=Lerp(this.velocity.x,0,2*xscale);
 			 this.Melee();
 			}
 
@@ -3776,6 +3813,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			 	{
 			 	 document.querySelector('#whoosh').play();
 			 	 this.soundPlayed=true;
+			 	 this.velocity.x=0;
 			 	}
 			 if(this.meleeOver)
 			 	{
@@ -4169,8 +4207,8 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			 this.angle=0;
 			 this.acceleration=new CreateVector(0,0);
 			 this.velocity=new CreateVector(0,0);
-			 this.maxVelocity=new CreateVector(14*xscale,12*yscale);
-			 this.horiForce=new CreateVector(1*xscale,0);
+			 this.maxVelocity=new CreateVector(10*xscale,12*yscale);
+			 this.horiForce=new CreateVector(0.8*xscale,0);
 			 this.gravityScale=1*yscale;
 			 this.sx=1;
 			 this.sy=1;
@@ -4539,9 +4577,8 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 	 		for(let x of gameManager.kill_plants)
 	 			{
 	 			if(b_collision(this.hit_box,x))
-	 				{	
- 					 console.log('here here');
-	 				 this.takeDamage(this.health);
+	 				{ 					 
+	 				 this.takeDamage(this.health);	 				 
 	 				}
 	 			}
 		 	}
@@ -4977,7 +5014,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
             localStorage.setItem("GameSaveData",JSON.stringify(datum));
 		 }
 		 checkPlayerExistence()
-		 	{
+		 	{		 	 
 		 	 if(this.playerDiedClock ==0) return false;
 		 	 w2screen("You Got Destroyed Bruh",300*xscale,400*yscale,'#FF0000',80);
 		 	 if(this.runningClock - this.playerDiedClock > 3000)
@@ -4999,6 +5036,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 		this.visible_sprites=[this.player,this.positionAdjuster,this.playerHealthBar,this.playerEnergyBar];
 		 		this.active_sprites=[this.player,this.positionAdjuster,this.playerHealthBar,this.playerEnergyBar];
 		 		this.collission_sprites=[this.player.hit_box];
+		 		this.player.spriteGroups=[this.visible_sprites,this.active_sprites];
 		 		}
 		 			 	
 		 	}
@@ -5021,7 +5059,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	 //DisplayInGaps(this.collission_sprites.map(x=>x.sprite_type).reduce((s,x)=>s+x+',',''));		 	 
 		 	 this.runClock();
 		 	 this.runGame();
-		 	 this.checkPlayerExistence();		 	 
+		 	 		 	 
 		 	 this.checkScenes();	
 		 	 this.showExperience();	
 		 	 this.showLevelUpBox(); 
@@ -5084,7 +5122,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	}
 		 runGame()
 		 	{
-		 	 // this.camera.runWithMouse();
+		 	 if(!this.gamePaused)	this.checkPlayerExistence();		 	
 		 	 const [hori,vert]=this.camChecker();
 		 	 if(!this.followMouse)
 			 	 {			 	 
@@ -5099,7 +5137,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			 	 }
 
 		 	 for(let sprite of this.visible_sprites)
-		 	 	{			 	 	
+		 	 	{		 	 			 	 	
 		 	 	sprite.display();
 		 	 	}
 		 	 for(let sprite of this.active_sprites)
@@ -5151,6 +5189,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 							   	   100*yscale,
 							   	   [this.visible_sprites,this.active_sprites]
 		   	   					  );
+ 	 	 	console.log('player loaded from memory');
  	 	 	this.levelUpBox.receiveGameObject(this.player);
  	 	 	if(localStoragex.listOfDestroyedSprites)
  	 	 		this.listOfDestroyedSprites=localStoragex.listOfDestroyedSprites;
@@ -5225,6 +5264,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	 	 		   	   elem['height']*yscale,
 		 	 	 		   	   [this.visible_sprites,this.active_sprites]
 		 	 	 		   	   );	
+		 	 	 	console.log('player loaded from scene data');
 		 	 	   this.levelUpBox.receiveGameObject(this.player);
 		 	 	   }		 	 	 
 		 	 	 else if(elem['sprite'].split('_')[0]=='camstopper')
