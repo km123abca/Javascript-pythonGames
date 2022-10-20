@@ -7,7 +7,7 @@ let scenes=[
 				{"sprite":"platform","x":-150,"y":600,"width":1987,"height":50},
 				{"sprite":"platform","x":1459,"y":479,"width":1200,"height":50},
 				{"sprite":"platform","x":3228,"y":696,"width":2313,"height":50},				
-				{"sprite":"player","x":100,"y":200,"width":150,"height":100},
+				{"sprite":"player","x":100,"y":200,"width":100,"height":100},
 				{"sprite":"camstopper_left","x":-565,"y":394},
 				{"sprite":"camstopper_right","x":3591,"y":582},
 				{"sprite":"entryexit_entry","x":-344,"y":464},

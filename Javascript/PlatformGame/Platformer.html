@@ -3342,6 +3342,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 
 			 this.acceleration=new CreateVector(0,0);
 			 this.velocity=new CreateVector(0,0);
+			 this.huskMaxHoriVelocity= 6;
 			 this.maxVelocity=new CreateVector(6*xscale,12*yscale);		
 			 this.horiForce=new CreateVector(1*xscale,0);	 
 			 this.gravityScale=2*yscale;	
@@ -3506,9 +3507,10 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 	 		this.health-=dmg;
 	 		this.huskHealthBar.updateValue(this.health);
 	 		this.huskHealthBar.onScreen=true;
-	 		if(this.health<0)
+	 		if(this.health<=0)
 	 			{
-	 			this.tgt.giveExp(this.expVal);
+	 			if(this.tgt)
+	 				this.tgt.giveExp(this.expVal);
 	 			SpawnClouds(this.position);
 	 			destroySelf(this);
 	 			destroySelf(this.hit_box);
@@ -3699,7 +3701,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			}
 		RecoverFromRush()
 			{
-			 this.maxVelocity.x=2*xscale;
+			 this.maxVelocity.x=this.huskMaxHoriVelocity;
 			 this.initSetupDone=false;			 
 			 this.waitTimerMeleeEnd=0;			
 			 // this.velocity.x=Lerp(this.velocity.x,0,2*xscale);	
@@ -3975,6 +3977,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			}
 		 update()
 		 	{
+
 		 	  this.runAnimation();
 		 	  this.stateMachine();
 		 	  this.move();
@@ -4238,8 +4241,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 
 		 	 this.hit_box=new HitBox(x,y,this.width*0.5,
 		 	 	                         this.height,
-		 	 	                         [gameManager.collission_sprites
-		 	 	                          // gameManager.active_sprites
+		 	 	                         [gameManager.collission_sprites		 	 	                          
 		 	 	                         ],
 		 	 	                         'playerhitbox');
 		 	 this.invincibleState=false;
@@ -4661,7 +4663,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	 this.runAnimation();
 		 	 this.move();
 		 	 // this.fallDamage();//obsolete
-		 	 this.testCollisionWithKillPlants();
+		 	 //this.testCollisionWithKillPlants();
 		 	}
 		 display()
 		 	{		 	 
@@ -4960,7 +4962,8 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	{
 		 	 this.visible_sprites=[];		 	 
 		 	 this.active_sprites=[];
-		 	 this.kill_plants=[];		 	 		 	 
+		 	 this.kill_plants=[];
+		 	 this.killables=[];		 	 		 	 
 		 	 this.collission_sprites=[];
 		 	 this.markedSpots=[];
 		 	 this.hitbox_sprites=[];
@@ -5017,8 +5020,22 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	{		 	 
 		 	 if(this.playerDiedClock ==0) return false;
 		 	 w2screen("You Got Destroyed Bruh",300*xscale,400*yscale,'#FF0000',80);
-		 	 if(this.runningClock - this.playerDiedClock > 3000)
+		 	 if(this.runningClock - this.playerDiedClock > 10000)
 		 	 	window.location.href="./Platformer.html";
+		 	}
+		 checkHitWithKillPlants()
+		 	{
+		 	 for(let x of this.kill_plants)
+		 	 {
+		 	 	for(let y of this.killables)
+		 	 		{
+		 	 			if(b_collision(x,y.hit_box))
+		 	 			{
+		 	 				y.takeDamage(y.health);
+		 	 				console.log(y.sprite_type+' got thorned');
+		 	 			}
+		 	 		}
+		 	 }
 		 	}
 
 		 unload_components()
@@ -5027,6 +5044,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	this.camera_stop_sprites=[];
 		 	this.entryexit_sprites=[];
 		 	this.kill_plants=[];
+		 	this.killables=[];
 		 	if(!this.player)
 		 		{
 		 		this.visible_sprites=[this.playerHealthBar,this.playerEnergyBar,this.positionAdjuster];
@@ -5122,6 +5140,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	}
 		 runGame()
 		 	{
+		 	 this.checkHitWithKillPlants();
 		 	 if(!this.gamePaused)	this.checkPlayerExistence();		 	
 		 	 const [hori,vert]=this.camChecker();
 		 	 if(!this.followMouse)
@@ -5185,9 +5204,9 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 
  	 	 	this.player=new Player(100*xscale,
 		   	   					   200*yscale,
-							   	   150*xscale,
+							   	   100*xscale,
 							   	   100*yscale,
-							   	   [this.visible_sprites,this.active_sprites]
+							   	   [this.visible_sprites,this.active_sprites,this.killables]
 		   	   					  );
  	 	 	console.log('player loaded from memory');
  	 	 	this.levelUpBox.receiveGameObject(this.player);
@@ -5262,7 +5281,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	 	 		   	   elem['y']*yscale,
 		 	 	 		   	   elem['width']*xscale,
 		 	 	 		   	   elem['height']*yscale,
-		 	 	 		   	   [this.visible_sprites,this.active_sprites]
+		 	 	 		   	   [this.visible_sprites,this.active_sprites,this.killables]
 		 	 	 		   	   );	
 		 	 	 	console.log('player loaded from scene data');
 		 	 	   this.levelUpBox.receiveGameObject(this.player);
@@ -5290,7 +5309,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	 	 		   	   elem['y']*yscale,
 		 	 	 		   	   elem['width']*xscale,
 		 	 	 		   	   elem['height']*yscale,
-		 	 	 		   	   [this.visible_sprites,this.enemy_sprites,this.active_sprites],
+		 	 	 		   	   [this.visible_sprites,this.enemy_sprites,this.active_sprites,this.killables],
 		 	 	 		   	   elem['spriteId']
 		 	 	 		   	   );
 		 	 	 else if(elem['sprite']=='lance' &&  this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)		 	 	 	
