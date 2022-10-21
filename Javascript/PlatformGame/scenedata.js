@@ -23,15 +23,16 @@ let scenes=[
 			[
 			    // {"sprite":"player","x":200,"y":200,"width":150,"height":100},
 			    // {"sprite":"lance","x":1060,"y":200,"width":250,"height":200,spriteId:"lance1"},
-			    // {"sprite":"husk","x":1062,"y":500,"width":150,"height":200,"spriteId":"husk2"},
+			    {"sprite":"husk","x":1062,"y":500,"width":150,"height":200,"spriteId":"husk2"},
 			    {"sprite":"thorn","x":-400,"y":824,"width":600,"height":250,"xoffset":0,"yoffset":0},
 			    {"sprite":"shrub","x":713,"y":870,"width":1571,"height":217,"xoffset":0,"yoffset":0},
+			    {"sprite":"platform","x":-875,"y":600,"width":400,"height":50},	
 				{"sprite":"platform","x":563,"y":600,"width":2200,"height":50},				
 				{"sprite":"camstopper_left","x":-115,"y":394},
 				{"sprite":"camstopper_right","x":925,"y":447},
 				{"sprite":"entryexit_entry","x":-457,"y":464},
 				{"sprite":"entryexit_exit","x":1262,"y":394},
-				{"sprite":"scenechanger_scleft","x":-794,"y":464},
+				{"sprite":"scenechanger_scleft","x":-994,"y":464},
 				{"sprite":"scenechanger_scright","x":1637,"y":468},
 				{"sprite":"MarkedSpot_enemystopleft","x":280,"y":523}
 			],
@@ -41,21 +42,19 @@ let scenes=[
 			     {"sprite":"shrub","x":3138,"y":994,"width":1312,"height":171,"xoffset":0,"yoffset":0},
 			    {"sprite":"thorn","x":400,"y":947,"width":736,"height":250,"xoffset":0,"yoffset":0},
 			    {"sprite":"thorn","x":2338,"y":1000,"width":948,"height":250,"xoffset":0,"yoffset":0},		    
-				{"sprite":"platform","x":-12,"y":600,"width":1625,"height":50},		
-				{"sprite":"platform","x":1350,"y":770,"width":1563,"height":50},	
-				{"sprite":"platform","x":2651,"y":600,"width":1238,"height":50},			
-				{"sprite":"camstopper_left","x":-115,"y":394},
-				{"sprite":"camstopper_right","x":2470,"y":447},
-				{"sprite":"entryexit_entry","x":-457,"y":464},
-				{"sprite":"entryexit_exit","x":2925,"y":394},
-				{"sprite":"scenechanger_scleft","x":-794,"y":464},
-				{"sprite":"scenechanger_scright","x":3238,"y":460},
-				{"sprite":"MarkedSpot_fkjumpup","x":1882,"y":685},
-				{"sprite":"MarkedSpot_fkjumpup","x":895,"y":685},
-				// {"sprite":"BossFightTriggGO","x":2224,"y":523,
-				//  "br1posx":-2301,"br1posy":-111,"br2posx":631,"br2posy":-111,"spriteId":"BossFightTriggGO"
-				// },
-				// {"sprite":"falseknight","x":1289,"y":-367,"width":368,"height":223,"spriteId":"boss_fknight1"}
+				{"sprite":"platform","x":-274,"y":600,"width":1625,"height":50},		
+				{"sprite":"platform","x":1350,"y":770,"width":2000,"height":50},	
+				{"sprite":"platform","x":3039,"y":600,"width":1500,"height":50},			
+				{"sprite":"camstopper_left","x":-282,"y":394},
+				{"sprite":"camstopper_right","x":2870,"y":447},
+				{"sprite":"entryexit_entry","x":-850,"y":464},
+				{"sprite":"entryexit_exit","x":3288,"y":394},
+				{"sprite":"scenechanger_scleft","x":-1057,"y":464},
+				{"sprite":"scenechanger_scright","x":3500,"y":460},				
+				{"sprite":"BossFightTriggGO","x":1824,"y":628,
+				 "br1posx":-1100,"br1posy":-60,"br2posx":200,"br2posy":-60,"spriteId":"BossFightTriggGO"
+				},
+				{"sprite":"falseknight","x":1289,"y":-367,"width":368,"height":223,"spriteId":"boss_fknight1"}
 			],
 			
 			[

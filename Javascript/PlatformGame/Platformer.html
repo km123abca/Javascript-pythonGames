@@ -2351,7 +2351,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			  	this.animationFrame=0;
 			  	this.sprite_type='false_knight';
 			  	this.state='fkagro';
-			  	this.maxHealth=10;
+			  	this.maxHealth=100;
 			  	this.health=this.maxHealth;
 			  	this.spriteGroups=spriteGroups;
 			 	for(let grp of spriteGroups)
@@ -4115,10 +4115,10 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     	{
     	 constructor(x,y,br1posx,br1posy,br2posx,br2posy,spriteGroups,spriteId)
     	 	{
-    	 	  console.log(`${x},${y}`);
+    	 	  // console.log(`${x},${y}`);
     	 	  this.position=new CreateVector(x,y);
     	 	  this.width=40*xscale;
-    	 	  this.height=40*yscale;
+    	 	  this.height=240*yscale;
     	 	  this.br1pos=new CreateVector(br1posx,br1posy);
     	 	  this.br2pos=new CreateVector(br2posx,br2posy);     	 	  	 	  
     	 	  this.spriteGroups=spriteGroups;
