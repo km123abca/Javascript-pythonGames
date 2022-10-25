@@ -4263,6 +4263,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	 // this.damHitBox = new DamageHitBox(x-100,y,this.width*0.2,this.height*0.2,[gameManager.visible_sprites],'sample',this,70,0);
 		 	 
 			}
+		
 		handleHealing()
 			{
 			 if(gameManager.runningClock - this.lastHealTime < this.healCoolDown)
@@ -5039,12 +5040,14 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	}
 
 		 unload_components()
-		 	{
+		 	{		 	
 		 	this.collission_sprites=[];
 		 	this.camera_stop_sprites=[];
 		 	this.entryexit_sprites=[];
+		 	this.markedSpots=[];
 		 	this.kill_plants=[];
 		 	this.killables=[];
+		 	this.enemy_sprites=[];
 		 	if(!this.player)
 		 		{
 		 		this.visible_sprites=[this.playerHealthBar,this.playerEnergyBar,this.positionAdjuster];
@@ -5053,8 +5056,9 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	else{
 		 		this.visible_sprites=[this.player,this.positionAdjuster,this.playerHealthBar,this.playerEnergyBar];
 		 		this.active_sprites=[this.player,this.positionAdjuster,this.playerHealthBar,this.playerEnergyBar];
+		 		this.killables=[this.player];
 		 		this.collission_sprites=[this.player.hit_box];
-		 		this.player.spriteGroups=[this.visible_sprites,this.active_sprites];
+		 		this.player.spriteGroups=[this.visible_sprites,this.active_sprites,this.killables];		 		
 		 		}
 		 			 	
 		 	}
