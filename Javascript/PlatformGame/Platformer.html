@@ -2237,7 +2237,8 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			 this.spriteId=spriteId;
 			 this.acceleration=new CreateVector(0,0);
 			 this.velocity=new CreateVector(0,0);
-			 this.maxVelocity=new CreateVector(3*xscale,12*yscale);		
+			 this.maxHorizontalVelocity=3*xscale;
+			 this.maxVelocity=new CreateVector(this.maxHorizontalVelocity,12*yscale);
 			 this.horiForce=new CreateVector(2*xscale,0);	 
 			 this.fkJumpForce=new CreateVector(0,-250*yscale);
 			 this.gravityScale=2*yscale;			 	
@@ -2389,7 +2390,12 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     	     this.jumpForceApplied=false;
     	     this.attackClock=0;
     	     this.freeToJump=true;
-    	     
+
+    	     this.dodgeStarted=false;
+    		 this.dodgeStartTime=0;
+    		 this.dodgeSpeed=10*xscale;
+    		 this.maxDodgeTime=500;
+    		 this.dodgeRight=1;    	     
     		} 
     	 removeBars()
     	 	{
@@ -2573,6 +2579,9 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     		 	  // console.log('jump');
     		 	  this.fkjumpattack();
     		 	  break;
+    		 	  case 'fkdodgeback':
+    		 	  this.fkdodgeback();
+    		 	  break;
     		 	 default:
     		 	  console.log('warning: unknown state');
     		 	  break;
@@ -2582,8 +2591,29 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     		{
     		 return false;
     		}  
-
     	
+    	fkdodgeback()
+    		{
+    		 if(!this.dodgeStarted)
+    		   {
+    		   this.dodgeStarted=true;	
+    		   this.dodgeStartTime=gameManager.runningClock;
+    		   this.velocity.x=this.dodgeRight*this.dodgeSpeed;
+    		   this.maxVelocity.x=this.dodgeSpeed;
+    		   this.switchAnimation('run');
+    		   }
+    		  else if(gameManager.runningClock - this.dodgeStartTime > this.maxDodgeTime)
+    		  {
+    		  	this.dodgeStartTime=0;
+    		  	this.velocity.x=0;
+    		  	this.maxVelocity.x=this.maxHorizontalVelocity;
+    		  	this.fkLastAttackTime=gameManager.runningClock;
+    		  	this.state='fkagro';
+    		  	this.dodgeStarted=false;
+    		  	this.switchAnimation('idle');
+    		  	this.dodgeRight*=-1;
+    		  }
+    		}
     	fkjumpattack()
     		{
     		 if(!this.jumpForceApplied)
@@ -2668,6 +2698,13 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     		    	this.freeToJump=true;    		    		
     		    	}
     			 }
+    		 if(Math.abs(playerSep) < 0.5*this.fkPlayerFarDistance &&
+    		 	this.position.y-this.tgt.position.y > this.height*0.5
+    		 	)
+    		 	{
+    		 	this.state="fkdodgeback";
+    		    return;
+    			}
 
     		 if(Math.abs(playerSep) > this.fkPlayerFarDistance) 
     		 	{   		 	
