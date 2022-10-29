@@ -2346,6 +2346,27 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 						  		    'height_extend':1,
 						  		    'anim_speed':0.2
 						  		     },
+					'stun_fall':{'imgsheet':LoadImagex(folderPath,'stun_fall.png'),
+						  		    'width':3063,
+						  		    'height':1035,			  		    
+						  		    'rows':2,
+						  		    'cols':4,
+						  		    'maxFrames':5,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.2
+						  		     },
+					'stun_fall_end':{'imgsheet':LoadImagex(folderPath,'stun_fall_end.png'),
+						  		    'width':1678,
+						  		    'height':460,			  		    
+						  		    'rows':1,
+						  		    'cols':4,
+						  		    'maxFrames':4,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.2
+						  		     },
+
 			  		         };			  		
 			  	this.animation='idle';
 			  	this.animInQueue=null;
@@ -2386,6 +2407,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 
     		 this.closeAttacks=['fkattack'];
     	     this.longAttacks =['runup'];
+    	     this.longAttacks=['fkslam'];
     	     this.randomAttacks=['fkjumpattack'];
     	     this.jumpForceApplied=false;
     	     this.attackClock=0;
@@ -2560,27 +2582,30 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     		{
     		 switch(this.state)
     		 	{
-    		 	 case 'idle':
+    		 	case 'idle':
     		 	  this.fkidle();
     		 	  break;
-    		 	 case 'fkagro':
+    		 	case 'fkagro':
     		 	  // console.log('agro');
     		 	  this.fkagro();
     		 	  break;
-    		 	 case 'runup':
+    		 	case 'runup':
     		 	  // console.log('runup');
     		 	  this.runup();
     		 	  break;
-    		 	 case 'fkattack':
+    		 	case 'fkattack':
     		 	  // console.log('attack');
     		 	  this.fkattack();
     		 	  break;
-    		 	 case 'fkjumpattack':
+    		 	case 'fkjumpattack':
     		 	  // console.log('jump');
     		 	  this.fkjumpattack();
     		 	  break;
-    		 	  case 'fkdodgeback':
+    		 	 case 'fkdodgeback':
     		 	  this.fkdodgeback();
+    		 	  break;
+    		 	 case 'fkslam':
+    		 	  this.fkslam();
     		 	  break;
     		 	 default:
     		 	  console.log('warning: unknown state');
@@ -2590,7 +2615,40 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     	fkidle()
     		{
     		 return false;
-    		}  
+    		} 
+    	fkslam()
+    		{
+    		 if(!this.jumpForceApplied)
+    		 	{
+    		 	 this.velocity.x=0;
+    		 	 this.animInQueue='stun_fall';
+    		 	 this.switchAnimation('jump_anticipate');
+    		 	 this.jumpForceApplied=true;
+    		 	 this.acceleration.add(this.fkJumpForce.copy().mult(1.8));
+    		 	 this.attackClock=gameManager.runningClock; 
+    		 	 
+    		 	 new DamageHitBox(this.position.x,this.position.y,
+    		 	 	              200*xscale,30*yscale,
+			 	 	 			  [gameManager.active_sprites,gameManager.hitbox_sprites,gameManager.visible_sprites],
+			 	 	 			 'enemy_hitbox',this,0*xscale,90*yscale,10,-this.sx*10,4000
+			 	 	 			 );   		 	 
+    		 	}
+    		 else if(this.animation=='stun_fall')
+    		 	{
+ 					this.animInQueue='stun_fall_end';
+    		 	}
+    		 else if(this.animation=='stun_fall_end')
+    		 	{
+    		 		this.animInQueue='idle';
+    		 	}
+    		
+    		 if(gameManager.runningClock - this.attackClock > 1500)
+    		 	{
+    		 	 this.fkLastAttackTime=gameManager.runningClock;
+    		 	 this.state='fkagro';
+    		 	 this.jumpForceApplied=false;    		 	 		 	 
+    		 	}	
+    		} 
     	
     	fkdodgeback()
     		{
