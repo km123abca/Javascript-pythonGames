@@ -999,13 +999,18 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			  if(this.parentx.hitBoxMadeContact)
 			  	{
 			  	 this.parentx.hitBoxMadeContact(this.hitboxName);
+			  	 console.log(this.hitboxName);
 			  	}
 			  this.destroySelf();
+			  SpawnClouds(this.position);			 
 			}
 		update()
 			{
 			 if(gameManager.runningClock - this.startTime > this.life)
-			 	this.destroySelf();
+			 	{
+			 	SpawnClouds(this.position);
+			 	this.destroySelf();			 	
+			 	}
 			 this.updatePosition();
 			}
 		updatePosition()
@@ -2405,9 +2410,8 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     		 this.fkPlayerFarDistance=280*xscale;
     		 this.fkJumpInDistance=400*xscale;    		
 
-    		 this.closeAttacks=['fkattack'];
-    	     this.longAttacks =['runup'];
-    	     this.longAttacks=['fkslam'];
+    		 this.closeAttacks=['fkattack','fkslam','fkslam','fkslam','fkslam'];
+    	     this.longAttacks =['runup'];    	     
     	     this.randomAttacks=['fkjumpattack'];
     	     this.jumpForceApplied=false;
     	     this.attackClock=0;
@@ -2628,9 +2632,9 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     		 	 this.attackClock=gameManager.runningClock; 
     		 	 
     		 	 new DamageHitBox(this.position.x,this.position.y,
-    		 	 	              200*xscale,30*yscale,
+    		 	 	              400*xscale,30*yscale,
 			 	 	 			  [gameManager.active_sprites,gameManager.hitbox_sprites,gameManager.visible_sprites],
-			 	 	 			 'enemy_hitbox',this,0*xscale,90*yscale,10,-this.sx*10,4000
+			 	 	 			 'enemy_hitbox',this,0*xscale,90*yscale,10,-this.sx*10,900
 			 	 	 			 );   		 	 
     		 	}
     		 else if(this.animation=='stun_fall')
@@ -4237,8 +4241,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     	 	{    	 	 
     	 	  if(!this.triggered && b_collision(this,gameManager.player))
     	 	  {
-    	 	   this.triggered=true;
-    	 	   console.log('player has made contact');
+    	 	   this.triggered=true;    	 	   
     	 	   this.tree1= new BarrierTree(this.br1pos.x+this.position.x,
     	 	   				   this.br1pos.y+this.position.y,
     	 	   				   230*xscale,355*yscale,
@@ -5271,18 +5274,20 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	 	 if(hb.sprite_type=="player_hitbox")
 		 	 	 	{
 		 	 	 	 for(let sprite of this.enemy_sprites)
-		 	 	 	 	{
+		 	 	 	 	{		 	 	 	 	 
 		 	 	 	 	 if(b_collision(sprite.hit_box,hb))
-		 	 	 	 	 	{
-		 	 	 	 	 	 hb.causeDamage(sprite);	
+		 	 	 	 	 	{		 	 	 	 	 		
+		 	 	 	 	 	 hb.causeDamage(sprite);		 	 	 	 	 	 	
 		 	 	 	 	 	}
 		 	 	 	 	}
 		 	 	 	}
 		 	 	 else if(hb.sprite_type=="enemy_hitbox")
 		 	 	 	{
-		 	 	 	  if(!gameManager.player) continue;
+		 	 	 	  if(!gameManager.player) continue;		 	 	 	  
 		 	 	 	  if(b_collision(gameManager.player.hit_box,hb))
+		 	 	 	  	{
 		 	 	 	  	hb.causeDamage(gameManager.player);
+		 	 	 	    }
 		 	 	 	}
 		 	 	}
 		 	}
