@@ -4286,7 +4286,6 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			 this.position=new CreateVector(x,y);
 			 this.width=wid*xscale;
 			 this.height=hei*yscale;
-			 this.numJumps=0;
 			 let idle_images=Array(10).fill(0).map((x,i)=>'E_E_Sword__Idle_00'+i+'.png');
 			 let run_images= Array(10).fill(0).map((x,i)=>'E_E_Sword__Run_00'+i+'.png');
 			 let slash_images=Array(10).fill(0).map((x,i)=>'E_E_Sword__Attack_00'+i+'.png');
@@ -4548,22 +4547,15 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	*/
 		 	 if(spacePress)
 		 	 	{
-		 	 	 if(this.spaceTrigger && !this.jumping && this.numJumps<2)
-		 	 	 	{ 	 	 	
-		 	 	 	
-		 	 	 	this.spaceTrigger=false;
+		 	 	 if(this.spaceTrigger && !this.jumping && this.checkIfOnGround())
+		 	 	 	{
 		 	 	 	if(this.energy < this.energyCosts["jump"]) 
 		 	 	 		return false;
+		 	 	 	
 		 	 	 	this.energy-=this.energyCosts["jump"];
-		 	 	 	this.numJumps+=1;
+		 	 	 	this.spaceTrigger=false;
 		 	 	 	this.jumping=true;
-		 	 	 	if(this.numJumps==1)
 		 	 	 	document.querySelector('#GetCoin').play();
-		 	 	 	else
-		 	 	 		{
-		 	 	 		document.querySelector('#Jump').play();
-		 	 	 		SpawnClouds(this.position);
-		 	 	 		}
 		 	 	 	this.jumpTimer=0;
 		 	 	 	}
 		 	 	 else if(this.jumping)
@@ -4576,11 +4568,8 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	 	 	 	}
 		 	 	 	}
 		 	 	}
-		 	 else if(!this.spaceTrigger && this.numJumps<2 ) 
-		 	 	this.spaceTrigger=true;
+		 	 else if(!this.spaceTrigger && this.checkIfOnGround()) this.spaceTrigger=true;
 		 	 if(!spacePress && this.jumping) this.jumping=false;
-		 	 if(!spacePress && this.numJumps>0 && this.checkIfOnGround()) 
-		 	 	this.numJumps=0;
 		 	}
 		 applyGravity()
 		 	{
