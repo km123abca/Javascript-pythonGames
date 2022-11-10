@@ -4309,7 +4309,8 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			 this.angle=0;
 			 this.acceleration=new CreateVector(0,0);
 			 this.velocity=new CreateVector(0,0);
-			 this.maxVelocity=new CreateVector(10*xscale,12*yscale);
+			 this.maxHoriVel_player=10*xscale;
+			 this.maxVelocity=new CreateVector(this.maxHoriVel_player,12*yscale);
 			 this.horiForce=new CreateVector(0.8*xscale,0);
 			 this.gravityScale=1*yscale;
 			 this.sx=1;
@@ -4360,7 +4361,10 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			 this.healTimer2=0;
 			 this.soundPlayed=false;
 		 	 // this.damHitBox = new DamageHitBox(x-100,y,this.width*0.2,this.height*0.2,[gameManager.visible_sprites],'sample',this,70,0);
-		 	 
+		 	 this.dashing=false;
+		 	 this.dashStartTime=0;
+		 	 this.maxDashTime=200;
+		 	 this.dashSpeed=40*xscale;		 	 
 			}
 		
 		handleHealing()
@@ -4552,9 +4556,9 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	 	 	{ 	 	 	
 		 	 	 	
 		 	 	 	this.spaceTrigger=false;
-		 	 	 	if(this.energy < this.energyCosts["jump"]) 
+		 	 	 	if(this.energy < this.energyCosts["jump"] && this.numJumps<1) 
 		 	 	 		return false;
-		 	 	 	this.energy-=this.energyCosts["jump"];
+		 	 	 	this.energy=Math.max(0,this.energy-this.energyCosts["jump"]);
 		 	 	 	this.numJumps+=1;
 		 	 	 	this.jumping=true;
 		 	 	 	if(this.numJumps==1)
@@ -4584,6 +4588,8 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	}
 		 applyGravity()
 		 	{
+		 	 if(this.dashing)
+		 	 	return false;
 		 	 this.acceleration.y+=this.gravityScale;
 		 	}
 		 changeAnimation(anim)
@@ -4614,11 +4620,34 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	 this.refillEnergy();
 		 	 this.manageInvincibility();
 		 	}
-
+		 
+		 dashStateFns()
+		 	{
+		 	 if(this.dashStartTime==0)
+			 	 {
+			 	  this.dashStartTime= gameManager.runningClock;
+			 	  this.maxVelocity.x= this.dashSpeed;
+			 	  this.velocity.y=0;
+			 	  SpawnClouds(this.position);
+			 	  document.querySelector('#HitPaddleBloop').play();
+			 	 }
+		 	 this.acceleration.add(this.horiForce.copy().mult(this.sx*3));
+		 	 if(gameManager.runningClock - this.dashStartTime > this.maxDashTime)
+		 	 	 {
+		 	 	  this.dashing=false;
+		 	 	  this.dashStartTime=0;
+		 	 	  this.maxVelocity.x= this.maxHoriVel_player;
+		 	 	 }
+		 	}
 		 manualControls()
 		 	{
 		 	if(this.invincibleState && this.invin_count < 0.5*this.max_invin_time)
 		 		return false; 
+		 	if(this.dashing)
+		 		{
+		 		 this.dashStateFns();
+		 		 return;
+		 		}
 		 	if(this.animation!='slash')
 			 	{
 		 		if(leftPress || leftArrow)
@@ -4632,6 +4661,11 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 			if(this.sx!=1) this.sx=1;
 		 			this.changeAnimation('run');
 		 			this.acceleration.add(this.horiForce);
+		 			}
+		 		else if(GetKeyPressedx("c"))
+		 			{
+		 			 this.changeAnimation('idle');
+		 			 this.dashing=true;
 		 			}
 		 		else
 		 			{
