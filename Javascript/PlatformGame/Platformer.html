@@ -432,6 +432,9 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 	<audio id="HitPaddleBloop" >
 		<source src="./sounds/HitPaddleBloop.wav" type="audio/mpeg">
 	</audio>
+	<audio id="parry" >
+		<source src="./sounds/parry.wav" type="audio/mpeg">
+	</audio>
 	<audio id="Jump" >
 		<source src="./sounds/Jump.wav" type="audio/mpeg">
 	</audio> 
@@ -998,8 +1001,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			  go.takeDamage(this.dmg,this.hitback);
 			  if(this.parentx.hitBoxMadeContact)
 			  	{
-			  	 this.parentx.hitBoxMadeContact(this.hitboxName);
-			  	 console.log(this.hitboxName);
+			  	 this.parentx.hitBoxMadeContact(this.hitboxName);			  	 
 			  	}
 			  this.destroySelf();
 			  SpawnClouds(this.position);			 
@@ -1007,8 +1009,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		update()
 			{
 			 if(gameManager.runningClock - this.startTime > this.life)
-			 	{
-			 	SpawnClouds(this.position);
+			 	{			 	
 			 	this.destroySelf();			 	
 			 	}
 			 this.updatePosition();
@@ -2400,7 +2401,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 
 			 this.invincibleState=false;
 		 	 this.invin_count=0;
-		 	 this.max_invin_time=2000;
+		 	 this.max_invin_time=1000;
 		 	 this.flickerCount=0;
 			 this.maxFlickerTime=100;
 
@@ -2633,8 +2634,8 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     		 	 
     		 	 new DamageHitBox(this.position.x,this.position.y,
     		 	 	              400*xscale,30*yscale,
-			 	 	 			  [gameManager.active_sprites,gameManager.hitbox_sprites,gameManager.visible_sprites],
-			 	 	 			 'enemy_hitbox',this,0*xscale,90*yscale,10,-this.sx*10,900
+			 	 	 			  [gameManager.active_sprites,gameManager.hitbox_sprites],
+			 	 	 			 'enemy_hitbox',this,0*xscale,90*yscale,10,-this.sx*0,900
 			 	 	 			 );   		 	 
     		 	}
     		 else if(this.animation=='stun_fall')
@@ -2761,7 +2762,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     		    	}
     			 }
     		 if(Math.abs(playerSep) < 0.5*this.fkPlayerFarDistance &&
-    		 	this.position.y-this.tgt.position.y > this.height*0.5
+    		 	Math.abs(this.position.y-this.tgt.position.y) > this.height*0.5
     		 	)
     		 	{
     		 	this.state="fkdodgeback";
@@ -2920,14 +2921,16 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     //husk miner starts    
     class HuskMiner
     	{
-    	constructor(x,y,wid,hei,spriteGroups,spriteId)	
+    	constructor(x,y,wid,hei,spriteGroups,spriteId,hasCutScene)	
     		{
+    		 this.isActive=false;
     		 this.position= new CreateVector(x,y);
     		 this.huskMusicStarted= false;
     		 this.tree_left=null;
     		 this.tree_right=null;
     		 this.isBoss= spriteId.split('_')[0]=='boss';
-    		 if(this.isBoss)
+    		 this.hasCutScene=hasCutScene;
+    		 if(this.isBoss && this.hasCutScene)
     		 this.tree_right= new BarrierTree(100*xscale+this.position.x,
     	 	   				   this.position.y+350*yscale,
     	 	   				   230*xscale,355*yscale,
@@ -3039,7 +3042,8 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			 this.animInQueue= null;
 			 this.animationFrame= 0;
 			 this.sprite_type= 'husk_miner';
-			 this.state= 'miner_idle';
+			 if(this.hasCutScene) this.state= 'miner_idle';
+			 else this.state='miner_agro';
 			 this.maxHealth= 100;
 			 this.health= 20;
 			 this.spriteGroups= spriteGroups;
@@ -3285,6 +3289,12 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     	 	{
     	 	 if(!this.tgt.isActive)
     	 	 	return false;  
+    	 	 if(!this.huskMusicStarted)
+	    	 	 	{
+	    	 	 	 this.huskMusicStarted= true;
+	    	 	 	 capraMusic.src="./sounds/Capra.mp3";
+	    	 	 	 capraMusic.play();
+	    	 	 	}
     	 	 let playerSep=this.tgt.position.x - this.position.x;
     	 	 this.sx=Math.sign(playerSep);    	 	 
     	 	 if(Math.abs(playerSep) < this.minerPlayerFarDistance)
@@ -3338,9 +3348,10 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 
     	 	}
     	 update()
-    	 	{    	 	 
- 			 this.move(); 
-    		 this.updateHealthBarPos();  
+    	 	{ 
+    	 	 this.updateHealthBarPos();
+    	 	 if(!this.hasCutScene && !this.isActive) return false;   	 	 
+ 			 this.move();    		   
     		 this.manageInvincibility();
     	 	 this.stateMachine();
     	 	}
@@ -4364,7 +4375,8 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	 this.dashing=false;
 		 	 this.dashStartTime=0;
 		 	 this.maxDashTime=200;
-		 	 this.dashSpeed=40*xscale;		 	 
+		 	 this.dashSpeed=40*xscale;
+		 	 this.dashStarted=false;		 	 
 			}
 		
 		handleHealing()
@@ -4562,10 +4574,10 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	 	 	this.numJumps+=1;
 		 	 	 	this.jumping=true;
 		 	 	 	if(this.numJumps==1)
-		 	 	 	document.querySelector('#GetCoin').play();
+		 	 	 	document.querySelector('#HitPaddleBloop').play();
 		 	 	 	else
 		 	 	 		{
-		 	 	 		document.querySelector('#Jump').play();
+		 	 	 		document.querySelector('#HitPaddleBloop').play();
 		 	 	 		SpawnClouds(this.position);
 		 	 	 		}
 		 	 	 	this.jumpTimer=0;
@@ -4625,6 +4637,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	{
 		 	 if(this.dashStartTime==0)
 			 	 {
+			 	  this.dashStarted=true;
 			 	  this.dashStartTime= gameManager.runningClock;
 			 	  this.maxVelocity.x= this.dashSpeed;
 			 	  this.velocity.y=0;
@@ -4648,6 +4661,16 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 		 this.dashStateFns();
 		 		 return;
 		 		}
+		 	if(GetKeyPressedx("c") )
+	 			{
+	 			 if(!this.dashStarted)
+	 			  {
+	 			  this.changeAnimation('idle');
+	 			  this.dashing=true;
+	 			  }	 			  
+	 			}
+	 		else 
+	 			this.dashStarted=false;
 		 	if(this.animation!='slash')
 			 	{
 		 		if(leftPress || leftArrow)
@@ -4661,12 +4684,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 			if(this.sx!=1) this.sx=1;
 		 			this.changeAnimation('run');
 		 			this.acceleration.add(this.horiForce);
-		 			}
-		 		else if(GetKeyPressedx("c"))
-		 			{
-		 			 this.changeAnimation('idle');
-		 			 this.dashing=true;
-		 			}
+		 			}		 		
 		 		else
 		 			{
 		 			this.changeAnimation('idle');
@@ -5501,7 +5519,8 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	 	 		   	   elem['width']*xscale,
 		 	 	 		   	   elem['height']*yscale,		 	 	 		   	   
 		 	 	 		   	   [this.visible_sprites,this.enemy_sprites,this.active_sprites],
-		 	 	 		   	   elem['spriteId']
+		 	 	 		   	   elem['spriteId'],
+		 	 	 		   	   elem['cutscene']
 		 	 	 		   	   );
 		 	 	 else if(elem['sprite']=='tree')		 	 	 	  
 		 	 	 	new BarrierTree(elem['x']*xscale,
