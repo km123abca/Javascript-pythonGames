@@ -1147,11 +1147,14 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		}
 	class ThornyBall
 		{
-		 constructor(x,y,wid,hei,parentx,offsetx,offsety,spriteGroups,horiVel=14)
+		 constructor(x,y,wid,hei,parentx,offsetx,offsety,spriteGroups,horiVel=14,lifeTime=3000)
 			{			 
 			 this.sprite_type='thornyball';
 			 this.position= new CreateVector(x,y);
+			 if(parentx)
 			 this.offsetpos=new CreateVector(parentx.sx*offsetx,parentx.sy*offsety);
+			 else
+			 	this.offsetpos=new CreateVector(0,0);
 			 this.position.add(this.offsetpos);
 			 this.parentx=parentx;
 			 this.width = wid * xscale;
@@ -1179,7 +1182,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	                         ],
 		 	                         'tballhitbox');
             this.birthTime=gameManager.runningClock;
-            this.lifeTime=3000;
+            this.lifeTime=lifeTime;
 			}
 		 mindHealth()
 		 	{
@@ -1292,7 +1295,10 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	  	 	  SpawnClouds(this.position);
 		 	  	 	  destroySelf(this.hit_box);
 		 	  	 	  destroySelf(this);
-		 	  	 	  gameManager.player.takeDamage(10,this.parentx.sx);
+		 	  	 	  if(this.parentx)
+		 	  	 	  	gameManager.player.takeDamage(10,this.parentx.sx);
+		 	  	 	  else
+		 	  	 	  	gameManager.player.takeDamage(10,0);
 		 	  	 	}
 		 	  	}
 		 	}
@@ -2885,7 +2891,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 	 		this.gravityScale=0.4*yscale;
 		 	this.maxVelocity=new CreateVector(horiVel*xscale,1*yscale);
 		 	this.rotSpeed=10;
-		 	this.lifeTime=30000;
+		 	this.lifeTime=3000;
     	 	}
     	 checkCollisions()
     	 	{
@@ -3033,8 +3039,8 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 						  		       'rows':2,
 						  		       'cols':6,
 						  		       'maxFrames':11,
-						  		       'width_extend':1,
-						  		       'height_extend':1,
+						  		       'width_extend':1.3,
+						  		       'height_extend':1.3,
 						  		       'anim_speed':0.25
 						  		        },
 			 				  };
@@ -3081,8 +3087,14 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     		 		     		
 
     		 this.closeAttacks=['miner_slash'];
-    	     this.longAttacks =['miner_throw'];
+    	     this.longAttacks =['miner_throw','miner_runup','miner_runup','miner_ballshower'];
+    	     //this.longAttacks= ['miner_ballshower','miner_ballshower','miner_runup'];
     	     this.randomAttacks=[];
+
+    	     this.hm_ritualStartTime=0;
+    	 	 this.hm_ritualGapTime=0;
+    	 	 this.hm_maxRitualGap=1000;
+    	 	 this.hm_maxRitualTime=3000;
     		}
 
 		updateHealthBarPos()
@@ -3187,7 +3199,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	}
 		 spawnHitBoxOnHit_huskMiner()
 		 	{
-		 	 let hbWidthRatio=0.5;//these can be modified to increase/ decrease the hitbox range
+		 	 let hbWidthRatio=0.8;//these can be modified to increase/ decrease the hitbox range
     		 let hbHeightRatio=0.3;
 		 	 if(this.animation == 'slash' && 
 		 	 	parseInt(this.animationFrame)==0 &&
@@ -3200,7 +3212,9 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 				 				  this.position.y,
 				 				  this.width*hbWidthRatio,
 				 				  this.height*hbHeightRatio,
-				 				  [gameManager.active_sprites,gameManager.hitbox_sprites],
+				 				  [gameManager.active_sprites,
+				 				   gameManager.hitbox_sprites,
+				 				   ],
 				     			  'enemy_hitbox',
 				 				  this,
 				 				  130*xscale,50*yscale,10,this.sx*1.5,50);
@@ -3236,6 +3250,9 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     	 	 	 case 'miner_throw':
     	 	 	 	this.hmThrow();
     	 	 	 	break;
+    	 	 	 case 'miner_ballshower':
+    	 	 	  	this.hmBallShower();
+    	 	 	  	break;
     	 	 	}
     	 	}
     	 Spawnbarriers()
@@ -3284,7 +3301,41 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 	    	 	 	}
     	 	 	}
     	 	 return false;
-    	 	}    	
+    	 	}   
+    	 
+    	 hmBallShower()
+    	 	{
+    	 	 if(this.hm_ritualStartTime==0)
+    	 	 	{
+				this.switchAnimation('mining');
+				this.hm_ritualGapTime=gameManager.runningClock;
+				this.hm_ritualStartTime=gameManager.runningClock;
+				this.image_offset.y-=55*yscale;
+    	 	 	}
+    	 	 if(gameManager.runningClock - this.hm_ritualGapTime > this.hm_maxRitualGap)
+    	 	 	{
+    	 	 	 this.sx*=-1;
+    	 	 	 this.hm_ritualGapTime=gameManager.runningClock;
+    	 	 	 new ThornyBall(this.tgt.position.x,
+ 						   this.tgt.position.y-400*yscale,
+ 						   30*xscale,
+ 						   30*yscale,
+ 						   null,0,0,
+ 						   [gameManager.visible_sprites,gameManager.active_sprites],
+ 						   0,500
+		 				         );
+    	 	 	}
+    	 	 
+    	 	 if(gameManager.runningClock - this.hm_ritualStartTime > this.hm_maxRitualTime)
+    	 	 	{
+    	 	 	 this.switchAnimation('idle');
+    	 	 	 this.state='miner_agro';
+    	 	 	 this.hm_ritualGapTime=0;
+				 this.hm_ritualStartTime=0;
+				 this.image_offset.y=this.image_offset_fixed.y;
+    	 	 	}
+    	 	 
+    	 	} 	
     	 hmAgro()
     	 	{
     	 	 if(!this.tgt.isActive)
