@@ -51,11 +51,11 @@ let scenes=[
 				{"sprite":"entryexit_exit","x":3288,"y":394},
 				{"sprite":"scenechanger_scleft","x":-1057,"y":464},
 				{"sprite":"scenechanger_scright","x":3500,"y":460},				
-				{"sprite":"BossFightTriggGO","x":1824,"y":628,
-				 "br1posx":-1100,"br1posy":-60,"br2posx":200,"br2posy":-60,"spriteId":"BossFightTriggGO"
-				},
+				// {"sprite":"BossFightTriggGO","x":1824,"y":628,
+				//  "br1posx":-1100,"br1posy":-60,"br2posx":200,"br2posy":-60,"spriteId":"BossFightTriggGO"
+				// },
 				// {"sprite":"falseknight","x":1289,"y":-367,"width":368,"height":223,"spriteId":"boss_fknight1"}
-				{"sprite":"huskMiner","x":889,"y":-367,"width":170,"height":220,"spriteId":"boss_huskminer1","cutscene":false}
+				// {"sprite":"huskMiner","x":889,"y":-367,"width":170,"height":220,"spriteId":"boss_huskminer1","cutscene":false}
 			],
 			
 			[
@@ -74,7 +74,7 @@ let scenes=[
 				{"sprite":"entryexit_entry","x":-457,"y":464},
 				{"sprite":"entryexit_exit","x":4950,"y":1252},
 				{"sprite":"scenechanger_scleft","x":-794,"y":464},
-				{"sprite":"huskMiner","x":2900,"y":500,"width":170,"height":220,"spriteId":"boss_huskminer1"}
+				// {"sprite":"huskMiner","x":2900,"y":500,"width":170,"height":220,"spriteId":"boss_huskminer1","cutscene":true}
 				// {"sprite":"scenechanger_scright","x":1275,"y":468}
 			]
 		   ];

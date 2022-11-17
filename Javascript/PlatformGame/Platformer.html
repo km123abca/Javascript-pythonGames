@@ -2417,7 +2417,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     		 this.fkPlayerFarDistance=280*xscale;
     		 this.fkJumpInDistance=400*xscale;    		
 
-    		 this.closeAttacks=['fkattack','fkslam','fkslam','fkslam','fkslam'];
+    		 this.closeAttacks=['fkattack','fkattack','fkslam'];
     	     this.longAttacks =['runup'];    	     
     	     this.randomAttacks=['fkjumpattack'];
     	     this.jumpForceApplied=false;
@@ -3051,7 +3051,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			 if(this.hasCutScene) this.state= 'miner_idle';
 			 else this.state='miner_agro';
 			 this.maxHealth= 100;
-			 this.health= 20;
+			 this.health= 10;
 			 this.spriteGroups= spriteGroups;
 			 for(let grp of spriteGroups)
 			 	grp.push(this);
@@ -3096,6 +3096,15 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     	 	 this.hm_maxRitualGap=1000;
     	 	 this.hm_maxRitualTime=3000;
     		}
+
+    	removeBars()
+    	 	{
+    	 	 for(let go of gameManager.active_sprites)
+    	 	 	{
+    	 	 	 if(go.spriteId && go.spriteId=="BossFightTriggGO")
+    	 	 	 	go.bossHasDiedRemoveBars();
+    	 	 	}
+    	 	}
 
 		updateHealthBarPos()
 			{
@@ -3266,6 +3275,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     	 	}
     	 Burnbarriers()
     	 	{
+    	 	if(!this.tree_left) return;
 	 		this.tree_left.burn();
 	 		this.tree_right.burn();
 	 		destroySelf(this);
@@ -3322,7 +3332,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
  						   30*yscale,
  						   null,0,0,
  						   [gameManager.visible_sprites,gameManager.active_sprites],
- 						   0,500
+ 						   0,800
 		 				         );
     	 	 	}
     	 	 
@@ -3470,6 +3480,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 	 			capraMusic.src="";
 	 			fogGateSound.play();
 	 			this.Burnbarriers();
+	 			this.removeBars();
 	 			this.tgt.giveExp(this.expVal);
 	 			SpawnClouds(this.position);
 	 			destroySelf(this);
