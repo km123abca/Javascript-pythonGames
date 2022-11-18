@@ -75,6 +75,18 @@ let scenes=[
 				{"sprite":"entryexit_exit","x":4950,"y":1252},
 				{"sprite":"scenechanger_scleft","x":-794,"y":464},
 				// {"sprite":"huskMiner","x":2900,"y":500,"width":170,"height":220,"spriteId":"boss_huskminer1","cutscene":true}
-				// {"sprite":"scenechanger_scright","x":1275,"y":468}
-			]
+				{"sprite":"scenechanger_scright","x":5650,"y":1208}
+			],
+			[			    
+			    // {"sprite":"lance","x":1060,"y":200,"width":250,"height":200,spriteId:"lance1"},			    
+			    {"sprite":"platform","x":-1110,"y":600,"width":775,"height":50},	
+			    {"sprite":"wall","x":-587,"y":610,"width":250,"height":150},						
+				{"sprite":"camstopper_left","x":-600,"y":394},
+				{"sprite":"camstopper_right","x":925,"y":447},
+				{"sprite":"entryexit_entry","x":-900,"y":464},
+				{"sprite":"entryexit_exit","x":1262,"y":394},
+				{"sprite":"scenechanger_scleft","x":-1450,"y":464},
+				{"sprite":"scenechanger_scright","x":1637,"y":468},
+				
+			],
 		   ];

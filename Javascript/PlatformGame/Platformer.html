@@ -939,6 +939,51 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		  		}		 
 		}
 
+	class Wall 
+		{
+		constructor(x,y,wid,hei,spriteGroups)
+			{
+			 
+			 this.position=new CreateVector(x,y);
+			 this.width=wid;
+			 this.height=hei;
+			 this.onScreen=true;
+			 let imgx=new Image();
+		 	 imgx.src=`./sprites/workshop/platform1.png`;
+		 	 this.imgx=imgx;
+		 	 this.spriteGroups=spriteGroups;
+			 for(let grp of spriteGroups)
+			 	grp.push(this);
+			 this.angle=0;
+			 this.copies=5;
+			}
+		update()
+		 	{
+		 	 return true;
+		 	}
+		display()
+			{
+			 if(!this.onScreen) return false;
+			 for(let i=0;i<this.copies;i++)
+			 	this.displayUnit(i);
+			}
+		displayUnit(i)
+		 	{
+		 	 ctx.save();
+		 	 ctx.translate(this.position.x+i*this.width-gameManager.camera.position.x, 
+		 	 	 		   this.position.y-gameManager.camera.position.y);
+		 	 ctx.rotate(d2r(this.angle));
+		 	 ctx.drawImage(this.imgx,
+		 	 			   -this.width/2,
+		 	 			   -this.height/2,
+		 	 			   this.width,
+		 	 			   this.height
+		 	 			  );
+		 	 ctx.restore(); 
+		 	}
+
+		}
+
 	class HitBox
 		{
 		 constructor(x,y,wid,hei,spriteGroups,hitboxName="unknown hitbox")
@@ -5206,7 +5251,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	 this.gamePaused=false;
 		 	 this.inTransition=false;
 		 	 this.sceneForward=true;
-		 	 this.followMouse= false;
+		 	 this.followMouse= true;
 		 	 this.sceneStartTime= 0;
 		 	 this.positionAdjuster=new PositionAdjuster(null,[this.visible_sprites,this.active_sprites]);
 
@@ -5607,6 +5652,13 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
  	   				          elem['height']*yscale,
  	   				          elem['xoffset']*xscale,
  	   				          elem['yoffset']*yscale,
+ 	   				   		  [gameManager.visible_sprites]
+    	 	   				  	 	);
+    	 	   	 else if(elem['sprite']=='wall')
+    	 	   	 	new Wall(elem['x']*xscale,
+ 	   				          elem['y']*yscale,
+ 	   				          elem['width']*xscale,
+ 	   				          elem['height']*yscale, 	   				          
  	   				   		  [gameManager.visible_sprites]
     	 	   				  	 	);	 	 	 	
 		 	 	}
