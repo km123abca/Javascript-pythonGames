@@ -941,21 +941,46 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 
 	class Wall 
 		{
-		constructor(x,y,wid,hei,spriteGroups)
+		constructor(x,y,wid,hei,isHorizontal,copies,spriteGroups)
 			{
 			 
 			 this.position=new CreateVector(x,y);
 			 this.width=wid;
 			 this.height=hei;
 			 this.onScreen=true;
+			 this.sprite_type="combinedwall";
+			 this.isHorizontal=isHorizontal;
 			 let imgx=new Image();
-		 	 imgx.src=`./sprites/workshop/platform1.png`;
+			 if(this.isHorizontal)
+		 	 imgx.src=`./sprites/workshop/platform1.png`;		 	 
+		 	 else
+		 	 	imgx.src=`./sprites/workshop/wall.png`;
 		 	 this.imgx=imgx;
 		 	 this.spriteGroups=spriteGroups;
 			 for(let grp of spriteGroups)
 			 	grp.push(this);
-			 this.angle=0;
-			 this.copies=5;
+			 this.angle=this.isHorizontal?0:90;
+			 this.copies=copies;
+			 if(this.isHorizontal)
+			 this.hit_box=new HitBox(this.position.x+this.copies*this.width/2-this.width/2,
+			 						 this.position.y,
+			 						 this.width*this.copies,
+			 						 this.height*0.5,
+			                         [ 
+			                          // gameManager.visible_sprites,
+			                          gameManager.collission_sprites
+			                         ],
+				                     'hori_wallhitbox');
+			else
+			this.hit_box=new HitBox(this.position.x,
+			 						 this.position.y+this.copies*this.height/2-this.height/2,
+			 						 this.width*0.5,
+			 						 this.height*(this.copies+0.8),
+			                         [ 
+			                          // gameManager.visible_sprites,
+			                          gameManager.collission_sprites
+			                         ],
+				                     'vert_wallhitbox');	
 			}
 		update()
 		 	{
@@ -970,8 +995,12 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		displayUnit(i)
 		 	{
 		 	 ctx.save();
-		 	 ctx.translate(this.position.x+i*this.width-gameManager.camera.position.x, 
-		 	 	 		   this.position.y-gameManager.camera.position.y);
+		 	 if(this.isHorizontal)
+			 	 ctx.translate(this.position.x+i*this.width-gameManager.camera.position.x, 
+			 	 	 		   this.position.y-gameManager.camera.position.y);
+		 	 else
+			 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
+			 	 	 		   this.position.y+i*this.height-gameManager.camera.position.y);
 		 	 ctx.rotate(d2r(this.angle));
 		 	 ctx.drawImage(this.imgx,
 		 	 			   -this.width/2,
@@ -5251,7 +5280,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	 this.gamePaused=false;
 		 	 this.inTransition=false;
 		 	 this.sceneForward=true;
-		 	 this.followMouse= true;
+		 	 this.followMouse= false;
 		 	 this.sceneStartTime= 0;
 		 	 this.positionAdjuster=new PositionAdjuster(null,[this.visible_sprites,this.active_sprites]);
 
@@ -5658,7 +5687,9 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     	 	   	 	new Wall(elem['x']*xscale,
  	   				          elem['y']*yscale,
  	   				          elem['width']*xscale,
- 	   				          elem['height']*yscale, 	   				          
+ 	   				          elem['height']*yscale,
+ 	   				          elem['isHorizontal'], 
+ 	   				          elem['copies'],	   				          
  	   				   		  [gameManager.visible_sprites]
     	 	   				  	 	);	 	 	 	
 		 	 	}

@@ -80,13 +80,16 @@ let scenes=[
 			[			    
 			    // {"sprite":"lance","x":1060,"y":200,"width":250,"height":200,spriteId:"lance1"},			    
 			    {"sprite":"platform","x":-1110,"y":600,"width":775,"height":50},	
-			    {"sprite":"wall","x":-587,"y":610,"width":250,"height":150},						
+			    {"sprite":"wall","x":750,"y":462,"width":250,"height":150,"isHorizontal":false,"copies":4},
+			    {"sprite":"wall","x":-587,"y":612,"width":250,"height":150,"isHorizontal":true,"copies":5},
+			    {"sprite":"wall","x":-450,"y":1000,"width":250,"height":150,"isHorizontal":true,"copies":5},
+			    {"sprite":"wall","x":-762,"y":1560,"width":250,"height":150,"isHorizontal":true,"copies":10},						
 				{"sprite":"camstopper_left","x":-600,"y":394},
-				{"sprite":"camstopper_right","x":925,"y":447},
+				{"sprite":"camstopper_right","x":800,"y":1375},
 				{"sprite":"entryexit_entry","x":-900,"y":464},
-				{"sprite":"entryexit_exit","x":1262,"y":394},
+				{"sprite":"entryexit_exit","x":1262,"y":1375},
 				{"sprite":"scenechanger_scleft","x":-1450,"y":464},
-				{"sprite":"scenechanger_scright","x":1637,"y":468},
+				{"sprite":"scenechanger_scright","x":1637,"y":1375},
 				
 			],
 		   ];
