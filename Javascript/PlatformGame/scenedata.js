@@ -78,7 +78,7 @@ let scenes=[
 				{"sprite":"scenechanger_scright","x":5650,"y":1208}
 			],
 			[			    
-			    // {"sprite":"lance","x":1060,"y":200,"width":250,"height":200,spriteId:"lance1"},			    
+			    {"sprite":"lance","x":460,"y":1300,"width":250,"height":200,spriteId:"boss_lance1"},			    
 			    {"sprite":"platform","x":-1110,"y":600,"width":775,"height":50},	
 			    {"sprite":"wall","x":750,"y":462,"width":250,"height":150,"isHorizontal":false,"copies":4},
 			    {"sprite":"wall","x":-587,"y":612,"width":250,"height":150,"isHorizontal":true,"copies":5},
@@ -90,6 +90,6 @@ let scenes=[
 				{"sprite":"entryexit_exit","x":1262,"y":1375},
 				{"sprite":"scenechanger_scleft","x":-1450,"y":464},
 				{"sprite":"scenechanger_scright","x":1637,"y":1375},
-				
+				{"sprite":"tree","x":937,"y":1300,"width":361,"height":490},
 			],
 		   ];

@@ -1617,16 +1617,16 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			 this.imgWidth=0;
 			 this.imgHeight=0;
 			 this.raycastLength=520*xscale;
-			 this.playerOutDistance= 500*xscale;
-			 this.playerGap=800*xscale;
+			 this.playerOutDistance= 1500*xscale;
+			 this.playerGap=500*xscale;
 			 this.throwDone=false;
 
 			 this.acceleration=new CreateVector(0,0);
 			 this.velocity=new CreateVector(0,0);
-			 this.normalvx=2*xscale;
+			 this.normalvx=5*xscale;
 			 this.rushvx=10*xscale;
 			 this.showervx=3.5*xscale;
-			 this.maxVelocity=new CreateVector(2*xscale,2*yscale);		
+			 this.maxVelocity=new CreateVector(5*xscale,2*yscale);		
 			 this.horiForce=new CreateVector(1*xscale,0);	 
 			 this.gravityScale=2*yscale;
 			 this.restClock=0;
@@ -1710,10 +1710,10 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			 // this.longRangeAttacks=['throw','rush'];
 			 this.gapClosings=["ballShower","slowApproach"];
 			 // this.gapClosings=["ballShower"];
-			 // this.attacksList=["throwSpear","rush","rush","rush"];
-			 this.attacksList=["rush","rush","rush"];
+			 this.attacksList=["throwSpear","rush","rush","rush"];
+			 // this.attacksList=["rush","rush","rush"];
 			 this.pointed=false;
-			 this.maxAttackGap=2000;
+			 this.maxAttackGap=1000;
 			 this.spearThrown=false;
 			 this.tgtVec=new CreateVector(0,0);
 			 this.enemysx=0;
@@ -2027,7 +2027,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
  						   30*xscale,
  						   30*yscale,
  						   this,60*xscale*-1*this.sx,0,
- 						   [gameManager.visible_sprites,gameManager.active_sprites],0
+ 						   [gameManager.visible_sprites,gameManager.active_sprites],0,800
 		 				          ); 
 		 	}
 		 ballShower()
