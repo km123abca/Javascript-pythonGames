@@ -719,18 +719,20 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		  {
 		  	super(x,y,'#00FF00',sprite_type,spriteGroups);
 		  	// this.sprite_type=sprite_type;
+		  	if(sprite_type=='camstopper_right') gameManager.bottomY=y;
 		  }
 		cameraCanFollow(objx)
 		  {
+		  	let resultArray=[true,true];
 		    if((this.sprite_type=='camstopper_left' && objx.position.x < this.position.x) ||
 		       (this.sprite_type=='camstopper_right' && objx.position.x > this.position.x)
 		      )
-		    	return [false,true];
-		    if((this.sprite_type=='camstopper_top' && objx.position.y < this.position.y) ||
-		       (this.sprite_type=='camstopper_bottom' && objx.position.y > this.position.y)
+		    	resultArray[0]=false;//return [false,true];
+		    if((this.sprite_type=='camstopper_left' && objx.position.y < this.position.y) ||
+		       (this.sprite_type=='camstopper_right' && objx.position.y > this.position.y)
 		      )
-		    	return [true,false];
-		    return [true,true];
+		    	resultArray[1]=false;//return [true,false];
+		    return resultArray;//return [true,true];
 		  }
 		 update()
 		  {		
@@ -3768,11 +3770,12 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 
 		fallDamage()
 			{
-			  if(Math.abs(this.position.y-gameManager.camera.position.y > canvas.height*5))
+			  if(Math.abs(this.position.y-gameManager.bottomY > canvas.height*2))
 			  	{
-	 			SpawnClouds(this.position);
-	 			destroySelf(this);
-	 			this.isActive=false;
+	 			// SpawnClouds(this.position);
+	 			// destroySelf(this);
+	 			// this.isActive=false;
+	 			this.takeDamage(this.health*2);
 	 			console.log(this.sprite_type+' reports fall damage!!!');
 	 			}	
 			}
@@ -4589,17 +4592,17 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 
 		fallDamage()
 			{
-			  return false;
-			  if(this.position.y > 5*canvas.height)
+			  // return false;
+			  if(this.position.y- gameManager.bottomY > 2*canvas.height)
 			  {
-			  	this.health-=2;
-			  	if(this.health > 0) 
-			  		return;
-			  	destroySelf(this.hit_box);
-	 			destroySelf(this);
-	 			this.isActive=false;
-	 			gameManager.player=null;
-	 			gameManager.camera.tgt=gameManager.camera_stop_sprites[0];
+			  	this.takeDamage(this.health*1.01);
+			  // 	if(this.health > 0) 
+			  // 		return;
+			  // 	destroySelf(this.hit_box);
+	 			// destroySelf(this);
+	 			// this.isActive=false;
+	 			// gameManager.player=null;
+	 			// gameManager.camera.tgt=gameManager.camera_stop_sprites[0];
 			  }
 			}
 
@@ -4960,7 +4963,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	 if(!this.onScreen) return false;
 		 	 this.runAnimation();
 		 	 this.move();
-		 	 // this.fallDamage();//obsolete
+		 	 this.fallDamage();
 		 	 //this.testCollisionWithKillPlants();
 		 	}
 		 display()
@@ -5025,6 +5028,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		  smoothFocus(followH,followV)
 		  	{
 		  	 if(!this.tgt) return false;
+		  	 // if(!this.tgt || !this.tgt.isActive) return false;
 		  	 // DisplayInGaps(`camera is following ${this.tgt.sprite_type}`);
 		  	 if(followH)
 		  	 	this.position.x=Lerp(this.position.x,this.tgt.position.x-canvas.width/2,this.lerpFactor);
@@ -5288,6 +5292,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			 this.playerEnergyBar= new UIBar(50,100,300,30,100,100,'#222222','#0000FF',[this.visible_sprites,this.active_sprites],true,'playerenergy');
 			 this.levelUpBox=new LevelUpBox(this.player);			 
 			 this.localStorageChecked=false;
+			 this.bottomY=2000;
 		 	}
 		 getLocalStoragex(){
 		 	/*
