@@ -3772,6 +3772,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			{
 			  if(Math.abs(this.position.y-gameManager.bottomY > canvas.height*2))
 			  	{
+
 	 			// SpawnClouds(this.position);
 	 			// destroySelf(this);
 	 			// this.isActive=false;
@@ -4594,16 +4595,12 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			{
 			  // return false;
 			  if(this.position.y- gameManager.bottomY > 2*canvas.height)
-			  {
-			  	this.takeDamage(this.health*1.01);
-			  // 	if(this.health > 0) 
-			  // 		return;
-			  // 	destroySelf(this.hit_box);
-	 			// destroySelf(this);
-	 			// this.isActive=false;
-	 			// gameManager.player=null;
-	 			// gameManager.camera.tgt=gameManager.camera_stop_sprites[0];
-			  }
+			  	{
+			  	// this.takeDamage(this.health*1.01);
+			  	gameManager.playerDied=true;
+			  	this.takeDamage(2);			  		
+			  			  
+			  	}
 			}
 
 
@@ -4611,7 +4608,8 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	{	
 		 	this.acceleration.add(new CreateVector(dir,0));	 	
 		 	// return false;
-		 	if(this.invincibleState) return false;
+		 	if(this.invincibleState && !gameManager.playerDied) return false;
+		 	if(!gameManager.playerDied)
 		 	document.querySelector('#LossBuzz').play();	
 		 	this.invincibleState=true;	 	
 		 	this.acceleration.add(new CreateVector(dir,0));
@@ -4619,12 +4617,15 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 	 		gameManager.playerHealthBar.updateValue(this.health);	 		
 	 		if(this.health<=0)
 	 			{
+	 			if(gameManager.playerDied) document.querySelector('#LossBuzz').play();	
+	 			this.health=0;
 	 			console.log('destroyed');
 	 			SpawnClouds(this.position);	 			
 	 			destroySelf(this.hit_box);
 	 			destroySelf(this);	 			
 	 			this.isActive=false;
-	 			gameManager.player=null;	 			
+	 			gameManager.player=null;
+	 			gameManager.playerDied=true;	 			
 	 			gameManager.playerDiedClock= gameManager.runningClock;		 			 			
 	 			}
 		 	}
@@ -5293,6 +5294,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			 this.levelUpBox=new LevelUpBox(this.player);			 
 			 this.localStorageChecked=false;
 			 this.bottomY=2000;
+			 this.playerDied=false;
 		 	}
 		 getLocalStoragex(){
 		 	/*
@@ -5323,7 +5325,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	{		 	 
 		 	 if(this.playerDiedClock ==0) return false;
 		 	 w2screen("You Got Destroyed Bruh",300*xscale,400*yscale,'#FF0000',80);
-		 	 if(this.runningClock - this.playerDiedClock > 10000)
+		 	 if(this.runningClock - this.playerDiedClock > 3000)
 		 	 	window.location.href="./Platformer.html";
 		 	}
 		 checkHitWithKillPlants()
@@ -5433,6 +5435,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 
 		 camChecker()
 		 	{
+		 	 if(gameManager.playerDied) return [false,false];
 		 	 if(!(this.camera.tgt && this.camera.tgt==this.player))
 		 	 	{		 	 	
 		 	 	return [true,true];
