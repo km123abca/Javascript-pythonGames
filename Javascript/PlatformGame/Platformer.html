@@ -490,7 +490,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     let upArrow=false,leftArrow=false,rightArrow=false,downArrow=false;
     let keysPressed=new Set();
     CapturePressedKey=(keyCode,pressed=true)=>{
-    	if(!((keyCode>64 && keyCode<91)||(keyCode > 96 && keyCode < 123))) return false;
+    	if(!((keyCode>64 && keyCode<91)||(keyCode > 96 && keyCode < 123)||(keyCode==32))) return false;
     	let charx=String.fromCharCode(keyCode);
     	let charx2=String.fromCharCode(keyCode+32);
     	/*
@@ -4523,7 +4523,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			{
 			 if(gameManager.runningClock - this.lastHealTime < this.healCoolDown)
 			 	return false;
-			 if(GetKeyPressedx('q'))
+			 if(GetKeyPressedx(gameManager.healKey))
 			 	{
 			 	 if(!this.healing)	 this.healing=true;			 	 
 			 	 if(this.health < this.maxHealth && this.experience > 0)
@@ -4702,7 +4702,8 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	else
 		 		DisplayInGaps("player is in air");
 		 	*/
-		 	 if(spacePress)
+		 	 // if(spacePress)
+		 	 if(GetKeyPressedx(gameManager.jumpKey))
 		 	 	{
 		 	 	 if(this.spaceTrigger && !this.jumping && this.numJumps<2)
 		 	 	 	{ 	 	 	
@@ -4801,7 +4802,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 		 this.dashStateFns();
 		 		 return;
 		 		}
-		 	if(GetKeyPressedx("c") )
+		 	if(GetKeyPressedx(gameManager.dashKey) )
 	 			{
 	 			 if(!this.dashStarted)
 	 			  {
@@ -4836,7 +4837,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 		this.velocity.x=Lerp(this.velocity.x,0,32);	 	
 		 		}
 
-	 		if(GetKeyPressedx("z") && this.slashTrigger)
+	 		if(GetKeyPressedx(gameManager.strikeKey) && this.slashTrigger)
 	 			{
 	 			 if(this.energy < this.energyCosts["slash"])
 	 			 	return false;
@@ -5142,6 +5143,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	  this.go=go;
 		 	  new Button(this.position.x,this.position.y+200,"Save",this.btnGroups);
 		 	  new Button(this.position.x+300,this.position.y-175,"Restart",this.btnGroups);
+		 	  this.maxEntries=3;
 		 	}
 		 update()
 		 	{
@@ -5197,13 +5199,13 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	 if(downArrow && this.coolDownTimer==0)
 		 	 	{
 		 	 	 this.focussed+=1;
-		 	 	 if(this.focussed > 3) this.focussed=1;
+		 	 	 if(this.focussed > this.maxEntries) this.focussed=1;
 		 	 	 this.coolDownTimer=1;
 		 	 	}
 		 	 else if(upArrow && this.coolDownTimer==0)
 		 	 	{
 		 	 	 this.focussed-=1;
-		 	 	 if(this.focussed < 1) this.focussed=3;
+		 	 	 if(this.focussed < 1) this.focussed=this.maxEntries;
 		 	 	 this.coolDownTimer=1;
 		 	 	}
 		 	 else if(rightArrow && this.coolDownTimer==0)
@@ -5232,6 +5234,28 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	 ctx.restore();
 		 	 this.showStats();
 		 	 this.displayAndUpdateButtons();
+		 	}
+
+		 showKeyReAssignDetails()
+		 	{
+		 	 let startx=this.position.x -this.width*0.4;
+		 	 let starty=this.position.y - this.height*0.4;
+		 	 let shifts=[[100,0],[-100,80],[0,80],[0,80],[0,220],[500,0]];
+		 	 let dialogues=["Use Arrow keys to navigate",
+		 	 			    "Jump :"+gameManager.maxHealth,
+		 	 			    "Dash :"+gameManager.maxEnergy,
+		 	 			    "Strike:"+gameManager.weaponDamage,
+		 	 			    "Heal:"+gameManager.expNeeded		 	 			    
+		 	 			   ];
+		 	 for(let i in dialogues)
+		 	 	{	
+		 	 	 startx+=shifts[i][0];
+		 	 	 starty+=shifts[i][1];
+		 	 	 if(i==this.focussed )
+		 	 	 w2screen(dialogues[i],startx,starty,'#FF0000');
+		 	 	 else
+		 	 	 w2screen(dialogues[i],startx,starty); 
+		 	 	}
 		 	}
 
 		 showStats()
@@ -5295,6 +5319,11 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			 this.localStorageChecked=false;
 			 this.bottomY=2000;
 			 this.playerDied=false;
+
+			 this.dashKey="c";
+			 this.jumpKey=" ";
+			 this.strikeKey="z";
+			 this.healKey="q";
 		 	}
 		 getLocalStoragex(){
 		 	/*
