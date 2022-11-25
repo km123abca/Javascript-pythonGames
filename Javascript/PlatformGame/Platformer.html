@@ -5041,7 +5041,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		}
 	class Button
 		{
-		constructor(x,y,tex,btnGroups)
+		constructor(x,y,tex,btnGroups,enclosingPanel)
 			{
 			 this.position=new CreateVector(x,y);
 			 this.tex=tex;
@@ -5054,6 +5054,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			 this.presentColor=this.fillColor;
 			 this.btnGroups=btnGroups;
 			 this.btnGroups.push(this);
+			 this.eP=enclosingPanel;			 
 			}
 		colorSwitch()
 			{			
@@ -5083,21 +5084,26 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			 	 if(mouseX > leftx && mouseX <rightx && mouseY > lefty && mouseY < righty )
 			 	 	{
 			 	 	// this.presentColor = this.clickColor;
-			 	 	 switch(this.tex)
-			 	 	 	{
-			 	 	 	case 'Save':				 	 		
-				 	 		gameManager.saveStatusToLocalStoragex();
-				 	 		gameManager.gamePaused = false;
-				 	 		break;
-				 	 	case 'Restart':
-				 	 	    if(confirm("Press Ok to delete progress and restart game from start"))
-				 	 	    {
-				 	 		localStorage.removeItem("GameSaveData");
-				 	 		window.location.href='Platformer.html';
+			 	 	if(!this.eP.showSecondScreen)
+				 	 	{
+				 	 	 switch(this.tex)
+				 	 	 	{
+				 	 	 	case 'Save':				 	 		
+					 	 		gameManager.saveStatusToLocalStoragex();
+					 	 		gameManager.gamePaused = false;
+					 	 		break;
+					 	 	case 'Restart':
+					 	 	    if(confirm("Press Ok to delete progress and restart game from start"))
+					 	 	    {
+					 	 		localStorage.removeItem("GameSaveData");
+					 	 		window.location.href='Platformer.html';
+					 	 		}
+					 	 		break;
+					 	 	case 'Controls':
+					 	 		this.eP.switchScreen();
+					 	 		break;
 				 	 		}
-				 	 		break;
-			 	 		}
-
+				 	 	}
 			 	 	}
 			 	}
 			 else if(!mousePressed && this.mouseTrigger)
@@ -5110,7 +5116,8 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			 // 	}
 			}
 		display()
-			{			 	 
+			{
+			 if(this.eP.showSecondScreen) return false;			 	 
 			 ctx.save();
 			 ctx.translate(this.position.x,this.position.y);
 			 ctx.fillStyle=this.presentColor;//#ccccb3
@@ -5137,17 +5144,38 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	  this.experience=100;
 		 	  this.expNeeded=10;	
 		 	  this.focussed=1;
+		 	  this.keyFocussed=-1;
 		 	  this.coolDownTimer=0;
 		 	  this.coolDownMaxTime=200;
 		 	  this.btnGroups=[];
 		 	  this.go=go;
-		 	  new Button(this.position.x,this.position.y+200,"Save",this.btnGroups);
-		 	  new Button(this.position.x+300,this.position.y-175,"Restart",this.btnGroups);
+		 	  new Button(this.position.x,this.position.y+200,"Save",this.btnGroups,this);
+		 	  new Button(this.position.x+300,this.position.y-175,"Restart",this.btnGroups,this);
+		 	  new Button(this.position.x+300,this.position.y,"Controls",this.btnGroups,this);
 		 	  this.maxEntries=3;
+		 	  this.showSecondScreen=false;
+		 	}
+		 switchScreen()
+		 	{
+		 	 if(this.showSecondScreen)
+			 	 {
+			 	  this.showSecondScreen= false;
+			 	  this.maxEntries=3;
+			 	 }
+			 else
+			 	 {
+			 	  this.showSecondScreen= true;
+			 	  this.maxEntries=4;
+			 	 }
 		 	}
 		 update()
 		 	{
-		 	 if(!gameManager.gamePaused || !gameManager.player) return false;		 	 
+
+		 	 if(!gameManager.gamePaused || !gameManager.player) 
+		 	 	{
+		 	 	if(this.showSecondScreen) this.switchScreen();
+		 	 	return false;	
+		 	 	}	 	 
 		 	 this.runCoolDown();
 		 	 this.checkForKeyPress();		 	 
 		 	}
@@ -5232,7 +5260,8 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	 ctx.stroke();
 		 	 ctx.fill();		 	 
 		 	 ctx.restore();
-		 	 this.showStats();
+		 	 if(this.showSecondScreen) this.showKeyReAssignDetails();
+		 	 else this.showStats();
 		 	 this.displayAndUpdateButtons();
 		 	}
 
@@ -5240,12 +5269,12 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	{
 		 	 let startx=this.position.x -this.width*0.4;
 		 	 let starty=this.position.y - this.height*0.4;
-		 	 let shifts=[[100,0],[-100,80],[0,80],[0,80],[0,220],[500,0]];
+		 	 let shifts=[[100,0],[-100,80],[0,80],[0,80],[0,80],[500,0]];
 		 	 let dialogues=["Use Arrow keys to navigate",
-		 	 			    "Jump :"+gameManager.maxHealth,
-		 	 			    "Dash :"+gameManager.maxEnergy,
-		 	 			    "Strike:"+gameManager.weaponDamage,
-		 	 			    "Heal:"+gameManager.expNeeded		 	 			    
+		 	 			    "Jump :  "+gameManager.jumpKey,
+		 	 			    "Dash :  "+gameManager.dashKey,
+		 	 			    "Strike:  "+gameManager.strikeKey,
+		 	 			    "Heal:  "+gameManager.healKey		 	 			    
 		 	 			   ];
 		 	 for(let i in dialogues)
 		 	 	{	
