@@ -506,11 +506,11 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
     	return keysPressed.has(x)||keysPressed.has(x.toUpperCase());
     }
 
-
+    let pressedKeyCode=-1;
 	document.onkeydown=function(e)
 	                 {
 	                 	// console.log(e.keyCode);
-	                 	// CapturePressedKey(e.keyCode);
+	                 	// CapturePressedKey(e.keyCode);	                 	
 	                 	startMusic();
 	                 	if(e.keyCode==37) leftArrow=true;
 	                 	if(e.keyCode==38) upArrow=true;
@@ -520,6 +520,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 
 	document.onkeypress=function (e)
 					{
+					pressedKeyCode=e.keyCode;
 					// console.log(e.keyCode);	
 					CapturePressedKey(e.keyCode);		
 					if(e.keyCode==32) spacePress=true;
@@ -549,6 +550,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 	document.onkeyup=function (e)
 					{	
 					// console.log(e.keyCode);
+					pressedKeyCode=-1;
 					CapturePressedKey(e.keyCode,false);
 					if(e.keyCode==32) spacePress=false;					
 					if(e.keyCode==87) upPress=false;
@@ -5134,7 +5136,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	  this.experience=100;
 		 	  this.expNeeded=10;	
 		 	  this.focussed=1;
-		 	  this.keyFocussed=1;
+		 	  this.keyFocussed=-1;
 		 	  this.enterTrigger=true;
 		 	  this.coolDownTimer=0;
 		 	  this.coolDownMaxTime=200;
@@ -5148,6 +5150,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	  this.lboxFlickerBool=false;
 		 	  this.lboxFlickerClock=0;
 		 	  this.lboxFlickerMaxTime=200;
+		 	  this.pressedKeyCode=-2;
 		 	}
 		 lboxFlickerControl()
 		 	{
@@ -5270,6 +5273,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 
 		 showKeyReAssignDetails()
 		 	{
+		 	 this.assignNewKeys();
 		 	 if(this.keyFocussed!=-1) this.keyFocussed=this.focussed;
 		 	 if(enterPress)
 		 	 	{
@@ -5306,7 +5310,39 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	}
 		 assignNewKeys()
 		 	{
-		 		
+		 	if(pressedKeyCode==-1) this.pressedKeyCode=-2;
+	 		if(this.keyFocussed==-1) return false;	 		
+	 		if(pressedKeyCode!=this.pressedKeyCode)
+	 			{	 				
+	 			  this.pressedKeyCode=pressedKeyCode;	 			  
+	 			  if((pressedKeyCode>64 && pressedKeyCode <91)||
+	 			  	(pressedKeyCode>97 && pressedKeyCode < 122)||
+	 			    (pressedKeyCode==32))
+	 			  	{
+	 			  	 let chosenKey="";
+	 			  	 if(pressedKeyCode>64 && pressedKeyCode <91) 
+	 			  	  chosenKey=String.fromCharCode(pressedKeyCode+32);
+	 			  	 else
+	 			  	  chosenKey=String.fromCharCode(pressedKeyCode); 
+	 			  	 switch (this.keyFocussed)
+	 			  	 	{
+	 			  	 	 case 1:
+	 			  	 	   console.log(`new jump key:${chosenKey}`);
+	 			  	 	   break;
+	 			  	 	 case 2:
+	 			  	 	   console.log(`new dash key:${chosenKey}`);
+	 			  	 	   break;
+	 			  	 	 case 3:
+	 			  	 	   console.log(`new strike key:${chosenKey}`);
+	 			  	 	   break;
+	 			  	 	 case 4:
+	 			  	 	   console.log(`new heal key:${chosenKey}`);
+	 			  	 	   break;
+
+	 			  	 	}
+	 			  	}
+	 			  
+	 			}
 		 	}
 
 		 showStats()
