@@ -4727,8 +4727,8 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	 	}
 		 	 else if(!this.spaceTrigger && this.numJumps<2 ) 
 		 	 	this.spaceTrigger=true;
-		 	 if(!spacePress && this.jumping) this.jumping=false;
-		 	 if(!spacePress && this.numJumps>0 && this.checkIfOnGround()) 
+		 	 if(!GetKeyPressedx(gameManager.jumpKey) && this.jumping) this.jumping=false;
+		 	 if(!GetKeyPressedx(gameManager.jumpKey) && this.numJumps>0 && this.checkIfOnGround()) 
 		 	 	this.numJumps=0;
 		 	}
 		 applyGravity()
@@ -5326,19 +5326,50 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 	 			  	  chosenKey=String.fromCharCode(pressedKeyCode); 
 	 			  	 switch (this.keyFocussed)
 	 			  	 	{
-	 			  	 	 case 1:
-	 			  	 	   console.log(`new jump key:${chosenKey}`);
+	 			  	 	 case 1:	 			  	 	   
+	 			  	 	   if(gameManager.isNewKey(chosenKey))
+	 			  	 	   	 {
+	 			  	 	   	 	gameManager.allKeys[0]=chosenKey;
+	 			  	 	   	 	gameManager.jumpKey=chosenKey;
+	 			  	 	   	 	console.log(`new jump key:${chosenKey}`);
+	 			  	 	   	 	gameManager.storeKeyDataToLocalStorage();
+	 			  	 	   	 }
+	 			  	 	   	else 
+	 			  	 	   		alert("duplicate key");
 	 			  	 	   break;
 	 			  	 	 case 2:
-	 			  	 	   console.log(`new dash key:${chosenKey}`);
+	 			  	 	   if(gameManager.isNewKey(chosenKey))
+	 			  	 	   	 {
+	 			  	 	   	 	gameManager.allKeys[1]=chosenKey;
+	 			  	 	   	 	gameManager.dashKey=chosenKey;
+	 			  	 	   	 	console.log(`new dash key:${chosenKey}`);
+	 			  	 	   	 	gameManager.storeKeyDataToLocalStorage();
+	 			  	 	   	 }
+	 			  	 	   	else 
+	 			  	 	   		alert("duplicate key");
 	 			  	 	   break;
 	 			  	 	 case 3:
-	 			  	 	   console.log(`new strike key:${chosenKey}`);
+	 			  	 	   if(gameManager.isNewKey(chosenKey))
+	 			  	 	   	 {
+	 			  	 	   	 	gameManager.allKeys[2]=chosenKey;
+	 			  	 	   	 	gameManager.strikeKey=chosenKey;
+	 			  	 	   	 	console.log(`new strike key:${chosenKey}`);
+	 			  	 	   	 	gameManager.storeKeyDataToLocalStorage();
+	 			  	 	   	 }
+	 			  	 	   	else 
+	 			  	 	   		alert("duplicate key");
 	 			  	 	   break;
 	 			  	 	 case 4:
-	 			  	 	   console.log(`new heal key:${chosenKey}`);
+	 			  	 	   if(gameManager.isNewKey(chosenKey))
+	 			  	 	   	 {
+	 			  	 	   	 	gameManager.allKeys[3]=chosenKey;
+	 			  	 	   	 	gameManager.healKey=chosenKey;
+	 			  	 	   	 	console.log(`new heal key:${chosenKey}`);
+	 			  	 	   	 	gameManager.storeKeyDataToLocalStorage();
+	 			  	 	   	 }
+	 			  	 	   	else 
+	 			  	 	   		alert("duplicate key");
 	 			  	 	   break;
-
 	 			  	 	}
 	 			  	}
 	 			  
@@ -5411,7 +5442,30 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 			 this.jumpKey=" ";
 			 this.strikeKey="z";
 			 this.healKey="q";
+			 this.allKeys=[this.jumpKey,this.dashKey,this.strikeKey,this.healKey];
 		 	}
+		 isNewKey(keyx){
+		 	for(let i in this.allKeys)		 		
+		 		 if(this.allKeys[i]==keyx) return false;
+		 	return true;		 		
+		 }
+		 getKeyDataFromLocalStorage(){
+		 	let keyData=localStorage.getItem("gameKeyData");
+		 	if(!keyData) return false;
+		 	keyData=JSON.parse(keyData);
+		 	this.jumpKey=keyData.jumpKey;
+		 	this.dashKey=keyData.dashKey;
+		 	this.strikeKey=keyData.strikeKey;
+		 	this.healKey=keyData.healKey;
+		 	this.allKeys=[this.jumpKey,this.dashKey,this.strikeKey,this.healKey];
+		 }
+		 storeKeyDataToLocalStorage(){
+		 	let keyData={"jumpKey":this.jumpKey,"dashKey":this.dashKey,
+		 	             "strikeKey":this.strikeKey,"healKey":this.healKey
+		                };
+		    localStorage.setItem("gameKeyData",JSON.stringify(keyData));
+		 }
+
 		 getLocalStoragex(){
 		 	/*
 		 	let localStorage_local={"sceneNo":2,
@@ -5622,6 +5676,7 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	    }
 		 	 this.localStorageChecked=true;		 	 
 		 	 let localStoragex=this.getLocalStoragex();
+		 	 this.getKeyDataFromLocalStorage();
 		 	 if(!localStoragex) 
 		 	 	{
 		 	 	console.log('nothing in localstorage..returning');
