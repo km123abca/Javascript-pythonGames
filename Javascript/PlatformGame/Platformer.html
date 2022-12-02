@@ -5151,6 +5151,28 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	  this.lboxFlickerClock=0;
 		 	  this.lboxFlickerMaxTime=200;
 		 	  this.pressedKeyCode=-2;
+		 	  this.mouseTrigger=true;
+		 	}
+
+		 clickedOutside()
+		 	{
+		 	 if(mouseX > this.position.x-this.width/2 && mouseX < this.position.x+this.width/2)
+		 	 if(mouseY > this.position.y-this.height/2 && mouseY < this.position.y+this.height/2)
+		 	 	return false;
+		 	 return true;
+		 	}
+		 mouseClickDetectedOutside()
+		 	{
+	 		if(this.clickedOutside() && mousePressed && this.mouseTrigger)
+	 			{
+	 			 this.mouseTrigger=false;
+	 			 gameManager.gamePaused=false;
+	 			}
+		 	}
+		 turnBackMouseTriggerOn()
+		 	{
+		 	 if(!mousePressed && !this.mouseTrigger)
+		 	 this.mouseTrigger=true;
 		 	}
 		 lboxFlickerControl()
 		 	{
@@ -5176,12 +5198,14 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	}
 		 update()
 		 	{
-
+		 	 
 		 	 if(!gameManager.gamePaused || !gameManager.player) 
 		 	 	{
 		 	 	if(this.showSecondScreen) this.switchScreen();
 		 	 	return false;	
-		 	 	}	 	 
+		 	 	}	 	
+		 	 this.turnBackMouseTriggerOn();
+		 	 this.mouseClickDetectedOutside(); 
 		 	 this.runCoolDown();
 		 	 this.checkForKeyPress();		 	 
 		 	}
@@ -5378,6 +5402,8 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 
 		 showStats()
 		 	{
+		 	 if(this.keyFocussed!=-1) 
+		 	 	this.keyFocussed=-1;
 		 	 let startx=this.position.x -this.width*0.4;
 		 	 let starty=this.position.y - this.height*0.4;
 		 	 let shifts=[[100,0],[-100,80],[0,80],[0,80],[0,220],[500,0]];
