@@ -21,6 +21,19 @@ let scenes=[
 				
 			],
 			[
+			  {"sprite":"platform","x":0,"y":600,"width":1987,"height":50},
+			  {"sprite":"platform","x":2100,"y":1000,"width":1000,"height":50},
+			  {"sprite":"platform","x":2100,"y":1200,"width":1000,"height":50},
+			  {"sprite":"thorn","x":1025,"y":507,"width":300,"height":250,"xoffset":0,"yoffset":0},
+			  {"sprite":"thorn","x":1762,"y":914,"width":300,"height":250,"xoffset":0,"yoffset":0},
+			  {"sprite":"camstopper_left","x":-303,"y":400},
+			  {"sprite":"camstopper_right","x":2988,"y":1300},
+			  {"sprite":"entryexit_entry","x":-825,"y":400},
+			  {"sprite":"entryexit_exit","x":800,"y":400},
+			  {"sprite":"scenechanger_scleft","x":-970,"y":464},
+			  // {"sprite":"scenechanger_scright","x":1637,"y":468},
+			],
+			[
 			    // {"sprite":"player","x":200,"y":200,"width":150,"height":100},
 			    // {"sprite":"lance","x":1060,"y":200,"width":250,"height":200,spriteId:"lance1"},
 			    {"sprite":"husk","x":1062,"y":500,"width":150,"height":200,"spriteId":"husk2"},

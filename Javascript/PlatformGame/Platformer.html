@@ -408,6 +408,10 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 let THORNIMAGE = LoadImagex('sprites/misc','thorn.png');
 let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
+
+let SAWWHEEL1= LoadImagex('sprites/workshop','sawwheel1.png');
+let SAWWHEEL2= LoadImagex('sprites/workshop','sawwheel2.png');
+let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     
 </script>
 </head>
@@ -1203,6 +1207,37 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 		 	{	 		
 	 		this.position.setVec(this.hit_box.position.copy().add(this.hitboxOffset));
 		 	}
+		}
+	class SawWheel extends GeneralSprite
+		{
+			constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups)
+			  	{
+			  	 super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
+			  	 this.sprite_type='sawwheel';
+	  		 	 this.hit_box=new HitBox(this.position.x,this.position.y,this.width*0.9,this.height*0.5,
+	                         [ gameManager.kill_plants,
+	                          // gameManager.visible_sprites
+	                         ],
+	                         'thornhitbox');
+	  		 	 this.imagex= SAWWHEEL1;
+	  		 	 this.imagesx=[SAWWHEEL1,SAWWHEEL2,SAWWHEEL3];
+	  		 	 this.animationFrame=0;
+			  	}
+			  animateMe()
+			  	{
+			  	 this.animationFrame+=0.2;
+			  	 if(this.animationFrame > this.imagesx.length) this.animationFrame=0;
+			  	 this.imagex= this.imagesx[parseInt(this.animationFrame)];
+			  	}
+			  update()
+			  	{
+			  	 this.animateMe();
+			  	 update_and_display_hitbox();
+			  	}
+			  update_and_display_hitbox()
+			 	{	 		
+		 		this.position.setVec(this.hit_box.position.copy().add(this.hitboxOffset));
+			 	}	
 		}
 	class GrassShrub extends GeneralSprite
 		{
