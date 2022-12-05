@@ -1210,7 +1210,9 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		}
 	class SawWheel extends GeneralSprite
 		{
-			constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups)
+			constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups,
+				        moveTime,speed,isHoriWheel
+				       )
 			  	{
 			  	 super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
 			  	 this.sprite_type='sawwheel';
@@ -1219,9 +1221,16 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	                          // gameManager.visible_sprites
 	                         ],
 	                         'thornhitbox');
+	  		 	 this.sprite_type='sawwheel';
 	  		 	 this.imagex= SAWWHEEL1;
 	  		 	 this.imagesx=[SAWWHEEL1,SAWWHEEL2,SAWWHEEL3];
 	  		 	 this.animationFrame=0;
+	  		 	 this.moveTime=moveTime;
+	  		 	 this.moveTimer=0;	  		 	 
+	  		 	 this.horiWheel=isHoriWheel;
+	  		 	 this.speed=speed;
+	  		 	 if(this.horiWheel) this.velocity=new CreateVector(this.speed*xscale,0);
+	  		 	 else this.velocity=new CreateVector(0,this.speed*yscale);
 			  	}
 			  animateMe()
 			  	{
@@ -1231,8 +1240,20 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			  	}
 			  update()
 			  	{
+			  	 this.move();
 			  	 this.animateMe();
-			  	 update_and_display_hitbox();
+			  	 this.update_and_display_hitbox();
+			  	}
+			  move()
+			  	{
+			  	 // console.log('moving');
+			  	 this.moveTimer+=deltaTime;
+			  	 if(this.moveTimer > this.moveTime)
+			  	 	{
+			  	 	 this.moveTimer=0;
+			  	 	 this.velocity.mult(-1);			  	 	 
+			  	 	}
+			  	 this.hit_box.position.add(this.velocity);
 			  	}
 			  update_and_display_hitbox()
 			 	{	 		
@@ -5914,6 +5935,16 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
  	   				          elem['yoffset']*yscale,
  	   				   		  [gameManager.visible_sprites]
     	 	   				  	 	);	
+    	 	   	 else if(elem['sprite']=='saw')
+    	 	   	 	new SawWheel(elem['x']*xscale,
+ 	   				          elem['y']*yscale,
+ 	   				          elem['width']*xscale,
+ 	   				          elem['height']*yscale,
+ 	   				          elem['xoffset']*xscale,
+ 	   				          elem['yoffset']*yscale,
+ 	   				   		  [gameManager.visible_sprites,gameManager.active_sprites],
+ 	   				   		  elem['moveTime'],elem['speed'],elem['isHoriWheel']
+    	 	   				  	 	);
     	 	   	 else if(elem['sprite']=='shrub')
     	 	   	 	new GrassShrub(elem['x']*xscale,
  	   				          elem['y']*yscale,

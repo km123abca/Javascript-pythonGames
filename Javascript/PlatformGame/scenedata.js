@@ -31,6 +31,8 @@ let scenes=[
 			  {"sprite":"entryexit_entry","x":-825,"y":400},
 			  {"sprite":"entryexit_exit","x":800,"y":400},
 			  {"sprite":"scenechanger_scleft","x":-970,"y":464},
+			  {"sprite":"saw","x":437,"y":175,"width":112,"height":112,"xoffset":0,"yoffset":0,"moveTime":600,"speed":10,"isHoriWheel":false},
+			   {"sprite":"saw","x":137,"y":175,"width":112,"height":112,"xoffset":0,"yoffset":0,"moveTime":600,"speed":10,"isHoriWheel":false},
 			  // {"sprite":"scenechanger_scright","x":1637,"y":468},
 			],
 			[
