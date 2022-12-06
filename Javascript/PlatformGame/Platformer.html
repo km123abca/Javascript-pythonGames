@@ -1211,7 +1211,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	class SawWheel extends GeneralSprite
 		{
 			constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups,
-				        moveTime,speed,isHoriWheel
+				        moveTime,moveTimeInit,speed,isHoriWheel
 				       )
 			  	{
 			  	 super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
@@ -1231,6 +1231,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	  		 	 this.speed=speed;
 	  		 	 if(this.horiWheel) this.velocity=new CreateVector(this.speed*xscale,0);
 	  		 	 else this.velocity=new CreateVector(0,this.speed*yscale);
+	  		 	 this.initMoveDone=false;
+	  		 	 this.moveTimeInit=moveTimeInit;
 			  	}
 			  animateMe()
 			  	{
@@ -1240,13 +1242,31 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			  	}
 			  update()
 			  	{
+			  	 return false;
 			  	 this.move();
 			  	 this.animateMe();
 			  	 this.update_and_display_hitbox();
 			  	}
+			  
+			  initMove()
+			  	{
+			  	 this.moveTimer+=deltaTime;
+			  	 if(this.moveTimer > this.moveTimeInit)
+			  	 	{
+			  	 	 this.moveTimer=0;
+			  	 	 this.velocity.mult(-1);
+			  	 	 this.initMoveDone=true;			  	 	 
+			  	 	}
+			  	 this.hit_box.position.add(this.velocity);
+			  	}
 			  move()
 			  	{
 			  	 // console.log('moving');
+			  	 if(!this.initMoveDone)
+			  	 	{
+			  	 	  this.initMove();
+			  	 	  return;
+			  	 	}
 			  	 this.moveTimer+=deltaTime;
 			  	 if(this.moveTimer > this.moveTime)
 			  	 	{
@@ -4509,7 +4529,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.acceleration=new CreateVector(0,0);
 			 this.velocity=new CreateVector(0,0);
 			 this.maxHoriVel_player=10*xscale;
-			 this.maxVelocity=new CreateVector(this.maxHoriVel_player,12*yscale);
+			 this.maxVelocity=new CreateVector(this.maxHoriVel_player,20*yscale);
 			 this.horiForce=new CreateVector(0.8*xscale,0);
 			 this.gravityScale=1*yscale;
 			 this.sx=1;
@@ -5052,7 +5072,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		  	 this.mouseLockX=0;
 		  	 this.mouseLockY=0;	
 		  	 this.tgt=null;	  
-		  	 this.lerpFactor=8;	 
+		  	 this.lerpFactor=4;	 
 		  	}
 		  runWithMouse()
 		  	{
@@ -5509,7 +5529,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.gamePaused=false;
 		 	 this.inTransition=false;
 		 	 this.sceneForward=true;
-		 	 this.followMouse= false;
+		 	 this.followMouse= true;
 		 	 this.sceneStartTime= 0;
 		 	 this.positionAdjuster=new PositionAdjuster(null,[this.visible_sprites,this.active_sprites]);
 
@@ -5943,7 +5963,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
  	   				          elem['xoffset']*xscale,
  	   				          elem['yoffset']*yscale,
  	   				   		  [gameManager.visible_sprites,gameManager.active_sprites],
- 	   				   		  elem['moveTime'],elem['speed'],elem['isHoriWheel']
+ 	   				   		  elem['moveTime'],elem['moveTimeInit'],elem['speed'],elem['isHoriWheel']
     	 	   				  	 	);
     	 	   	 else if(elem['sprite']=='shrub')
     	 	   	 	new GrassShrub(elem['x']*xscale,
