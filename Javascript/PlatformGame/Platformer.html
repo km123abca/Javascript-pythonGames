@@ -1242,7 +1242,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			  	}
 			  update()
 			  	{
-			  	 return false;
+			  	 // return false;
 			  	 this.move();
 			  	 this.animateMe();
 			  	 this.update_and_display_hitbox();
@@ -4528,7 +4528,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.angle=0;
 			 this.acceleration=new CreateVector(0,0);
 			 this.velocity=new CreateVector(0,0);
-			 this.maxHoriVel_player=10*xscale;
+			 this.maxHoriVel_player=6*xscale;
 			 this.maxVelocity=new CreateVector(this.maxHoriVel_player,20*yscale);
 			 this.horiForce=new CreateVector(0.8*xscale,0);
 			 this.gravityScale=1*yscale;
@@ -5529,7 +5529,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.gamePaused=false;
 		 	 this.inTransition=false;
 		 	 this.sceneForward=true;
-		 	 this.followMouse= true;
+		 	 this.followMouse= false;
 		 	 this.sceneStartTime= 0;
 		 	 this.positionAdjuster=new PositionAdjuster(null,[this.visible_sprites,this.active_sprites]);
 
