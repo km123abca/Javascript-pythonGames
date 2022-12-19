@@ -29,7 +29,7 @@ let scenes=[
 			  {"sprite":"camstopper_left","x":-303,"y":400},
 			  {"sprite":"camstopper_right","x":1822,"y":1190},
 			  {"sprite":"entryexit_entry","x":-825,"y":400},
-			  {"sprite":"entryexit_exit","x":2350,"y":1215},
+			  {"sprite":"entryexit_exit","x":800,"y":400},
 			  {"sprite":"scenechanger_scleft","x":-970,"y":464},
 			  {"sprite":"saw","x":437,"y":416,"width":112,"height":112,"xoffset":0,"yoffset":0,"moveTime":600,"moveTimeInit":200,"speed":10,"isHoriWheel":false},
 			  {"sprite":"saw","x":137,"y":175,"width":112,"height":112,"xoffset":0,"yoffset":0,"moveTime":600,"moveTimeInit":600,"speed":10,"isHoriWheel":false},
@@ -52,7 +52,7 @@ let scenes=[
 			  // "moveTime":1200,"moveTimeInit":600,"speed":10,"isHoriWheel":true},
 			  // {"sprite":"saw","x":1600,"y":521,"width":112,"height":112,"xoffset":0,"yoffset":0,
 			  // "moveTime":2200,"moveTimeInit":0,"speed":3,"isHoriWheel":true},
-			  {"sprite":"scenechanger_scright","x":3300,"y":740},
+			  // {"sprite":"scenechanger_scright","x":3300,"y":740},
 
 			],
 			[
@@ -86,9 +86,9 @@ let scenes=[
 				{"sprite":"entryexit_exit","x":3288,"y":394},
 				{"sprite":"scenechanger_scleft","x":-1057,"y":464},
 				{"sprite":"scenechanger_scright","x":3500,"y":460},				
-				{"sprite":"BossFightTriggGO","x":1824,"y":628,
-				 "br1posx":-1100,"br1posy":-60,"br2posx":200,"br2posy":-60,"spriteId":"BossFightTriggGO"
-				},
+				// {"sprite":"BossFightTriggGO","x":1824,"y":628,
+				//  "br1posx":-1100,"br1posy":-60,"br2posx":200,"br2posy":-60,"spriteId":"BossFightTriggGO"
+				// },
 				// {"sprite":"falseknight","x":1289,"y":-367,"width":368,"height":223,"spriteId":"boss_fknight1"}
 				// {"sprite":"huskMiner","x":889,"y":-367,"width":170,"height":220,"spriteId":"boss_huskminer1","cutscene":false}
 			],
