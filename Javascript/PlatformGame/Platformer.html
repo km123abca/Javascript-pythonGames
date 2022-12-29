@@ -408,6 +408,7 @@ let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 let THORNIMAGE = LoadImagex('sprites/misc','thorn.png');
 let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
+let FLOWERIMAGE= LoadImagex('sprites/misc','Flower.png');
 
 let SAWWHEEL1= LoadImagex('sprites/workshop','sawwheel1.png');
 let SAWWHEEL2= LoadImagex('sprites/workshop','sawwheel2.png');
@@ -1165,6 +1166,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.width = wid * xscale;
 			 this.height = hei * yscale;
 			 this.onScreen=true;
+			 this.angle=0;
 			 this.imagex= WHITECLOUD;		
 			 this.sprite_type='generalSprite';	
 			 this.spriteGroups= spriteGroups; 
@@ -1186,6 +1188,26 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 return true;
 		 	}
 		}
+
+	class Flower extends GeneralSprite
+		{
+		constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,exp,spriteId,spriteGroups)
+			{
+			  super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
+			  this.sprite_type='flower';
+			  this.imagex=FLOWERIMAGE;
+			  this.exp=exp;
+			  this.spriteId=spriteId;
+			}	
+		giveExp(objx)
+			{
+			objx.giveExp(this.exp);
+			destroySelf(this);
+			gameManager.listOfDestroyedSprites.push(this.spriteId);
+			console.log('flower got plucked');
+			}	
+		}
+
 	class Thorn extends GeneralSprite
 		{
 		  constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups)
@@ -4956,6 +4978,17 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 			}
 		 	}
 
+		 testCollisionWithLoot()
+		 	{
+		 	for(let x of gameManager.loot)
+	 			{
+	 			if(b_collision(this.hit_box,x))
+	 				{ 					 
+	 				 x.giveExp(this);	 				 
+	 				}
+	 			}	
+		 	}
+
 		 applyVelocity()
 		 	{		 	 	 	 
 		 	 this.hit_box.position.x+=this.velocity.x;
@@ -5035,6 +5068,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.move();
 		 	 this.fallDamage();
 		 	 //this.testCollisionWithKillPlants();
+		 	 this.testCollisionWithLoot();
 		 	}
 		 display()
 		 	{		 	 
@@ -5510,7 +5544,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.visible_sprites=[];		 	 
 		 	 this.active_sprites=[];
 		 	 this.kill_plants=[];
-		 	 this.killables=[];		 	 		 	 
+		 	 this.killables=[];
+		 	 this.loot=[];		 	 		 	 
 		 	 this.collission_sprites=[];
 		 	 this.markedSpots=[];
 		 	 this.hitbox_sprites=[];
@@ -5955,6 +5990,17 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
  	   				          elem['yoffset']*yscale,
  	   				   		  [gameManager.visible_sprites]
     	 	   				  	 	);	
+    	 	   	 else if(elem['sprite']=='flower'&&  
+		 	 	 	     this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)
+    	 	   	 	new Flower(elem['x']*xscale,
+ 	   				          elem['y']*yscale,
+ 	   				          elem['width']*xscale,
+ 	   				          elem['height']*yscale,
+ 	   				          elem['xoffset']*xscale,
+ 	   				          elem['yoffset']*yscale,
+ 	   				          elem['exp'],elem['spriteId'],
+ 	   				   		  [gameManager.visible_sprites,gameManager.loot]
+    	 	   				  	 	);
     	 	   	 else if(elem['sprite']=='saw')
     	 	   	 	new SawWheel(elem['x']*xscale,
  	   				          elem['y']*yscale,

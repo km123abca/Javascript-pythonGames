@@ -17,8 +17,11 @@ let scenes=[
 				{"sprite":"MarkedSpot_fkjumpup","x":2112,"y":614},				
 				// {"sprite":"huskMiner","x":73,"y":431,"width":170,"height":220,"spriteId":"boss_huskminer1"}
 				// {"sprite":"lance","x":300,"y":200,"width":250,"height":200,spriteId:"lance1"},
-				{"sprite":"husk","x":1616,"y":300,"width":150,"height":200,"spriteId":"husk1"}
-				
+				{"sprite":"husk","x":1616,"y":300,"width":150,"height":200,"spriteId":"husk1"},
+				{"sprite":"flower","x":-69,"y":554,"width":50,"height":50,"xoffset":0,"yoffset":0,"exp":10,"spriteId":"f1"},
+				{"sprite":"flower","x":93,"y":554,"width":50,"height":50,"xoffset":0,"yoffset":0,"exp":10,"spriteId":"f2"},
+				{"sprite":"flower","x":268,"y":554,"width":50,"height":50,"xoffset":0,"yoffset":0,"exp":10,"spriteId":"f3"},	
+				{"sprite":"flower","x":1081,"y":430,"width":50,"height":50,"xoffset":0,"yoffset":0,"exp":10,"spriteId":"f4"},				
 			],
 			[
 			  {"sprite":"platform","x":0,"y":600,"width":1987,"height":50},
