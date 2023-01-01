@@ -422,6 +422,12 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	<audio id="backgroundMusic" onended="resetMusicVar()">
 		<source src="./sounds/techno_bg_music.mp3" type="audio/mpeg">
 	</audio>
+	<audio id="greenPath" onended="resetMusicVar()">
+		<source src="./sounds/Hollow Knight OST - Greenpath.mp3" type="audio/mpeg">
+	</audio>
+	<audio id="crystalPeak" onended="resetMusicVar()">
+		<source src="./sounds/Hollow Knight OST - Crystal Peak.mp3" type="audio/mpeg">
+	</audio>
 	<audio id="capraMusic" onended="restartCapraMusic()">
 		<source src="./sounds/Capra.mp3" type="audio/mpeg">
 	</audio>
@@ -458,14 +464,27 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	//music starts
 	var bgMusic= document.querySelector('#backgroundMusic');
 	var fogGateSound= document.querySelector('#fogGate');
+	var coinSound= document.querySelector('#GetCoin');
 	var capraMusic= document.querySelector('#capraMusic');
 
+	//background scores
+	var greenPath= document.querySelector('#greenPath');
+	var crystalPeak= document.querySelector('#crystalPeak');
+	var musicList=[greenPath,crystalPeak];
+    var musicFileNames=["Hollow Knight OST - Greenpath.mp3","Hollow Knight OST - Crystal Peak.mp3"];
+	//background scores end
+	let okToStartMusic=false;
 	let musicStarted=false;
+	let presentMusicIndex=0;
+	var pauseMusic=()=>{
+						for(let i in musicList) musicList[i].src="";
+						for(let i in musicList) musicList[i].src=`./sounds/${musicFileNames[i]}`;
+	};
 	var startMusic=()=>{
-						if(!musicStarted)
+						if(!musicStarted && okToStartMusic)
 							{
 							 musicStarted=true;
-							 // bgMusic.play();
+							 musicList[presentMusicIndex % musicList.length].play();
 							}	
 						};						
 	var resetMusicVar=()=>{
@@ -515,8 +534,12 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	document.onkeydown=function(e)
 	                 {
 	                 	// console.log(e.keyCode);
-	                 	// CapturePressedKey(e.keyCode);	                 	
-	                 	startMusic();
+	                 	// CapturePressedKey(e.keyCode);             	
+	                 	if(!okToStartMusic)
+	                 		{
+	                 		 okToStartMusic=true;
+	                 		 startMusic();
+	                 		}
 	                 	if(e.keyCode==37) leftArrow=true;
 	                 	if(e.keyCode==38) upArrow=true;
 	                 	if(e.keyCode==39) rightArrow=true;
@@ -949,6 +972,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.onScreen=true;
 			 this.sprite_type="combinedwall";
 			 this.isHorizontal=isHorizontal;
+			 if(!isHorizontal) this.sprite_type="combinedwallVertical"
 			 let imgx=new Image();
 			 if(this.isHorizontal)
 		 	 imgx.src=`./sprites/workshop/platform1.png`;		 	 
@@ -1204,7 +1228,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			objx.giveExp(this.exp);
 			destroySelf(this);
 			gameManager.listOfDestroyedSprites.push(this.spriteId);
-			console.log('flower got plucked');
+			coinSound.play();			
 			}	
 		}
 
@@ -2397,8 +2421,9 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     //false knight starts
     class FalseKnight
     	{
-    	constructor(x,y,wid,hei,spriteGroups,spriteId='falseknight')
+    	constructor(x,y,wid,hei,spriteGroups,spriteId='falseknight',spawnedBoss=false)
     		{
+    		 this.spawnedBoss=spawnedBoss;
     		 this.fkMusicStarted=false;
     		 this.position= new CreateVector(x,y);
     		 this.width = wid * xscale;
@@ -2423,6 +2448,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.expVal=200; 
 			 this.attackStarted=false;
 			 this.isActive=false;
+			 if(!spawnedBoss) this.isActive=true;
 			 this.animations={
 						 	'attack':{'imgsheet':LoadImagex(folderPath,'attack.png'),
 						  		    'width':2118,
@@ -2723,13 +2749,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     		{
     		 if(!this.isActive)
     		 	return false;
-    		 if(!this.fkMusicStarted)
-    		 {
-    		  this.fkMusicStarted=true;
-    		  capraMusic.play();	
-    		 }
-    		 this.stateMachine();
-    		 
+    		
+    		 this.stateMachine();    		 
     		 this.move(); 
     		 this.updateHealthBarPos();  
     		 this.manageInvincibility(); 		 
@@ -2923,7 +2944,11 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     		{
     		 if(!this.tgt.isActive)
     		 	return false;
-
+    		  if(!this.fkMusicStarted)
+    		 	{
+    		  	this.fkMusicStarted=true;
+    		  	capraMusic.play();	
+    		 	}
     		 let playerSep=this.tgt.position.x - this.position.x;
     		 this.sx=Math.sign(playerSep);
     		 if(Math.abs(playerSep) > this.fkJumpInDistance)
@@ -5754,6 +5779,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	}
 		 	 return resultMat;
 		 	}
+		 
 		 runGame()
 		 	{
 		 	 this.checkHitWithKillPlants();
@@ -5945,7 +5971,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 		   	   elem['width']*xscale,
 		 	 	 		   	   elem['height']*yscale,
 		 	 	 		   	   [this.visible_sprites,this.enemy_sprites,this.active_sprites],
-		 	 	 		   	   elem['spriteId']
+		 	 	 		   	   elem['spriteId'],elem['spawnedBoss']
 		 	 	 		   	   );
 		 	 	 else if(elem['sprite'].split('_')[0]=='MarkedSpot')
 		 	 	 	new MarkedSpot(elem['x']*xscale,
@@ -6036,6 +6062,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.inTransition=false;
 		 	 this.sceneStartTime= this.runningClock;		 	 
 		 	 console.log('scene No'+n+' loaded');
+		 	 presentMusicIndex=n;
+		 	 musicStarted=false;
+		 	 pauseMusic();
+		 	 startMusic();
 		 	}
 		}
 	let gameManager=new GameManager();

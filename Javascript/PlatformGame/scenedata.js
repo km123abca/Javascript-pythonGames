@@ -23,6 +23,24 @@ let scenes=[
 				{"sprite":"flower","x":268,"y":554,"width":50,"height":50,"xoffset":0,"yoffset":0,"exp":10,"spriteId":"f3"},	
 				{"sprite":"flower","x":1081,"y":430,"width":50,"height":50,"xoffset":0,"yoffset":0,"exp":10,"spriteId":"f4"},				
 			],
+            [                               
+                {"sprite":"platform","x":-1110,"y":600,"width":775,"height":50},
+                {"sprite":"wall","x":-887,"y":2156,"width":250,"height":150,"isHorizontal":false,"copies":5},  
+                {"sprite":"wall","x":1888,"y":1698,"width":250,"height":150,"isHorizontal":false,"copies":5},    
+                {"sprite":"wall","x":-812,"y":837,"width":250,"height":150,"isHorizontal":false,"copies":6},
+                {"sprite":"wall","x":750,"y":462,"width":250,"height":150,"isHorizontal":false,"copies":4},
+                {"sprite":"wall","x":-587,"y":612,"width":250,"height":150,"isHorizontal":true,"copies":5},
+                {"sprite":"wall","x":-450,"y":1000,"width":250,"height":150,"isHorizontal":true,"copies":5},
+                {"sprite":"wall","x":-762,"y":1713,"width":250,"height":150,"isHorizontal":true,"copies":10},  
+                {"sprite":"wall","x":-550,"y":2450,"width":250,"height":150,"isHorizontal":true,"copies":10}, 
+                {"sprite":"wall","x":-700,"y":2935,"width":250,"height":150,"isHorizontal":true,"copies":15},                     
+                {"sprite":"camstopper_left","x":-600,"y":394},
+                {"sprite":"camstopper_right","x":1350,"y":2778},
+                {"sprite":"entryexit_entry","x":-900,"y":464},
+                {"sprite":"entryexit_exit","x":2100,"y":2819},
+                {"sprite":"scenechanger_scleft","x":-1450,"y":464},
+                {"sprite":"scenechanger_scright","x":2300,"y":2805},               
+            ],
 			[
 			  {"sprite":"platform","x":0,"y":600,"width":1987,"height":50},
 			  {"sprite":"platform","x":2100,"y":1000,"width":1000,"height":50},
@@ -92,7 +110,7 @@ let scenes=[
 				{"sprite":"BossFightTriggGO","x":1824,"y":628,
 				 "br1posx":-1100,"br1posy":-60,"br2posx":200,"br2posy":-60,"spriteId":"BossFightTriggGO"
 				},
-				// {"sprite":"falseknight","x":1289,"y":-367,"width":368,"height":223,"spriteId":"boss_fknight1"}
+				// {"sprite":"falseknight","x":1289,"y":-367,"width":368,"height":223,"spriteId":"boss_fknight1","spawnedBoss":true}
 				// {"sprite":"huskMiner","x":889,"y":-367,"width":170,"height":220,"spriteId":"boss_huskminer1","cutscene":false}
 			],
 			
