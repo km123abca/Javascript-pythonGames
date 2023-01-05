@@ -4442,8 +4442,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 constructor(x,y,wid,hei,spriteGroups)
 		 	{		 	 
 		 	 this.position=new CreateVector(x,y);
-		 	 this.width=wid*xscale;
-		 	 this.height=hei*yscale;
+		 	 this.width=wid;
+		 	 this.height=hei;
 		 	 this.spriteGroups=spriteGroups;
 		 	 for(let grp of this.spriteGroups)
 			 	grp.push(this); 
@@ -4510,12 +4510,12 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     	 	   this.triggered=true;    	 	   
     	 	   this.tree1= new BarrierTree(this.br1pos.x+this.position.x,
     	 	   				   this.br1pos.y+this.position.y,
-    	 	   				   230*xscale,355*yscale,
+    	 	   				   630*xscale,955*yscale,
     	 	   				   [gameManager.visible_sprites]
     	 	   				  );
     	 	   this.tree2= new BarrierTree(this.br2pos.x+this.position.x,
     	 	   				   this.br2pos.y+this.position.y,
-    	 	   				   230*xscale,355*yscale,
+    	 	   				   630*xscale,955*yscale,
     	 	   				   [gameManager.visible_sprites]
     	 	   				  );
     	 	   for(let go of gameManager.visible_sprites)
@@ -5987,7 +5987,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 		   	   elem['br1posy']*yscale,
 		 	 	 		   	   elem['br2posx']*xscale,
 		 	 	 		   	   elem['br2posy']*yscale,		 	 	 		   	   
-		 	 	 		   	   [this.active_sprites],
+		 	 	 		   	   [this.active_sprites,this.visible_sprites],
 		 	 	 		   	   elem['spriteId']
 		 	 	 		   	   );
 		 	 	 else if(elem['sprite']=='huskMiner' &&  

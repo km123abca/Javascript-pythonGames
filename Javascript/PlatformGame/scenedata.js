@@ -39,7 +39,12 @@ let scenes=[
                 {"sprite":"entryexit_entry","x":-900,"y":464},
                 {"sprite":"entryexit_exit","x":2100,"y":2819},
                 {"sprite":"scenechanger_scleft","x":-1450,"y":464},
-                {"sprite":"scenechanger_scright","x":2300,"y":2805},               
+                {"sprite":"scenechanger_scright","x":2300,"y":2805},
+                {"sprite":"BossFightTriggGO","x":0,"y":2298,
+				 "br1posx":-660,"br1posy":-348,"br2posx":1600,"br2posy":-348,"spriteId":"BossFightTriggGO"
+				}, 
+				{"sprite":"falseknight","x":0,"y":1800,"width":368,"height":223,
+				"spriteId":"boss_fknight1","spawnedBoss":true}              
             ],
 			[
 			  {"sprite":"platform","x":0,"y":600,"width":1987,"height":50},
