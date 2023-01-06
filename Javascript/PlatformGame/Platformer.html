@@ -2426,10 +2426,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     		 this.spawnedBoss=spawnedBoss;
     		 this.fkMusicStarted=false;
     		 this.position= new CreateVector(x,y);
-    		 this.width = wid * xscale;
-    		 this.height = hei * yscale;
+    		 this.width = wid;
+    		 this.height = hei;
     		 let folderPath='sprites/FalseKnight';
-    		 this.onScreen=true;
+    		 this.onScreen=!spawnedBoss;             
     		 this.angle=0;
     		 this.sx=1;
     		 this.sy=1;
@@ -2620,7 +2620,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     		 this.dodgeStartTime=0;
     		 this.dodgeSpeed=10*xscale;
     		 this.maxDodgeTime=500;
-    		 this.dodgeRight=1;    	     
+    		 this.dodgeRight=1; 
+             this.raycastLength=200*xscale;   	     
     		} 
     	 removeBars()
     	 	{
@@ -2630,6 +2631,18 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     	 	 	 	go.bossHasDiedRemoveBars();
     	 	 	}
     	 	}
+         PlayerDetected(n,dist=this.raycastLength)
+            {
+              if(!this.tgt || !this.tgt.isActive) return false;
+              let offsets=[-40*yscale,0,40*yscale];
+              for(let offset of offsets)
+                {
+                let yoffset=new CreateVector(0,offset);
+                if(Raycast(this.position.copy().add(yoffset),new CreateVector(n,0),dist,this.tgt))
+                    return true;
+                }
+              return false;
+            }
 		 takeDamage(dmg,dir=0)
 		 	{
 		 	//this.acceleration.add(new CreateVector(dir,0));
@@ -2757,7 +2770,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     		}
     	display()
 		 	{		 	 
-		 	 if(!this.onScreen) return false;
+		 	 if(!this.onScreen) return false;             
 		 	 this.runAnimation();
 		 	 ctx.save();
 		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
@@ -4478,12 +4491,12 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
     class BossFightTriggGO
     	{
-    	 constructor(x,y,br1posx,br1posy,br2posx,br2posy,spriteGroups,spriteId)
+    	 constructor(x,y,mywidth,myheight,br1posx,br1posy,br2posx,br2posy,spriteGroups,spriteId)
     	 	{
     	 	  // console.log(`${x},${y}`);
     	 	  this.position=new CreateVector(x,y);
-    	 	  this.width=40*xscale;
-    	 	  this.height=240*yscale;
+    	 	  this.width=mywidth;
+    	 	  this.height=myheight;
     	 	  this.br1pos=new CreateVector(br1posx,br1posy);
     	 	  this.br2pos=new CreateVector(br2posx,br2posy);     	 	  	 	  
     	 	  this.spriteGroups=spriteGroups;
@@ -4521,7 +4534,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     	 	   for(let go of gameManager.visible_sprites)
     	 	   {
     	 	   	if(go.spriteId && go.spriteId.split('_')[0]=='boss')
+                    {
     	 	   		go.isActive=true;
+                    go.onScreen=true;
+                    }
     	 	   }
     	 	  }
     	    }
@@ -5983,11 +5999,13 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 		 this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)
 		 	 	 	new BossFightTriggGO(elem['x']*xscale,
 		 	 	 		   	   elem['y']*yscale,
+                               elem['mywidth']*xscale,
+                               elem['myheight']*yscale,
 		 	 	 		   	   elem['br1posx']*xscale,
 		 	 	 		   	   elem['br1posy']*yscale,
 		 	 	 		   	   elem['br2posx']*xscale,
 		 	 	 		   	   elem['br2posy']*yscale,		 	 	 		   	   
-		 	 	 		   	   [this.active_sprites,this.visible_sprites],
+		 	 	 		   	   [this.active_sprites],
 		 	 	 		   	   elem['spriteId']
 		 	 	 		   	   );
 		 	 	 else if(elem['sprite']=='huskMiner' &&  
