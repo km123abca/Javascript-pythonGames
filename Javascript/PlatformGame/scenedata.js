@@ -41,10 +41,11 @@ let scenes=[
                 {"sprite":"scenechanger_scleft","x":-1450,"y":464},
                 {"sprite":"scenechanger_scright","x":2300,"y":2805},
                 {"sprite":"BossFightTriggGO","x":0,"y":2111,"mywidth":40,"myheight":600,
-				 "br1posx":-660,"br1posy":-147,"br2posx":1600,"br2posy":-147,"spriteId":"BossFightTriggGO"
+				 "br1posx":-660,"br1posy":-147,"br2posx":1600,"br2posy":-147,
+				 "spriteId":"BossFightTriggGO"
 				}, 
 				{"sprite":"falseknight","x":625,"y":1944,"width":368,"height":223,
-				"spriteId":"boss_fknight1","spawnedBoss":true}              
+				 "spriteId":"boss_fknight1","spawnedBoss":false}              
             ],
 			[
 			  {"sprite":"platform","x":0,"y":600,"width":1987,"height":50},

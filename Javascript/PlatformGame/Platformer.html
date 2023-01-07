@@ -141,11 +141,11 @@
     function Raycast(originx,direction,lenx,objToCheck)
     	{
 		//graphic	
-		/*	 	 
+		 /*	 	 
 	 	 Draw_a_line(originx.copy().add(new CreateVector(0,0)),
 	 	 	 		 originx.copy().add(new CreateVector(0,0)).add(direction.copy().mult(lenx))
 	 	 	 		);	
-	 	*/ 	 
+	 	 */	 
 	 	//graphic
 
 		let origin=originx.copy();
@@ -2576,7 +2576,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			  	this.animInQueue=null;
 			  	this.animationFrame=0;
 			  	this.sprite_type='false_knight';
-			  	this.state='fkagro';
+			  	this.state=spawnedBoss?'fkagro':'fkidle';
 			  	this.maxHealth=100;
 			  	this.health=this.maxHealth;
 			  	this.spriteGroups=spriteGroups;
@@ -2621,8 +2621,16 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     		 this.dodgeSpeed=10*xscale;
     		 this.maxDodgeTime=500;
     		 this.dodgeRight=1; 
-             this.raycastLength=200*xscale;   	     
+             this.raycastLength=400*xscale;   	     
     		} 
+         lookForBFightTrigger()
+            {
+              for(let go of gameManager.active_sprites)
+                {
+                 if(go.spriteId && go.spriteId=="BossFightTriggGO")
+                    go.triggerOnRequest(this);
+                }  
+            }
     	 removeBars()
     	 	{
     	 	 for(let go of gameManager.active_sprites)
@@ -2793,7 +2801,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     		{
     		 switch(this.state)
     		 	{
-    		 	case 'idle':
+    		 	case 'fkidle':
     		 	  this.fkidle();
     		 	  break;
     		 	case 'fkagro':
@@ -2825,7 +2833,11 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     		}
     	fkidle()
     		{
-    		 return false;
+    		 if(this.PlayerDetected(1) || this.PlayerDetected(-1))
+                {
+                this.lookForBFightTrigger();
+                this.state="fkagro";
+                }
     		} 
     	fkslam()
     		{
@@ -4516,6 +4528,27 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     	 		this.tree2.burn();
     	 		destroySelf(this);
     	 	}
+         spawnTrees()
+            {
+              this.tree1= new BarrierTree(this.br1pos.x+this.position.x,
+                               this.br1pos.y+this.position.y,
+                               630*xscale,955*yscale,
+                               [gameManager.visible_sprites]
+                              );
+                this.tree2= new BarrierTree(this.br2pos.x+this.position.x,
+                               this.br2pos.y+this.position.y,
+                               630*xscale,955*yscale,
+                               [gameManager.visible_sprites]
+                              );  
+            }
+         triggerOnRequest(go)
+            {
+             if(!this.triggered && go.spriteId && go.spriteId.split('_')[0]=='boss')
+                {
+                this.triggered=true;             
+                this.spawnTrees();
+                }
+            }
     	 update()
     	 	{    	 	 
     	 	  if(!this.triggered && b_collision(this,gameManager.player))
