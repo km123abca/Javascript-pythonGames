@@ -2668,7 +2668,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 			SpawnClouds(this.position);
 	 			destroySelf(this);
 	 			destroySelf(this.hit_box);
-	 			destroySelf(this.fkHealthBar);	 			
+	 			destroySelf(this.fkHealthBar);
+                gameManager.listOfDestroyedSprites.push(this.spriteId);	 			
 	 			}	
 		 	}   
 		updateHealthBarPos()
@@ -3154,7 +3155,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     		 this.hasCutScene=hasCutScene;
     		 if(this.isBoss && this.hasCutScene)
     		 this.tree_right= new BarrierTree(100*xscale+this.position.x,
-    	 	   				   this.position.y+350*yscale,
+    	 	   				   this.position.y+0*yscale,
     	 	   				   230*xscale,355*yscale,
     	 	   				   [gameManager.visible_sprites]
     	 	   				  );
@@ -3321,7 +3322,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     	 	 	 	go.bossHasDiedRemoveBars();
     	 	 	}
     	 	}
-
+        destroyProp()
+            {
+                this.tree_right.burn();
+            }
 		updateHealthBarPos()
 			{
 			if(this.minerHealthBar.onScreen)
@@ -3513,21 +3517,44 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     	 	 	{
     	 	 	this.state='miner_agro';    	
     	 	 	this.miningStarted= false; 	
-    	 	 	this.Spawnbarriers(); 	
+    	 	 	this.Spawnbarriers(); 
+                this.destroyProp();	
     	 	 	}
-    	 	 else if(this.animation!='startle' && Math.abs(playerSep) < this.minerAgroDistance)
+    	 	 else if(this.animation!='startle' && 
+                        (this.PlayerDetected(1)||this.PlayerDetected(-1)))
     	 	 	{    	 	 	 
     	 	 	 this.switchAnimation('startle');
     	 	 	 this.animInQueue='idle';
     	 	 	 if(!this.huskMusicStarted)
 	    	 	 	{
 	    	 	 	 this.huskMusicStarted= true;
+                     this.lookForBFightTrigger();
 	    	 	 	 capraMusic.src="./sounds/Capra.mp3";
 	    	 	 	 capraMusic.play();
 	    	 	 	}
     	 	 	}
     	 	 return false;
-    	 	}   
+    	 	} 
+         PlayerDetected(n,dist=this.minerAgroDistance)
+            {
+              if(!this.tgt || !this.tgt.isActive) return false;
+              let offsets=[-40*yscale,0,40*yscale];
+              for(let offset of offsets)
+                {
+                let yoffset=new CreateVector(0,offset);
+                if(Raycast(this.position.copy().add(yoffset),new CreateVector(n,0),dist,this.tgt))
+                    return true;
+                }
+              return false;
+            }
+        lookForBFightTrigger()
+            {
+              for(let go of gameManager.active_sprites)
+                {
+                 if(go.spriteId && go.spriteId=="BossFightTriggGO")
+                    go.triggerOnRequest(this);
+                }  
+            }  
     	 
     	 hmBallShower()
     	 	{
@@ -3626,6 +3653,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     	 	}
     	 update()
     	 	{ 
+             // return false;
     	 	 this.updateHealthBarPos();
     	 	 if(!this.hasCutScene && !this.isActive) return false;   	 	 
  			 this.move();    		   
@@ -3701,7 +3729,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 			SpawnClouds(this.position);
 	 			destroySelf(this);
 	 			destroySelf(this.hit_box);
-	 			destroySelf(this.minerHealthBar);	 			
+	 			destroySelf(this.minerHealthBar);
+                gameManager.listOfDestroyedSprites.push(this.spriteId);	 			
 	 			}	
 		 	} 
 
@@ -4484,6 +4513,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	{
 		 		destroySelf(this.hit_box);
 		 		destroySelf(this);
+                for(let i=0;i<5;i++)
+                    SpawnClouds(this.position);
 		 	}
 		 display()
 		 	{
@@ -4553,27 +4584,36 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     	 	{    	 	 
     	 	  if(!this.triggered && b_collision(this,gameManager.player))
     	 	  {
-    	 	   this.triggered=true;    	 	   
-    	 	   this.tree1= new BarrierTree(this.br1pos.x+this.position.x,
-    	 	   				   this.br1pos.y+this.position.y,
-    	 	   				   630*xscale,955*yscale,
-    	 	   				   [gameManager.visible_sprites]
-    	 	   				  );
-    	 	   this.tree2= new BarrierTree(this.br2pos.x+this.position.x,
-    	 	   				   this.br2pos.y+this.position.y,
-    	 	   				   630*xscale,955*yscale,
-    	 	   				   [gameManager.visible_sprites]
-    	 	   				  );
-    	 	   for(let go of gameManager.visible_sprites)
-    	 	   {
-    	 	   	if(go.spriteId && go.spriteId.split('_')[0]=='boss')
+               if(this.activateBosses())
                     {
-    	 	   		go.isActive=true;
-                    go.onScreen=true;
+        	 	   this.triggered=true;    	 	   
+        	 	   this.tree1= new BarrierTree(this.br1pos.x+this.position.x,
+        	 	   				   this.br1pos.y+this.position.y,
+        	 	   				   630*xscale,955*yscale,
+        	 	   				   [gameManager.visible_sprites]
+        	 	   				  );
+        	 	   this.tree2= new BarrierTree(this.br2pos.x+this.position.x,
+        	 	   				   this.br2pos.y+this.position.y,
+        	 	   				   630*xscale,955*yscale,
+        	 	   				   [gameManager.visible_sprites]
+        	 	   				  ); 
                     }
-    	 	   }
+
     	 	  }
     	    }
+         activateBosses()
+            {
+            for(let go of gameManager.visible_sprites)
+               {
+                if(go.spriteId && go.spriteId.split('_')[0]=='boss')
+                    {
+                    go.isActive=true;
+                    go.onScreen=true;
+                    return true;
+                    }
+               }
+             return false;  
+            }
     	 display()
     	 	{
     	 	 if(!this.onScreen)
