@@ -1,5 +1,7 @@
 let scenes=[
 			[
+				{"sprite":"platform","x":150,"y":300,"width":50,"height":500},
+				{"sprite":"WallGripper","x":125,"y":300,"width":10,"height":500},
 			    {"sprite":"thorn","x":1870,"y":924,"width":600,"height":250,"xoffset":0,"yoffset":0},
 			    {"sprite":"shrub","x":200,"y":924,"width":2400,"height":250,"xoffset":0,"yoffset":0},
 			    {"sprite":"shrub","x":3675,"y":924,"width":2400,"height":250,"xoffset":0,"yoffset":0},

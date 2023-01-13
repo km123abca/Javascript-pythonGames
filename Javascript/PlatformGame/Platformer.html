@@ -409,6 +409,7 @@ let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 let THORNIMAGE = LoadImagex('sprites/misc','thorn.png');
 let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 let FLOWERIMAGE= LoadImagex('sprites/misc','Flower.png');
+let GATEIMAGE= LoadImagex('sprites/misc','gate.png');
 
 let SAWWHEEL1= LoadImagex('sprites/workshop','sawwheel1.png');
 let SAWWHEEL2= LoadImagex('sprites/workshop','sawwheel2.png');
@@ -881,6 +882,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		}
 	//positionAdjuster ends
 
+
 	class Platform
 		{
 		 constructor(x,y,width,height,spriteGroups)
@@ -1212,6 +1214,17 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 return true;
 		 	}
 		}
+   class WallGripper extends GeneralSprite
+        {
+
+         constructor(x,y,width,height,spriteGroups)
+            {
+             console.log('JA');
+             super(x,y,width,height,0,0,spriteGroups);             
+             this.sprite_type='WallGripper';
+             this.imagex= GATEIMAGE;
+            } 
+        } 
 
 	class Flower extends GeneralSprite
 		{
@@ -6009,6 +6022,13 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 				 elem['height']*yscale,
 		 	 	 				 [this.visible_sprites,this.collission_sprites]
 		 	 	 				);
+                 else if(elem['sprite']=='WallGripper')
+                    new WallGripper(elem['x']*xscale,
+                                 elem['y']*yscale,
+                                 elem['width']*xscale,
+                                 elem['height']*yscale,
+                                 [this.visible_sprites]
+                                );
 		 	 	 else if(elem['sprite']=='player')	
 		 	 	 	{		 	 	 		 	 	 	
 		 	 	 	this.player=new Player(elem['x']*xscale,
