@@ -1,7 +1,7 @@
 let scenes=[
 			[
-				{"sprite":"platform","x":150,"y":300,"width":50,"height":500},
-				{"sprite":"WallGripper","x":125,"y":300,"width":10,"height":500},
+				{"sprite":"platform","x":150,"y":-160,"width":50,"height":1280},
+				{"sprite":"WallGripper","x":125,"y":-177,"width":50,"height":1304},
 			    {"sprite":"thorn","x":1870,"y":924,"width":600,"height":250,"xoffset":0,"yoffset":0},
 			    {"sprite":"shrub","x":200,"y":924,"width":2400,"height":250,"xoffset":0,"yoffset":0},
 			    {"sprite":"shrub","x":3675,"y":924,"width":2400,"height":250,"xoffset":0,"yoffset":0},
@@ -10,7 +10,7 @@ let scenes=[
 				{"sprite":"platform","x":1459,"y":479,"width":1200,"height":50},
 				{"sprite":"platform","x":3228,"y":696,"width":2313,"height":50},				
 				{"sprite":"player","x":100,"y":200,"width":100,"height":100},
-				{"sprite":"camstopper_left","x":-565,"y":394},
+				{"sprite":"camstopper_left","x":-565,"y":-491},//394
 				{"sprite":"camstopper_right","x":3591,"y":582},
 				{"sprite":"entryexit_entry","x":-344,"y":464},
 				{"sprite":"entryexit_exit","x":4059,"y":610},
