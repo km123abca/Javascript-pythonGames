@@ -4948,7 +4948,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	{
 		 	 	 if(this.spaceTrigger  && !this.jumping && this.numJumps<2)
 		 	 	 	{ 
-                    if(Math.abs(this.IsInContactWithWallVar)==1)	 
+                    if(this.IsInContactWithWallVar)	 
                         {
                         this.reverseDashing=true;
                         // this.HoriForceBanned=true;        
@@ -4984,7 +4984,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	this.spaceTrigger=true;
 		 	 if(!GetKeyPressedx(gameManager.jumpKey) && this.jumping) this.jumping=false;
 		 	 if(!GetKeyPressedx(gameManager.jumpKey) && this.numJumps>0 && 
-                (this.checkIfOnGround()|| Math.abs(this.IsInContactWithWallVar) ) ) 
+                (this.checkIfOnGround()|| this.IsInContactWithWallVar ) ) 
 		 	 	this.numJumps=0;
 		 	}
 		 applyGravity()
@@ -5032,7 +5032,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 	  this.maxVelocity.x= this.dashSpeed*0.5;			 	  
 			 	  document.querySelector('#HitPaddleBloop').play();
 			 	 }
-		 	 this.acceleration.add(this.horiForce.copy().mult(-this.IsInContactWithWallVar*3));
+		 	 this.acceleration.add(this.horiForce.copy().mult(-this.sx*3));
 		 	 if(gameManager.runningClock - this.dashStartTime > this.maxDashTime*0.6)
 		 	 	 {
 		 	 	  this.dashing=false;
