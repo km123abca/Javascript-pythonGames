@@ -15,6 +15,7 @@ autogitpull.bat
 # production
 /build
 /ThePigGame
+/Mario
 
 # misc
 .DS_Store
