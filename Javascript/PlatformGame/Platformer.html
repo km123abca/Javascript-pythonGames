@@ -4935,16 +4935,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 		}
 		 	return false;
 		 	}
-         HoriForceBanChecker()
-            {
-                this.horiForceLockTimer+=deltaTime;
-                if(this.horiForceLockTimer > this.horiForceLockTimerMax)
-                    {
-                     this.horiForceLockTimer=0;
-                     return false;
-                    }
-                return true;
-            }
+
 
 		 jumpingContols()
 		 	{
@@ -4957,7 +4948,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 // if(spacePress)
 		 	 if(GetKeyPressedx(gameManager.jumpKey))
 		 	 	{
-		 	 	 if(this.spaceTrigger && !this.HoriForceBanned && !this.jumping && this.numJumps<2)
+		 	 	 if(this.spaceTrigger  && !this.jumping && this.numJumps<2)
 		 	 	 	{ 
                     if(this.IsInContactWithWallVar)	 
                         {
@@ -5033,7 +5024,17 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.refillEnergy();
 		 	 this.manageInvincibility();
 		 	}
-		 
+
+         HoriForceBanChecker()
+            {
+                this.horiForceLockTimer+=deltaTime;
+                if(this.horiForceLockTimer > this.horiForceLockTimerMax)
+                    {
+                     this.horiForceLockTimer=0;
+                     return false;
+                    }
+                return true;
+            }		 
 		 dashStateFns()
 		 	{
 		 	 if(this.dashStartTime==0)
