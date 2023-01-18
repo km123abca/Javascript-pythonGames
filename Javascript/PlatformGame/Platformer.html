@@ -3743,7 +3743,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 		this.minerHealthBar.onScreen=true;
 	 		if(this.health <= 5)
 	 			{
-	 			capraMusic.src="";
+	 			// capraMusic.src="";
+	 			pauseBossMusic();
 	 			pauseMusic();
 	 			startMusic();
 	 			fogGateSound.play();
@@ -4762,12 +4763,12 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                      if(b_collision(this,x))
                         {
                          this.IsInContactWithWallVar=Math.sign(x.position.x-this.position.x);
-                         this.maxVelocity.y=this.maxVertVel_player_sliding;
+                         this.maxVelocity.y=this.maxVertVel_player_sliding;                         
                          return true;   
                         } 
                     }
                 this.IsInContactWithWallVar=0;
-                this.maxVelocity.y=this.maxVertVel_player;
+                this.maxVelocity.y=this.maxVertVel_player;               
                 return false;
             }
 		handleHealing()

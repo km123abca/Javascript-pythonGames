@@ -1,11 +1,11 @@
 let scenes=[
 			[
-				// {"sprite":"platform","x":150,"y":-160,"width":50,"height":1280},
-				// {"sprite":"WallGripper","x":125,"y":-177,"width":50,"height":1304},
+				{"sprite":"platform","x":150,"y":-160,"width":50,"height":1280},
+				{"sprite":"WallGripper","x":125,"y":-177,"width":50,"height":1304},
 			    {"sprite":"thorn","x":1870,"y":924,"width":600,"height":250,"xoffset":0,"yoffset":0},
 			    {"sprite":"shrub","x":200,"y":924,"width":2400,"height":250,"xoffset":0,"yoffset":0},
 			    {"sprite":"shrub","x":3675,"y":924,"width":2400,"height":250,"xoffset":0,"yoffset":0},
-				{"sprite":"tree","x":-950,"y":424,"width":361,"height":343},
+				{"sprite":"tree","x":-988,"y":30,"width":824,"height":1146},
 				{"sprite":"platform","x":-150,"y":600,"width":1987,"height":50},
 				{"sprite":"platform","x":1459,"y":479,"width":1200,"height":50},
 				{"sprite":"platform","x":3228,"y":696,"width":2313,"height":50},				
@@ -52,6 +52,8 @@ let scenes=[
 				   "spriteId":"boss_huskminer1","cutscene":true}              
             ],
 			[
+			  {"sprite":"platform","x":1188,"y":804,"width":50,"height":667},
+			  {"sprite":"WallGripper","x":1213,"y":801,"width":46,"height":667},
 			  {"sprite":"platform","x":0,"y":600,"width":1987,"height":50},
 			  {"sprite":"platform","x":2100,"y":1000,"width":1000,"height":50},
 			  {"sprite":"platform","x":2100,"y":1350,"width":1000,"height":50},
