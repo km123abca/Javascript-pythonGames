@@ -1,7 +1,7 @@
 let scenes=[
 			[
-				{"sprite":"platform","x":150,"y":-160,"width":50,"height":1280},
-				{"sprite":"WallGripper","x":125,"y":-177,"width":50,"height":1304},
+				{"sprite":"platform","x":150,"y":-210,"width":50,"height":1280},
+				{"sprite":"WallGripper","x":175,"y":-227,"width":50,"height":1304},
 			    {"sprite":"thorn","x":1870,"y":924,"width":600,"height":250,"xoffset":0,"yoffset":0},
 			    {"sprite":"shrub","x":200,"y":924,"width":2400,"height":250,"xoffset":0,"yoffset":0},
 			    {"sprite":"shrub","x":3675,"y":924,"width":2400,"height":250,"xoffset":0,"yoffset":0},
@@ -51,9 +51,9 @@ let scenes=[
 				{"sprite":"huskMiner","x":550,"y":2260,"width":170,"height":220,
 				   "spriteId":"boss_huskminer1","cutscene":true}              
             ],
-			[
-			  {"sprite":"platform","x":1188,"y":804,"width":50,"height":667},
-			  {"sprite":"WallGripper","x":1213,"y":801,"width":46,"height":667},
+			[			  
+			  {"sprite":"platform","x":1263,"y":950,"width":50,"height":1000},
+			  {"sprite":"WallGripper","x":1288,"y":947,"width":50,"height":1000},
 			  {"sprite":"platform","x":0,"y":600,"width":1987,"height":50},
 			  {"sprite":"platform","x":2100,"y":1000,"width":1000,"height":50},
 			  {"sprite":"platform","x":2100,"y":1350,"width":1000,"height":50},
@@ -68,7 +68,7 @@ let scenes=[
 			  {"sprite":"saw","x":137,"y":175,"width":112,"height":112,"xoffset":0,"yoffset":0,"moveTime":600,"moveTimeInit":600,"speed":10,"isHoriWheel":false},
 			  {"sprite":"scenechanger_scright","x":2598,"y":1190},
 			],
-			[			  
+			[			  	  
 			  {"sprite":"wall","x":-888,"y":612,"width":250,"height":150,"isHorizontal":true,"copies":5},
 			  {"sprite":"wall","x":388,"y":868,"width":250,"height":150,"isHorizontal":true,"copies":4},
 			  {"sprite":"wall","x":1738,"y":868,"width":250,"height":150,"isHorizontal":true,"copies":4},
