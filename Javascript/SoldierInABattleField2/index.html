@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title> Soldier in a battle field</title>
+    <!-- function group1: Basic functions -->
+    <script>
+    let FPS=60;
+    let deltaTime=1000 / FPS;
+    let mouseX,mouseY;
+
+    function trackMouse(e)
+            {
+            mouseX=e.clientX;
+            mouseY=e.clientY;
+            }
+    function showMouse()    
+            {
+        let mx=mouseX+gameManager.camera.position.x;
+        let my=mouseY+gameManager.camera.position.y;
+        mx=mx.toFixed(2);
+        my=my.toFixed(2);
+        w2screen(`${mx},${my}`,canvas.width/2,200);
+            }
+    const w2screen=(strr = "", px = 20, py = 30,fillStyle="#FFFFFF",siz=40) =>
+            {
+          ctx.font = `${siz}px Haettenschweiler`;
+          ctx.fillStyle = fillStyle;
+          ctx.fillText(strr, px, py);
+            }
+    class CreateVector
+        {
+        constructor(x,y)
+            {
+             this.x=x;
+             this.y=y;  
+            }       
+        set(x,y)
+            {
+             this.x=x;
+             this.y=y;
+             return this;
+            }
+        setVec(vec)
+            {
+             this.x=vec.x;
+             this.y=vec.y;           
+            }
+        mag()
+            {
+             return Math.sqrt(this.x**2+this.y**2);
+            }
+        add(vec)
+            {
+            this.x+=vec.x;
+            this.y+=vec.y;
+            return this;
+            }
+        sub(vec)
+            {
+            this.x-=vec.x;
+            this.y-=vec.y;
+            return this;
+            }
+        mult(num)
+            {
+            this.x*=num;
+            this.y*=num;
+            return this;
+            }
+        div(num)
+            {
+            if(num==0)
+                {
+                 alert("div by 0:!!!");
+                 return new CreateVector(0,0);
+                }
+            this.x/=num;
+            this.y/=num;
+            return this;
+            }
+        normalize()
+            {
+            let mag=this.mag();
+            if(mag==0) return this;
+            this.x/=mag;
+            this.y/=mag;
+            return this;
+            }
+        normalized()
+            {
+             return this.copy().normalize();
+            }
+        copy()
+            {
+            let copyVec=new CreateVector(this.x,this.y);
+            return copyVec;
+            }
+        equals(vec)
+            {
+             return this.x==vec.x && this.y==vec.y;
+            }
+        desc()
+            {
+            return `Vector:${this.x},${this.y}`
+            }
+        heading()
+            {
+            let angx=Math.atan2(this.y,this.x)/Math.PI*180;
+            return angx<0?angx+360:angx;
+            }
+        pointToAngle(angle)
+            {
+            let mag=this.mag();
+            this.x=mag*Math.cos(angle/180*Math.PI);
+            this.y=mag*Math.sin(angle/180*Math.PI);         
+            return this;
+            }
+        rotateByAngle(delta)
+            {
+            let ang=this.heading();
+            return this.pointToAngle(ang+delta);
+            }
+        dot(vec)
+            {
+            return this.x*vec.x+this.y*vec.y;
+            }       
+        }
+    function PointInsideObject(objToCheck,pt)
+        {
+        if (pt.x >= objToCheck.position.x-objToCheck.width/2 && pt.x <= objToCheck.position.x+objToCheck.width/2)
+        if (pt.y >= objToCheck.position.y-objToCheck.height/2 && pt.y <= objToCheck.position.y+objToCheck.height/2)
+            return true
+        return false
+        }
+    function Raycast(originx,direction,lenx,objToCheck)
+        {
+        //graphic   
+         /*      
+         Draw_a_line(originx.copy().add(new CreateVector(0,0)),
+                     originx.copy().add(new CreateVector(0,0)).add(direction.copy().mult(lenx))
+                    );  
+         */  
+        //graphic
+
+        let origin=originx.copy();
+        let destin=originx.copy().add(direction.copy().mult(lenx)); 
+        let deltaz=2*xscale
+        let startLen=0
+
+        while (startLen < lenx)
+            {
+            if (PointInsideObject(objToCheck,origin.add(direction.copy().mult(deltaz))) )
+                return true
+            startLen+=deltaz
+            }
+        return false
+        }
+    function RaycastAll(originx,direction,lenx,arrOfArrObjs,arrAvoid)
+        {
+        
+        //graphic            
+         Draw_a_line(originx.copy().add(new CreateVector(0,0)),
+                     originx.copy().add(new CreateVector(0,0)).add(direction.copy().mult(lenx))
+                    );       
+        //graphic
+
+        let origin=originx.copy();
+        let destin=originx.copy().add(direction.copy().mult(lenx)); 
+        let deltaz=2*xscale
+        let startLen=0
+            
+
+        while (startLen < lenx)
+            {
+            for(let objxArr of arrOfArrObjs)
+                for(let objToCheck of objxArr)
+                {
+                 let skipFlag=false;
+                 for(let avoidObj of arrAvoid)
+                    {                   
+                    if(avoidObj==objToCheck)
+                        {
+                        skipFlag=true;
+                        break;  
+                        }
+                    }
+                 if (skipFlag) continue;
+
+                 if (PointInsideObject(objToCheck,origin.add(direction.copy().mult(deltaz))) )
+                    {
+                     console.log('reporting hit inside '+objToCheck.sprite_type);
+                     return true;
+                    }
+                }
+            startLen+=deltaz;
+            }
+        return false
+        }
+    //collision check algorithm starts
+    function b_collision(obj1,obj2)
+        {
+         let cornerPoints1=[obj1.position.copy().add(new CreateVector(-obj1.width/2,-obj1.height/2)),
+                           obj1.position.copy().add(new CreateVector(-obj1.width/2, obj1.height/2)),
+                           obj1.position.copy().add(new CreateVector( obj1.width/2,-obj1.height/2)),
+                           obj1.position.copy().add(new CreateVector( obj1.width/2, obj1.height/2))
+                          ];
+         let cornerPoints2=[obj2.position.copy().add(new CreateVector(-obj2.width/2,-obj2.height/2)),
+                            obj2.position.copy().add(new CreateVector(-obj2.width/2, obj2.height/2)),
+                            obj2.position.copy().add(new CreateVector( obj2.width/2,-obj2.height/2)),
+                            obj2.position.copy().add(new CreateVector( obj2.width/2, obj2.height/2))
+                          ];
+         cornerPoints1=cornerPoints1.map(x=>obj1.position.copy().add(x.copy().sub(obj1.position).rotateByAngle(obj1.angle)) );
+         cornerPoints2=cornerPoints2.map(x=>obj2.position.copy().add(x.copy().sub(obj2.position).rotateByAngle(obj2.angle)) );
+         return ArePointsInside(cornerPoints1,obj2)||ArePointsInside(cornerPoints2,obj1);
+        }
+    function ArePointsInside(pts,obj2)
+        {
+        let ptsy=pts.map(x=>GetRAVec(x,obj2.angle));
+        let objx={position:GetRAVec(obj2.position,obj2.angle),width:obj2.width,height:obj2.height};
+        for(let pt of ptsy)
+            {
+             if(PointInsideObject(objx,pt)) return true;
+            }
+        return false;
+        }
+    //collision check algorithm ends
+    //simple box collsion check
+    function collisioncheckzVec(elem1,elem2)
+                {
+            return (inter_ects(elem1.position.x-elem1.width/2,elem1.position.y-elem1.height/2,
+                               elem1.width,elem1.height,
+                               elem2.position.x-elem2.width/2,elem2.position.y-elem2.height/2,
+                               elem2.width,elem2.height
+                              )
+                   );
+                }
+    function circularCollision(elem1,elem2)
+        {
+            let centerSeperation=elem1.position.copy();
+            centerSeperation.sub(elem2.position);
+            centerSeperation=centerSeperation.mag();
+            return centerSeperation < elem1.width/2+elem2.width/2;
+        }
+    function inter_ects(q1,q2,ql1,ql2,w1,w2,wl1,wl2)
+                {
+                if(w1>=q1)
+                    {
+                    if((w1-q1)<ql1)
+                        {
+                        if(w2>=q2)
+                            {
+                            if((w2-q2)<ql2) return true;
+                            return false;
+                            }
+                        else
+                            {
+                            if((q2-w2)<wl2) return true;
+                            return false;
+                            }
+                        }
+                    }
+                else
+                    {
+                    if((q1-w1)<wl1)
+                        {
+                        if(w2>=q2)
+                            {
+                            if((w2-q2)<ql2) return true;
+                            return false;
+                            }
+                        else
+                            {
+                            if((q2-w2)<wl2) return true;
+                            return false;
+                            }
+                        }
+                    }
+                }
+    //simple box collision check ends
+    function GetRAVec(a,angle)
+        {
+            let t=d2r(angle);
+            let xval= a.x * Math.cos(t)+a.y * Math.sin(t);
+            let yval=-a.x * Math.sin(t)+a.y * Math.cos(t);
+            return new CreateVector(xval,yval);
+        }
+    function GetrRAVec(a,angle)
+        {
+            let t=d2r(angle);
+            let xval= a.x * Math.cos(t)-a.y * Math.sin(t);
+            let yval= a.x * Math.sin(t)+a.y * Math.cos(t);
+            return new CreateVector(xval,yval);
+        }
+    function d2r(ang)
+        {
+        return ang/180*Math.PI;
+        }
+    function r2d(ang)
+        {
+        return ang/Math.PI*180;
+        }
+    function Lerp(startValue,endValue,LerpFac)
+        {
+        return startValue+(endValue-startValue)/LerpFac;
+        }
+    function AngleLerp(startValue,endValue,lerpFac)
+        {
+        // console.log('received start:'+startValue);
+        // console.log('received end:'+endValue);
+        if (Math.abs(endValue - startValue) < SepFrom360(startValue) + SepFrom360(endValue))
+            return startValue+(endValue-startValue)/lerpFac 
+        return CloseAngleDistance360(startValue,(SepFrom360(startValue)+SepFrom360(endValue))/lerpFac )
+        }
+    function SepFrom360(angle)
+        {
+        if (angle < 180)
+            return angle
+        return 360 - angle
+        }
+    function CloseAngleDistance360(startAngle,delta)
+        {
+        if (startAngle < 180)
+            {
+            if (startAngle > delta)
+                return startAngle - delta;
+            return 360 - (delta - startAngle);
+            }
+        else
+            {
+             if (360 - startAngle > delta)
+                return startAngle + delta;
+             return delta - (360 - startAngle);
+            }
+        }
+    function LoadImages(folderPath,imageNames)
+        {
+        let result=[];
+        for(let imgx of imageNames)
+            {
+            let createdImage=new Image();
+            // console.log('./'+folderPath+'/'+imgx);
+            try
+                {
+                createdImage.src='./'+folderPath+'/'+imgx;
+                }
+            catch(err)
+                {
+                console.log(err);               
+                }
+            result.push(createdImage);
+            }
+        return result;
+        }
+    function LoadImagex(folderPath,imageName)
+        {
+            let createdImage= new Image();
+            createdImage.src='./'+folderPath+'/'+imageName;
+            return createdImage;
+        }
+
+    let tempTimer=0;
+    function DisplayInGaps(strx)
+        {
+         if(gameManager.runningClock - tempTimer > 2000)
+            {
+              tempTimer=gameManager.runningClock;
+              console.log(strx);
+            }
+        }
+
+    function Draw_a_line(startPos,endPos,color='#FF0000')
+        {
+        ctx.strokeStyle=color;
+        ctx.beginPath();
+        ctx.moveTo(startPos.x - gameManager.camera.position.x,startPos.y - gameManager.camera.position.y);
+        ctx.lineTo(endPos.x - gameManager.camera.position.x,endPos.y - gameManager.camera.position.y);
+        ctx.stroke();
+        }
+
+    function destroySelf(objx)
+        {             
+         for(let i in objx.spriteGroups)
+         {        
+          for(let j in objx.spriteGroups[i])
+            {
+
+             if(objx.spriteGroups[i][j]==objx)
+                {     
+                  objx.spriteGroups[i].splice(j,1);
+                  break;
+                }   
+            }
+         }
+         
+        }
+    </script>
+</head>
+<body style='background-color:black;'>
+    <!-- function group2: functions and variables that run the game -->
+    <script>
+    var canvas = document.querySelector('canvas');
+    ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth-35;
+    canvas.height = window.innerHeight-100;
+    let xscale=canvas.width/1273;
+    let yscale=canvas.height/873;
+    var resize = function () 
+        {
+        canvas.width = window.innerWidth-35;
+        canvas.height = window.innerHeight-100;
+        };
+    window.addEventListener('resize', resize);
+    let upArrow=false,leftArrow=false,rightArrow=false,downArrow=false;
+    let keysPressed=new Set();
+    CapturePressedKey=(keyCode,pressed=true)=>{
+        if(!((keyCode>64 && keyCode<91)||(keyCode > 96 && keyCode < 123)||(keyCode==32))) return false;
+        let charx=String.fromCharCode(keyCode);
+        let charx2=String.fromCharCode(keyCode+32);     
+        if(pressed && !keysPressed.has(charx))          
+            keysPressed.add(charx);
+        else if(!pressed)
+            {
+             keysPressed.delete(charx);
+             keysPressed.delete(charx2);
+            }
+    }
+
+    GetKeyPressedx=(x)=>{
+        return keysPressed.has(x)||keysPressed.has(x.toUpperCase());
+    }
+    let pressedKeyCode=-1;
+    document.onkeydown=function(e)
+                     {
+                        // console.log(e.keyCode);
+                        // CapturePressedKey(e.keyCode);                
+                        if(!okToStartMusic)
+                            {
+                             okToStartMusic=true;
+                             startMusic();
+                            }
+                        if(e.keyCode==37) leftArrow=true;
+                        if(e.keyCode==38) upArrow=true;
+                        if(e.keyCode==39) rightArrow=true;
+                        if(e.keyCode==40) downArrow=true;
+                     }
+    let spacePress,enterPress,upPress,rightPress,downPress,leftPress;
+    document.onkeypress=function (e)
+                    {
+                    pressedKeyCode=e.keyCode;
+                    // console.log(e.keyCode);  
+                    CapturePressedKey(e.keyCode);       
+                    if(e.keyCode==32) spacePress=true;
+                    if(e.keyCode==119) upPress=true;
+                    if(e.keyCode==100) rightPress=true;
+                    if(e.keyCode==115) downPress=true;
+                    if(e.keyCode==97) leftPress=true;                  
+                    if(e.keyCode==13)  enterPress=true;                     
+                    if(e.keyCode==112)                        
+                        gameManager.gamePaused=!gameManager.gamePaused;//This is the code for p                        
+                          
+                    };
+    document.onkeyup=function (e)
+                    {   
+                    // console.log(e.keyCode);
+                    pressedKeyCode=-1;
+                    CapturePressedKey(e.keyCode,false);
+                    if(e.keyCode==32) spacePress=false;                 
+                    if(e.keyCode==87) upPress=false;
+                    if(e.keyCode==68) rightPress=false;
+                    if(e.keyCode==83) downPress=false;
+                    if(e.keyCode==65) leftPress=false;
+                    
+                    if(e.keyCode==13)  enterPress=false;                  
+
+                    if(e.keyCode==37) leftArrow=false;
+                    if(e.keyCode==38) upArrow=false;
+                    if(e.keyCode==39) rightArrow=false;
+                    if(e.keyCode==40) downArrow=false;
+                    };
+    document.onmousedown=function(e)
+                    {
+                    mousePressed=true;                                                  
+                    };  
+    document.onmouseup=function(e)
+                    {
+                    mousePressed=false;                                             
+                    };
+    class Camera
+        {
+          constructor()
+            {
+             this.position=new CreateVector(0,0);
+             this.mouseLockX=0;
+             this.mouseLockY=0; 
+             this.tgt=null;   
+             this.lerpFactor=4;  
+            }
+          runWithMouse()
+            {
+             if(mousePressed)
+                {   
+                if(this.mouseLockX==0)
+                    {
+                    this.mouseLockX=mouseX;                 
+                    }
+                if(this.mouseLockY==0)
+                    {
+                    this.mouseLockY=mouseY;
+                    }
+                this.position.x-=(mouseX-this.mouseLockX)/10;
+                this.position.y-=(mouseY-this.mouseLockY)/10;
+                }
+             else
+                {
+                if(this.mouseLockX!=0) this.mouseLockX=0;
+                if(this.mouseLockY!=0) this.mouseLockY=0;
+                }
+            }
+          smoothFocus(followH,followV)
+            {
+             if(!this.tgt) return false;
+             // if(!this.tgt || !this.tgt.isActive) return false;
+             // DisplayInGaps(`camera is following ${this.tgt.sprite_type}`);
+             if(followH)
+                this.position.x=Lerp(this.position.x,this.tgt.position.x-canvas.width/2,this.lerpFactor);
+             if(followV)
+                this.position.y=Lerp(this.position.y,this.tgt.position.y-canvas.height/2,this.lerpFactor);
+            }
+
+        }
+
+        class GameManager
+        {
+         constructor()
+            {
+             this.visible_sprites=[];
+             this.wall_grippers=[];          
+             this.active_sprites=[];
+             this.kill_plants=[];
+             this.killables=[];
+             this.loot=[];                       
+             this.collission_sprites=[];
+             this.markedSpots=[];
+             this.hitbox_sprites=[];
+             this.enemy_sprites=[];
+             this.camera_stop_sprites=[];
+             this.entryexit_sprites=[];
+             this.camera=new Camera(0,0);
+             this.scenesReady=[];
+             this.scenesLoaded=[];
+             this.listOfDestroyedSprites=[];
+             this.testing=false;
+             this.playerDiedClock = 0;           
+             this.runningClock=0;            
+             this.player=null;
+             this.tempCounter=0;
+             this.gamePaused=false;
+             this.inTransition=false;
+             this.sceneForward=true;
+             this.followMouse= false;
+             this.sceneStartTime= 0;
+             this.positionAdjuster=new PositionAdjuster(null,[this.visible_sprites,this.active_sprites]);
+
+             this.playerHealthBar= new UIBar(50,20,300,30,100,100,'#222222','#FF0000',[this.visible_sprites,this.active_sprites],true,'playerhealth');
+             this.playerEnergyBar= new UIBar(50,100,300,30,100,100,'#222222','#0000FF',[this.visible_sprites,this.active_sprites],true,'playerenergy');
+             this.levelUpBox=new LevelUpBox(this.player);            
+             this.localStorageChecked=false;
+             this.bottomY=2000;
+             this.playerDied=false;
+
+             this.dashKey="c";
+             this.jumpKey=" ";
+             this.strikeKey="z";
+             this.healKey="q";
+             this.allKeys=[this.jumpKey,this.dashKey,this.strikeKey,this.healKey];
+            }
+         isNewKey(keyx){
+            for(let i in this.allKeys)              
+                 if(this.allKeys[i]==keyx) return false;
+            return true;                
+         }
+         getKeyDataFromLocalStorage(){
+            let keyData=localStorage.getItem("gameKeyData");
+            if(!keyData) return false;
+            keyData=JSON.parse(keyData);
+            this.jumpKey=keyData.jumpKey;
+            this.dashKey=keyData.dashKey;
+            this.strikeKey=keyData.strikeKey;
+            this.healKey=keyData.healKey;
+            this.allKeys=[this.jumpKey,this.dashKey,this.strikeKey,this.healKey];
+         }
+         storeKeyDataToLocalStorage(){
+            let keyData={"jumpKey":this.jumpKey,"dashKey":this.dashKey,
+                         "strikeKey":this.strikeKey,"healKey":this.healKey
+                        };
+            localStorage.setItem("gameKeyData",JSON.stringify(keyData));
+         }
+
+         getLocalStoragex(){
+            /*
+            let localStorage_local={"sceneNo":2,
+                                    "player":{"health":80,"maxHealth":200,"weaponDamage":20,"exp":100,"maxEnergy":100}
+                                   };
+            */
+            let localStorage_local = localStorage.getItem("GameSaveData");
+            if(!localStorage_local) return false;
+            localStorage_local= JSON.parse(localStorage_local);
+            return localStorage_local; 
+         }
+
+         saveStatusToLocalStoragex(){
+            let sceneNo= this.scenesLoaded.filter(x=>x).length;
+            let datum={"sceneNo":sceneNo,
+                       "player":{"health":this.player.health,
+                                 "maxHealth":this.player.maxHealth,
+                                 "weaponDamage":this.player.weaponDamage,
+                                 "exp":this.player.experience,
+                                 "maxEnergy":this.player.maxEnergy
+                                },
+                       "listOfDestroyedSprites":this.listOfDestroyedSprites
+                      };
+            localStorage.setItem("GameSaveData",JSON.stringify(datum));
+         }
+         checkPlayerExistence()
+            {            
+             if(this.playerDiedClock ==0) return false;
+             w2screen("You Got Destroyed Bruh",300*xscale,400*yscale,'#FF0000',80);
+             if(this.runningClock - this.playerDiedClock > 3000)
+                window.location.href="./Platformer.html";
+            }
+         checkHitWithKillPlants()
+            {
+             for(let x of this.kill_plants)
+             {
+                for(let y of this.killables)
+                    {
+                        if(b_collision(x,y.hit_box))
+                        {
+                            y.takeDamage(y.health);
+                            console.log(y.sprite_type+' got thorned');
+                        }
+                    }
+             }
+            }
+
+         unload_components()
+            {           
+            this.collission_sprites=[];
+            this.camera_stop_sprites=[];
+            this.entryexit_sprites=[];
+            this.markedSpots=[];
+            this.kill_plants=[];
+            this.killables=[];
+            this.enemy_sprites=[];
+            if(!this.player)
+                {
+                this.visible_sprites=[this.playerHealthBar,this.playerEnergyBar,this.positionAdjuster];
+                this.active_sprites=[this.playerHealthBar,this.playerEnergyBar,this.positionAdjuster];  
+                }
+            else{
+                this.visible_sprites=[this.player,this.positionAdjuster,this.playerHealthBar,this.playerEnergyBar];
+                this.active_sprites=[this.player,this.positionAdjuster,this.playerHealthBar,this.playerEnergyBar];
+                this.killables=[this.player];
+                this.collission_sprites=[this.player.hit_box];
+                this.player.spriteGroups=[this.visible_sprites,this.active_sprites,this.killables];             
+                }
+                        
+            }
+
+         runClock()
+            {
+            this.runningClock+=deltaTime;
+            if(this.runningClock > 300000) this.runningClock=0;
+            }
+
+         showExperience()
+            {
+             if(!this.player) return false;
+             w2screen("Exp:"+this.player.experience,canvas.width-100,canvas.height-50);
+             w2screen("Weapon:"+this.player.weaponDamage,20,canvas.height-50);
+            }
+
+         update()
+            {
+             //DisplayInGaps(this.collission_sprites.map(x=>x.sprite_type).reduce((s,x)=>s+x+',',''));           
+             this.runClock();
+             this.runGame();
+                         
+             this.checkScenes();    
+             this.showExperience(); 
+             this.showLevelUpBox(); 
+            }
+         showLevelUpBox()
+            {
+             this.levelUpBox.update();
+             this.levelUpBox.display();
+            }
+         changeScene(sc_id)
+            {       
+             this.inTransition=true;                 
+             
+
+             if(sc_id=="scright")
+                {
+                 this.sceneForward=true;
+                 this.scenesReady.push(true);
+                 this.scenesLoaded.push(false);
+                }
+             else if(sc_id=="scleft")
+                {
+                console.log('going back to previous scene');
+                this.sceneForward=false;
+                this.scenesReady.pop();
+                this.scenesLoaded.pop();
+                this.scenesLoaded[this.scenesLoaded.length-1]=false;
+                }
+             else
+                {
+                this.sceneForward=true;
+                this.scenesLoaded[this.scenesLoaded.length-1]=false;
+                }
+            }
+
+         placePlayerOnEntryExit(ent_ex)
+            {
+            for(let elem of this.entryexit_sprites)
+                {
+                if(elem.sprite_type==ent_ex)
+                    {
+                     // console.log(`player placed at ${elem.position.x},${elem.position.y} of ${elem.sprite_type}`);
+                     gameManager.player.hit_box.position.setVec(elem.position);
+                    }
+                }
+            }
+
+         camChecker()
+            {
+             if(gameManager.playerDied) return [false,false];
+             if(!(this.camera.tgt && this.camera.tgt==this.player))
+                {               
+                return [true,true];
+                }
+             let resultMat=[true,true];          
+             for(let camstopper of this.camera_stop_sprites)
+                {
+                 resultMat=camstopper.cameraCanFollow(this.player).map((x,i)=>x?resultMat[i]:false);                 
+                }
+             return resultMat;
+            }
+         
+         runGame()
+            {
+             this.checkHitWithKillPlants();
+             if(!this.gamePaused)   this.checkPlayerExistence();            
+             const [hori,vert]=this.camChecker();
+             if(!this.followMouse)
+                 {               
+                 this.camera.smoothFocus(hori,vert);
+                 }
+             else
+                 {
+                    if(this.runningClock - this.sceneStartTime < 2000)                  
+                     this.camera.smoothFocus(hori,vert);
+                    else
+                     this.camera.runWithMouse();
+                 }
+
+             for(let sprite of this.visible_sprites)
+                {                               
+                sprite.display();
+                }
+             for(let sprite of this.active_sprites)
+                {
+                if(!gameManager.gamePaused)         
+                    sprite.update();    
+                }
+
+             for(let hb of this.hitbox_sprites)
+                {
+                 if(gameManager.gamePaused)
+                    continue;
+                 if(hb.sprite_type=="player_hitbox")
+                    {
+                     for(let sprite of this.enemy_sprites)
+                        {                        
+                         if(b_collision(sprite.hit_box,hb))
+                            {                               
+                             hb.causeDamage(sprite);                                
+                            }
+                        }
+                    }
+                 else if(hb.sprite_type=="enemy_hitbox")
+                    {
+                      if(!gameManager.player) continue;                   
+                      if(b_collision(gameManager.player.hit_box,hb))
+                        {
+                        hb.causeDamage(gameManager.player);
+                        }
+                    }
+                }
+            }
+         alterSceneData()
+            {
+             if(this.localStorageChecked)
+                {               
+                return false;
+                }
+             this.localStorageChecked=true;          
+             let localStoragex=this.getLocalStoragex();
+             this.getKeyDataFromLocalStorage();
+             if(!localStoragex) 
+                {
+                console.log('nothing in localstorage..returning');
+                return true;
+                }
+            let scene=localStoragex.sceneNo;
+
+            this.player=new Player(100*xscale,
+                                   200*yscale,
+                                   100*xscale,
+                                   100*yscale,
+                                   [this.visible_sprites,this.active_sprites,this.killables]
+                                  );
+            console.log('player loaded from memory');
+            this.levelUpBox.receiveGameObject(this.player);
+            if(localStoragex.listOfDestroyedSprites)
+                this.listOfDestroyedSprites=localStoragex.listOfDestroyedSprites;
+            this.player.receiveParams(localStoragex.player.health,
+                                      localStoragex.player.maxHealth,
+                                      localStoragex.player.maxEnergy,
+                                      localStoragex.player.weaponDamage,
+                                      localStoragex.player.exp                                    
+                                     );
+
+             for(let i=0;i < scene;i++)
+                {
+                 this.scenesReady[i]=true;
+                 this.scenesLoaded[i]=true;
+                }
+             this.scenesLoaded[this.scenesLoaded.length-1]=false;
+
+             // console.log(JSON.stringify(this.scenesReady));
+             // console.log(JSON.stringify(this.scenesLoaded));
+            }
+         checkScenes()
+            {
+             this.alterSceneData();
+             let n=this.scenesReady.length;          
+             if(n==0)
+                {
+                 this.scenesReady[0]=true;
+                 this.scenesLoaded[0]=false;
+                 n+=1;
+                }
+             for(let i=0;i<n;i++)
+                 {
+                 if(this.scenesReady[i]==true && this.scenesLoaded[i]==false)
+                    {
+                    // if(!(n==1 && this.sceneForward) && !this.testing)
+                    this.unload_components();
+                    this.loadScene(i);
+                    break;
+                    }
+                 }
+            }
+         loadScene(n)
+            {
+            this.tempCounter+=1;
+            console.log('gameManager called '+this.tempCounter+ ' times for scene:'+n);
+            if(this.tempCounter > 50) 
+                {
+                console.log('something is wrong');
+                return false;
+                }
+             // this.unload_components();            
+             for(let elem of scenes[n])
+                {
+                /*
+                 if (this.player || (!this.testing && elem['sprite']=='player' && (n!=0 || !this.sceneForward) ) )
+                    continue;
+                 */
+                 if(elem['sprite']=='player' && (this.player) )
+                    continue;
+                 if(elem['sprite']=='platform')
+                    new Platform(elem['x']*xscale,
+                                 elem['y']*yscale,
+                                 elem['width']*xscale,
+                                 elem['height']*yscale,
+                                 [this.visible_sprites,this.collission_sprites]
+                                );
+                 else if(elem['sprite']=='WallGripper')
+                    new WallGripper(elem['x']*xscale,
+                                 elem['y']*yscale,
+                                 elem['width']*xscale,
+                                 elem['height']*yscale,
+                                 [this.visible_sprites,this.wall_grippers]
+                                );
+                 else if(elem['sprite']=='player')  
+                    {                                   
+                    this.player=new Player(elem['x']*xscale,
+                               elem['y']*yscale,
+                               elem['width']*xscale,
+                               elem['height']*yscale,
+                               [this.visible_sprites,this.active_sprites,this.killables]
+                               );   
+                    console.log('player loaded from scene data');
+                   this.levelUpBox.receiveGameObject(this.player);
+                   }                 
+                 else if(elem['sprite'].split('_')[0]=='camstopper')
+                    new CameraStopper(elem['x']*xscale,
+                               elem['y']*yscale,
+                               elem['sprite'],
+                               [this.visible_sprites,this.camera_stop_sprites,this.active_sprites]
+                               );
+                 else if(elem['sprite'].split('_')[0]=='entryexit')
+                    new EntryExitPoint(elem['x']*xscale,
+                               elem['y']*yscale,
+                               elem['sprite'].split('_')[1],
+                               [this.visible_sprites,this.entryexit_sprites,this.active_sprites]
+                               );
+                 else if(elem['sprite'].split('_')[0]=='scenechanger')
+                    new SceneChanger(elem['x']*xscale,
+                               elem['y']*yscale,
+                               elem['sprite'].split('_')[1],
+                               [this.visible_sprites,this.active_sprites]
+                               );                
+                 else if(elem['sprite']=='husk' && this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)               
+                      new Husk(elem['x']*xscale,
+                               elem['y']*yscale,
+                               elem['width']*xscale,
+                               elem['height']*yscale,
+                               [this.visible_sprites,this.enemy_sprites,this.active_sprites,this.killables],
+                               elem['spriteId']
+                               );
+                 else if(elem['sprite']=='lance' &&  this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)                 
+                      new Lance(elem['x']*xscale,
+                               elem['y']*yscale,
+                               elem['width']*xscale,
+                               elem['height']*yscale,
+                               [this.visible_sprites,this.enemy_sprites,this.active_sprites],
+                               elem['spriteId']
+                               );
+                 else if(elem['sprite']=='falseknight' &&  this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)                   
+                      new FalseKnight(elem['x']*xscale,
+                               elem['y']*yscale,
+                               elem['width']*xscale,
+                               elem['height']*yscale,
+                               [this.visible_sprites,this.enemy_sprites,this.active_sprites],
+                               elem['spriteId'],elem['spawnedBoss']
+                               );
+                 else if(elem['sprite'].split('_')[0]=='MarkedSpot')
+                    new MarkedSpot(elem['x']*xscale,
+                               elem['y']*yscale,
+                               elem['sprite'].split('_')[1],
+                               [this.visible_sprites,this.markedSpots]
+                               );
+                 else if(elem['sprite']=='BossFightTriggGO' &&  
+                         this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)
+                    new BossFightTriggGO(elem['x']*xscale,
+                               elem['y']*yscale,
+                               elem['mywidth']*xscale,
+                               elem['myheight']*yscale,
+                               elem['br1posx']*xscale,
+                               elem['br1posy']*yscale,
+                               elem['br2posx']*xscale,
+                               elem['br2posy']*yscale,                             
+                               [this.active_sprites],
+                               elem['spriteId']
+                               );
+                 else if(elem['sprite']=='huskMiner' &&  
+                         this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)                 
+                      new HuskMiner(elem['x']*xscale,
+                               elem['y']*yscale,
+                               elem['width']*xscale,
+                               elem['height']*yscale,                              
+                               [this.visible_sprites,this.enemy_sprites,this.active_sprites],
+                               elem['spriteId'],
+                               elem['cutscene']
+                               );
+                 else if(elem['sprite']=='tree')                      
+                    new BarrierTree(elem['x']*xscale,
+                                    elem['y']*yscale,
+                                    elem['width']*xscale,
+                                    elem['height']*yscale,
+                                    [gameManager.visible_sprites]
+                                    );
+                 else if(elem['sprite']=='thorn')
+                    new Thorn(elem['x']*xscale,
+                              elem['y']*yscale,
+                              elem['width']*xscale,
+                              elem['height']*yscale,
+                              elem['xoffset']*xscale,
+                              elem['yoffset']*yscale,
+                              [gameManager.visible_sprites]
+                                    );  
+                 else if(elem['sprite']=='flower'&&  
+                         this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)
+                    new Flower(elem['x']*xscale,
+                              elem['y']*yscale,
+                              elem['width']*xscale,
+                              elem['height']*yscale,
+                              elem['xoffset']*xscale,
+                              elem['yoffset']*yscale,
+                              elem['exp'],elem['spriteId'],
+                              [gameManager.visible_sprites,gameManager.loot]
+                                    );
+                 else if(elem['sprite']=='saw')
+                    new SawWheel(elem['x']*xscale,
+                              elem['y']*yscale,
+                              elem['width']*xscale,
+                              elem['height']*yscale,
+                              elem['xoffset']*xscale,
+                              elem['yoffset']*yscale,
+                              [gameManager.visible_sprites,gameManager.active_sprites],
+                              elem['moveTime'],elem['moveTimeInit'],elem['speed'],elem['isHoriWheel']
+                                    );
+                 else if(elem['sprite']=='shrub')
+                    new GrassShrub(elem['x']*xscale,
+                              elem['y']*yscale,
+                              elem['width']*xscale,
+                              elem['height']*yscale,
+                              elem['xoffset']*xscale,
+                              elem['yoffset']*yscale,
+                              [gameManager.visible_sprites]
+                                    );
+                 else if(elem['sprite']=='wall')
+                    new Wall(elem['x']*xscale,
+                              elem['y']*yscale,
+                              elem['width']*xscale,
+                              elem['height']*yscale,
+                              elem['isHorizontal'], 
+                              elem['copies'],                             
+                              [gameManager.visible_sprites]
+                                    );              
+                }
+             this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');          
+             this.camera.tgt=this.camera_stop_sprites[this.sceneForward?0:1];
+             this.scenesLoaded[n]=true;
+             this.inTransition=false;
+             this.sceneStartTime= this.runningClock;             
+             console.log('scene No'+n+' loaded');
+             presentMusicIndex=n;
+             // musicStarted=false;
+             pauseMusic();
+             startMusic();
+            }
+        }
+    </script>
+</body>
+</html>
