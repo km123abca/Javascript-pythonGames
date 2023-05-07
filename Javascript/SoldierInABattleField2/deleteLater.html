@@ -379,18 +379,18 @@
 
     function destroySelf(objx)
         {             
-         for(let i in objx.spriteGroups)
-         {        
-          for(let j in objx.spriteGroups[i])
-            {
+             for(let i in objx.spriteGroups)
+             {        
+              for(let j in objx.spriteGroups[i])
+                {
 
-             if(objx.spriteGroups[i][j]==objx)
-                {     
-                  objx.spriteGroups[i].splice(j,1);
-                  break;
-                }   
-            }
-         }
+                 if(objx.spriteGroups[i][j]==objx)
+                    {     
+                      objx.spriteGroups[i].splice(j,1);
+                      break;
+                    }   
+                }
+             }
          
         }
     </script>
@@ -533,12 +533,8 @@
         {
          constructor()
             {
-             this.visible_sprites=[];
-             this.wall_grippers=[];          
-             this.active_sprites=[];
-             this.kill_plants=[];
-             this.killables=[];
-             this.loot=[];                       
+             this.visible_sprites=[];                       
+             this.active_sprites=[];                                  
              this.collission_sprites=[];
              this.markedSpots=[];
              this.hitbox_sprites=[];
@@ -560,10 +556,7 @@
              this.followMouse= false;
              this.sceneStartTime= 0;
              this.positionAdjuster=new PositionAdjuster(null,[this.visible_sprites,this.active_sprites]);
-
-             this.playerHealthBar= new UIBar(50,20,300,30,100,100,'#222222','#FF0000',[this.visible_sprites,this.active_sprites],true,'playerhealth');
-             this.playerEnergyBar= new UIBar(50,100,300,30,100,100,'#222222','#0000FF',[this.visible_sprites,this.active_sprites],true,'playerenergy');
-             this.levelUpBox=new LevelUpBox(this.player);            
+                        
              this.localStorageChecked=false;
              this.bottomY=2000;
              this.playerDied=false;
@@ -881,20 +874,6 @@
                  */
                  if(elem['sprite']=='player' && (this.player) )
                     continue;
-                 if(elem['sprite']=='platform')
-                    new Platform(elem['x']*xscale,
-                                 elem['y']*yscale,
-                                 elem['width']*xscale,
-                                 elem['height']*yscale,
-                                 [this.visible_sprites,this.collission_sprites]
-                                );
-                 else if(elem['sprite']=='WallGripper')
-                    new WallGripper(elem['x']*xscale,
-                                 elem['y']*yscale,
-                                 elem['width']*xscale,
-                                 elem['height']*yscale,
-                                 [this.visible_sprites,this.wall_grippers]
-                                );
                  else if(elem['sprite']=='player')  
                     {                                   
                     this.player=new Player(elem['x']*xscale,
@@ -923,23 +902,8 @@
                                elem['y']*yscale,
                                elem['sprite'].split('_')[1],
                                [this.visible_sprites,this.active_sprites]
-                               );                
-                 else if(elem['sprite']=='husk' && this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)               
-                      new Husk(elem['x']*xscale,
-                               elem['y']*yscale,
-                               elem['width']*xscale,
-                               elem['height']*yscale,
-                               [this.visible_sprites,this.enemy_sprites,this.active_sprites,this.killables],
-                               elem['spriteId']
-                               );
-                 else if(elem['sprite']=='lance' &&  this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)                 
-                      new Lance(elem['x']*xscale,
-                               elem['y']*yscale,
-                               elem['width']*xscale,
-                               elem['height']*yscale,
-                               [this.visible_sprites,this.enemy_sprites,this.active_sprites],
-                               elem['spriteId']
-                               );
+                               );           
+
                  else if(elem['sprite']=='falseknight' &&  this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)                   
                       new FalseKnight(elem['x']*xscale,
                                elem['y']*yscale,
@@ -966,33 +930,7 @@
                                elem['br2posy']*yscale,                             
                                [this.active_sprites],
                                elem['spriteId']
-                               );
-                 else if(elem['sprite']=='huskMiner' &&  
-                         this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)                 
-                      new HuskMiner(elem['x']*xscale,
-                               elem['y']*yscale,
-                               elem['width']*xscale,
-                               elem['height']*yscale,                              
-                               [this.visible_sprites,this.enemy_sprites,this.active_sprites],
-                               elem['spriteId'],
-                               elem['cutscene']
-                               );
-                 else if(elem['sprite']=='tree')                      
-                    new BarrierTree(elem['x']*xscale,
-                                    elem['y']*yscale,
-                                    elem['width']*xscale,
-                                    elem['height']*yscale,
-                                    [gameManager.visible_sprites]
-                                    );
-                 else if(elem['sprite']=='thorn')
-                    new Thorn(elem['x']*xscale,
-                              elem['y']*yscale,
-                              elem['width']*xscale,
-                              elem['height']*yscale,
-                              elem['xoffset']*xscale,
-                              elem['yoffset']*yscale,
-                              [gameManager.visible_sprites]
-                                    );  
+                               ); 
                  else if(elem['sprite']=='flower'&&  
                          this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)
                     new Flower(elem['x']*xscale,
@@ -1004,16 +942,7 @@
                               elem['exp'],elem['spriteId'],
                               [gameManager.visible_sprites,gameManager.loot]
                                     );
-                 else if(elem['sprite']=='saw')
-                    new SawWheel(elem['x']*xscale,
-                              elem['y']*yscale,
-                              elem['width']*xscale,
-                              elem['height']*yscale,
-                              elem['xoffset']*xscale,
-                              elem['yoffset']*yscale,
-                              [gameManager.visible_sprites,gameManager.active_sprites],
-                              elem['moveTime'],elem['moveTimeInit'],elem['speed'],elem['isHoriWheel']
-                                    );
+
                  else if(elem['sprite']=='shrub')
                     new GrassShrub(elem['x']*xscale,
                               elem['y']*yscale,
@@ -1039,10 +968,9 @@
              this.inTransition=false;
              this.sceneStartTime= this.runningClock;             
              console.log('scene No'+n+' loaded');
-             presentMusicIndex=n;
-             // musicStarted=false;
-             pauseMusic();
-             startMusic();
+             presentMusicIndex=n;           
+             // pauseMusic();
+             // startMusic();
             }
         }
     </script>
