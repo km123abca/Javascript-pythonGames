@@ -496,7 +496,6 @@
                     };
 
 //Game classes start
-    //1. Camera starts
     class Camera
         {
           constructor()
@@ -540,8 +539,6 @@
             }
 
         }
-    //1. Camera Ends
-    //3. Indicator Objs start
     class IndicatorObjs
         {
         constructor(x,y,colorx,sprite_type,spriteGroups)
@@ -574,8 +571,6 @@
                      this.position.y-50*yscale-gameManager.camera.position.y);
             }
         }
-  //3. Indicator Objs end
-  //2. Gamemanager start
   class GameManager
         {
           constructor()
@@ -586,9 +581,7 @@
           this.gamePaused=false;
           this.followMouse=false;
           this.visible_sprites=[];
-          this.active_sprites=[];
           new IndicatorObjs(300,300,'#00FF00','indicator',[this.visible_sprites]);
-          this.positionAdjuster=new PositionAdjuster(null,[this.visible_sprites,this.active_sprites]);
           }
           runClock()
             {
@@ -603,123 +596,13 @@
           runGame()
             {
              for(let sprite of this.visible_sprites)
-                {                                              
+                { 
+                                             
                 sprite.display();
                 }
-             for(let sprite of this.active_sprites)
-                {                                              
-                sprite.update();
-                }
             }
         }
-//2. Gamemanager ends
-//4. position adjuster start
-    //positionAdjuster start
-    class PositionAdjuster
-        {
-        constructor(obj,spriteGroups)
-            {
-             this.obj=obj;
-             this.sprite_type="pos_adjuster";
-             this.onScreen=true;
-             this.rad=50*xscale;
-             this.moveSpeed=0;
-             this.moveSpeedMax=200*xscale;
-             this.shapeSpeed=0;
-             this.shapeSpeedMax=50;
-             this.objIndex=0;
-             this.last_gpress_time=0;    
-             for(let grp of spriteGroups)
-                {
-                 grp.push(this);
-                }
-            }
-        changeObject(obj)
-            {
-             this.obj=obj;
-            }
-        display()
-            {   
-            if(!this.obj) return false;                     
-            ctx.save();         
-            ctx.translate(this.obj.position.x - gameManager.camera.position.x,this.obj.position.y - gameManager.camera.position.y); 
-            ctx.fillStyle='#FFFF00';
-            ctx.strokeStyle='#FF0000';              
-            ctx.beginPath();
-            ctx.arc(0,0,this.rad,0,2*Math.PI);
-            ctx.fill();
-            ctx.stroke();
-            ctx.restore();
-            }
-        update()
-            {
-             this.attractFocus();
-             if(!this.obj) return false;
-             this.adjustObjPosition();
-             this.adjustObjShape();             
-             this.showData();        
-            }
 
-        showData()
-            {
-             if(!this.obj) return false;
-             w2screen(`sprite:${this.obj.sprite_type}`,300,100);
-             w2screen(`x:${(this.obj.position.x/xscale).toFixed(0)},y:${(this.obj.position.y/yscale).toFixed(0)}`,300,150);
-             w2screen(`width:${(this.obj.width/xscale).toFixed(0)},height:${(this.obj.height/yscale).toFixed(0)}`,300,200);
-            }   
-        attractFocus()
-            {
-            if(GetKeyPressedx('g'))
-                {
-                  
-                  if(gameManager.runningClock - this.last_gpress_time > 250)
-                    {
-                      this.last_gpress_time=gameManager.runningClock;
-                      this.objIndex+=1;
-                      if(this.objIndex >= gameManager.visible_sprites.length) this.objIndex=0;
-                      if(gameManager.visible_sprites[this.objIndex]==this)
-                        this.objIndex+=1;
-                      this.changeObject(gameManager.visible_sprites[this.objIndex]);
-                    }
-                }
-            }
-        adjustObjPosition()
-            {
-             if(GetKeyPressedx('i') || GetKeyPressedx('j') || GetKeyPressedx('m') || GetKeyPressedx('l')) 
-                this.moveSpeed=Lerp(this.moveSpeed,this.moveSpeedMax,16);
-             else
-                this.moveSpeed=0;
-             if(GetKeyPressedx('i'))                          
-                this.obj.position.y=this.obj.position.y - this.moveSpeed;
-             else if(GetKeyPressedx('m'))
-                this.obj.position.y=this.obj.position.y + this.moveSpeed;
-
-             if(GetKeyPressedx('l'))
-                this.obj.position.x=this.obj.position.x + this.moveSpeed;
-             else if(GetKeyPressedx('j'))
-                this.obj.position.x=this.obj.position.x - this.moveSpeed;
-            }
-
-        adjustObjShape()
-            {
-             if(GetKeyPressedx('t') || GetKeyPressedx('h') || GetKeyPressedx('b') || GetKeyPressedx('f')) 
-                this.moveSpeed=Lerp(this.moveSpeed,this.moveSpeedMax,16);
-             else
-                this.moveSpeed=0;
-             if(GetKeyPressedx('t'))                          
-                this.obj.height=this.obj.height - this.moveSpeed;
-             else if(GetKeyPressedx('b'))
-                this.obj.height=this.obj.height + this.moveSpeed;
-
-             if(GetKeyPressedx('h'))
-                this.obj.width=this.obj.width + this.moveSpeed;
-             else if(GetKeyPressedx('f'))
-                this.obj.width=this.obj.width - this.moveSpeed;
-            }
-
-        }
-    //positionAdjuster ends
-//4. position adjuster ends
 //Game Classes end
     </script>
 
