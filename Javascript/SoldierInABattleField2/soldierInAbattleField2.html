@@ -357,6 +357,17 @@
             createdImage.src='./'+folderPath+'/'+imageName;
             return createdImage;
         }
+    function LoadImagexArray(imagePathArray)
+        {
+            let outputArray=[];
+            for(let individualImagePath of imagePathArray)
+                {
+                 let createdImage= new Image();
+                 createdImage.src=IndividualImagePath;  
+                 outputArray.push(createdImage); 
+                }            
+            return outputArray;
+        }
 
     let tempTimer=0;
     function DisplayInGaps(strx)
@@ -720,6 +731,143 @@
         }
     //positionAdjuster ends
 //4. position adjuster ends
+
+//image list for soldier starts
+let SOLDIER_IDLE=["https://drive.google.com/uc?export=view&id=1TnEzgF4aAX-Fz67GUQJH72aJQgtYMDtl",
+                    "https://drive.google.com/uc?export=view&id=1QmFM4sG0E4tuW_Wc805jiD17_fMjKrlb",
+                    "https://drive.google.com/uc?export=view&id=1Y_iqTdrdLgGyJlTvttn7_VwdqeK8w5Wa",
+                    "https://drive.google.com/uc?export=view&id=1I8Ifyrzh5FSP8oB84EtXs8N3FOcyxcft",
+                    "https://drive.google.com/uc?export=view&id=1kEnkX7rY6ZScAJCDKWslwNXmrwbD9HD3",
+                    "https://drive.google.com/uc?export=view&id=1SCUf5Jx6Ef6iRIJOHJdBVpG-5vD8qBK2",
+                    "https://drive.google.com/uc?export=view&id=1y3Q0MO8eh4EF8jeJaGwIHEgsqpKIb4ld",
+                    "https://drive.google.com/uc?export=view&id=1qjyjdgGIW64RcH22FcgQCNrkBaEcKufS",
+                    "https://drive.google.com/uc?export=view&id=1sxHPWoKa3LO5bxrDx_HTlPmLfGCf907z",
+                    "https://drive.google.com/uc?export=view&id=1RAPlxelYQkFHRdkpkHswYvdtQeWUZ2RM",
+                    "https://drive.google.com/uc?export=view&id=1M-GRbQcukuTA9EC1hJ0_-7zjJjkjDsgE",
+                    "https://drive.google.com/uc?export=view&id=1O_LxHEy5ys74zV7jWQVC2BHcXMhxruDt",
+                    "https://drive.google.com/uc?export=view&id=12SQy0hpS5Z9CdmplfV2UptelLxxXvrjI",
+                    "https://drive.google.com/uc?export=view&id=1j5iJdwty8HhJitb8_6boHTuBhmDTl0Bx",
+                    "https://drive.google.com/uc?export=view&id=1y78hO2vmVWR8A-e-iHEI6N8HQquYPMNl",
+                    "https://drive.google.com/uc?export=view&id=1FsqPW7a8pKdkwkSrkg_F5W7QWBI_A6gv",
+                    "https://drive.google.com/uc?export=view&id=1MEiAUutwrSzcBXPuQ2InGPuv0Oz9HWGb",
+                    "https://drive.google.com/uc?export=view&id=1CT_hQaTQplIAQtjjmlL7SzLxu3EKhz1n",
+                    "https://drive.google.com/uc?export=view&id=1XamHyuVK71G_CW79US-Eka9VsUb0FSWc",
+                    "https://drive.google.com/uc?export=view&id=1Zt_mSgKkZK-32Z1xa66p8S-u-QHwBMSF"];
+//image list for soldier ends
+//5. soldier starts
+class Soldier
+    {
+     constructor(x,y,wid,hei,spriteGroups)
+        {
+         this.position=new CreateVector(x,y);
+         this.width=wid*xscale;
+         this.heigh=hei*yscale;
+         this.animations={
+                          'idle':SOLDIER_IDLE
+                         };
+         this.animationFractions={'idle':0.8,'run':0.4,'slash':0.2};
+         this.animation='idle';
+         this.animationFrame=0;
+         this.animInQueue=null;
+         this.onScreen=true;
+         this.sprite_type='player';
+         this.spriteGroups=spriteGroups;
+         for(let grp of spriteGroups)
+            grp.push(this);
+         this.angle=0;
+         this.acceleration=new CreateVector(0,0);
+         this.velocity=new CreateVector(0,0);
+         this.maxVelocity=10*xscale;
+         this.hit_box=new HitBox(x,y,this.width*0.5,this.height,
+                                 [gameManager.collission_sprites],
+                                 'playerhitbox');
+
+        }
+     update_and_display_hitbox()
+        {
+        // this.hit_box.updatePosition(this.position);
+        this.position.setVec(this.hit_box.position);
+        }
+    runAnimation()
+        {
+        this.animationFrame+=this.animationFractions[this.animation];           
+        if(this.animationFrame >= this.animations[this.animation].length)
+            {
+             this.animationFrame=0;
+             if(this.animInQueue) 
+                {
+                this.animation=this.animInQueue;
+                this.animInQueue=null;
+                }
+            }
+        }
+    changeAnimation(anim)
+        {
+        if(this.animation=="slash") return false;
+        
+        if(this.animation == anim) return false;
+        else
+            {
+            this.animation=anim;
+            this.animationFrame=0;
+            }
+        }
+    move()
+        {
+         this.velocity.add(this.acceleration);
+         this.acceleration.set(0,0);
+         this.applyVelocity();
+         this.applyVelocityRestrictions();
+         this.update_and_display_hitbox();
+        }
+     applyVelocity()
+        {                    
+         this.hit_box.position.x+=this.velocity.x;         
+         for(let k in gameManager.collission_sprites)
+            { 
+             let x=gameManager.collission_sprites[k];
+             if(!x.onScreen) continue;
+             if(x==this || x==this.hit_box) continue;                
+             if(b_collision(this.hit_box,x)) 
+                {        
+                // console.log('collision with '+x.sprite_type);         
+                 if(this.velocity.x > 0)
+                    {                    
+                    this.hit_box.position.x=x.position.x - x.width/2-this.hit_box.width/2-2;                        
+                    }
+                 else 
+                    {
+                    this.hit_box.position.x=x.position.x + x.width/2 + this.hit_box.width/2+2;                      
+                    }
+                }
+            }
+
+         this.hit_box.position.y+=this.velocity.y;           
+         for(let x of gameManager.collission_sprites)
+            {
+             if(!x.onScreen) continue;
+             if(x==this || x==this.hit_box) continue;                
+             if(b_collision(this.hit_box,x)) 
+                {
+                // console.log('collision with '+x.sprite_type);
+                if(this.velocity.y > 0)
+                    {
+                    this.hit_box.position.y=x.position.y-x.height/2-this.hit_box.height/2-2;                        
+                    }
+                else
+                    {
+                    this.hit_box.position.y=x.position.y+x.height/2+this.hit_box.height/2+2;                        
+                    }
+                }
+            }
+        }
+     applyVelocityRestrictions()
+        {
+        if(this.velocity.mag() < this.maxVelocity) return;
+        this.velocity.normalize.mult(this.maxVelocity);         
+        }
+    }
+//5. soldier ends
 //Game Classes end
     </script>
 
