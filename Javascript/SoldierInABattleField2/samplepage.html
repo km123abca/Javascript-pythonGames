@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hello</title>
+    <style>
+        body{
+            background-color:black;
+        }
+        #imgcontainer{
+            display:flex;
+            flex-wrap: wrap;
+        }
+        #imgcontainer > *{
+            margin-bottom: 10px;
+        }
+    </style>
+    <script>
+        let SOLDIER_IDLE=["https://drive.google.com/uc?export=view&id=1TnEzgF4aAX-Fz67GUQJH72aJQgtYMDtl",
+                    "https://drive.google.com/uc?export=view&id=1QmFM4sG0E4tuW_Wc805jiD17_fMjKrlb",
+                    "https://drive.google.com/uc?export=view&id=1Y_iqTdrdLgGyJlTvttn7_VwdqeK8w5Wa",
+                    "https://drive.google.com/uc?export=view&id=1I8Ifyrzh5FSP8oB84EtXs8N3FOcyxcft",
+                    "https://drive.google.com/uc?export=view&id=1kEnkX7rY6ZScAJCDKWslwNXmrwbD9HD3",
+                    "https://drive.google.com/uc?export=view&id=1SCUf5Jx6Ef6iRIJOHJdBVpG-5vD8qBK2",
+                    "https://drive.google.com/uc?export=view&id=1y3Q0MO8eh4EF8jeJaGwIHEgsqpKIb4ld",
+                    "https://drive.google.com/uc?export=view&id=1qjyjdgGIW64RcH22FcgQCNrkBaEcKufS",
+                    "https://drive.google.com/uc?export=view&id=1sxHPWoKa3LO5bxrDx_HTlPmLfGCf907z",
+                    "https://drive.google.com/uc?export=view&id=1RAPlxelYQkFHRdkpkHswYvdtQeWUZ2RM",
+                    "https://drive.google.com/uc?export=view&id=1M-GRbQcukuTA9EC1hJ0_-7zjJjkjDsgE",
+                    "https://drive.google.com/uc?export=view&id=1O_LxHEy5ys74zV7jWQVC2BHcXMhxruDt",
+                    "https://drive.google.com/uc?export=view&id=12SQy0hpS5Z9CdmplfV2UptelLxxXvrjI",
+                    "https://drive.google.com/uc?export=view&id=1j5iJdwty8HhJitb8_6boHTuBhmDTl0Bx",
+                    "https://drive.google.com/uc?export=view&id=1y78hO2vmVWR8A-e-iHEI6N8HQquYPMNl",
+                    "https://drive.google.com/uc?export=view&id=1FsqPW7a8pKdkwkSrkg_F5W7QWBI_A6gv",
+                    "https://drive.google.com/uc?export=view&id=1MEiAUutwrSzcBXPuQ2InGPuv0Oz9HWGb",
+                    "https://drive.google.com/uc?export=view&id=1CT_hQaTQplIAQtjjmlL7SzLxu3EKhz1n",
+                    "https://drive.google.com/uc?export=view&id=1XamHyuVK71G_CW79US-Eka9VsUb0FSWc",
+                    "https://drive.google.com/uc?export=view&id=1Zt_mSgKkZK-32Z1xa66p8S-u-QHwBMSF"];
+
+    </script>
+</head>
+<body>
+<div id="imgcontainer">
+</div>
+    <script>
+        for (let i=0;i<SOLDIER_IDLE.length;i++)
+            {
+                document.querySelector('#imgcontainer').innerHTML+=
+       `<img src="${SOLDIER_IDLE[i]}" alt="no image" />`;
+            }
+    </script>
+</body>
+</html>

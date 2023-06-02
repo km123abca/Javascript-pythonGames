@@ -654,35 +654,11 @@
           this.scenesLoaded=[];
           this.tempCounter=0;
           this.player=null;
-
-          //mouse click detection variables
-          this.numClicks=0;
-          this.clickStartTime=0;
-          this.mouseClickTrigger=true;
-          this.maxClickGap=500;
-
+          
           // new IndicatorObjs(300,300,'#00FF00','indicator',[this.visible_sprites]);
           // new Soldier(300,300,200*xscale,200*yscale,[this.visible_sprites]);
           this.positionAdjuster=new PositionAdjuster(null,[this.visible_sprites,this.active_sprites]);
           }
-
-          detectMouseClicks()
-            {
-             if(mousePressed && this.mouseClickTrigger)
-                {
-                 this.numClicks+=1;
-                 this.clickStartTime=this.runningClock;
-                 this.mouseClickTrigger=false;
-                }
-             else if(!this.mouseClickTrigger && !mousePressed)
-                {
-                 this.mouseClickTrigger=true;
-                }
-             if(this.numClicks!=0 && (this.runningClock - this.clickStartTime > this.maxClickGap) )
-                {
-                 this.numClicks=0;
-                }
-            }
           runClock()
             {
             this.runningClock+=deltaTime;
@@ -692,7 +668,6 @@
             {            
             this.runClock();
             this.runGame();
-            this.detectMouseClicks();
             if(!this.gamePaused) this.checkScenes();
             }
           runGame()
@@ -905,12 +880,8 @@ let SOLDIER_IDLE=["https://drive.google.com/uc?export=view&id=1TnEzgF4aAX-Fz67GU
 let SOLDIER_IDLE_OBJS=LoadImagexArray(SOLDIER_IDLE);
 //This was not working
 */
-let folder_name="F:\\gitClones\\GamesPythonJavascript\\Python\\TopDownBossFight1\\sprites\\soldier\\idle";
-let folder_name2="F:\\gitClones\\GamesPythonJavascript\\Python\\TopDownBossFight1\\sprites\\soldier\\move";
 let soldier_image_names=Array(20).fill(0).map((x,i)=>`survivor-idle_handgun_${i}.png`);
-let SOLDIER_IDLE_OBJS=LoadImages(folder_name,soldier_image_names);
-soldier_image_names=Array(20).fill(0).map((x,i)=>`survivor-move_handgun_${i}.png`);
-let SOLDIER_MOVE_OBJS=LoadImages(folder_name2,soldier_image_names);
+let SOLDIER_IDLE_OBJS=LoadImages("F:\\gitClones\\GamesPythonJavascript\\Python\\TopDownBossFight1\\sprites\\soldier\\idle",soldier_image_names)
 //image list for soldier ends
 //5. soldier starts
 class Soldier
@@ -921,8 +892,7 @@ class Soldier
          this.width=wid*xscale;
          this.height=hei*yscale;
          this.animations={
-                          'idle':SOLDIER_IDLE_OBJS,
-                          'move':SOLDIER_MOVE_OBJS
+                          'idle':SOLDIER_IDLE_OBJS
                          };
          this.animationFractions={'idle':0.8,'run':0.4,'slash':0.2};
          this.animation='idle';
@@ -936,88 +906,16 @@ class Soldier
          this.angle=0;
          this.acceleration=new CreateVector(0,0);
          this.velocity=new CreateVector(0,0);
-         this.targetVelocity=this.velocity.copy();
          this.maxVelocity=10*xscale;
          this.hit_box=new HitBox(x,y,this.width*0.5,this.height,
                                  [gameManager.collission_sprites],
                                  'playerhitbox');
          this.sceneStartTime=0;
-         this.prevMouseClicks=0;
-
-        
-         // this.destX=0;
-         // this.destY=0;
-         this.turnSpeed=2;
-         this.dest=new CreateVector(0,0);
-         this.moveStartTime=0;
-         this.permissionToMove=false;
-         this.getMoving=false;
-         this.destinationAngle=0;         
-         this.waitBeforeShoot=gameManager.maxClickGap+10*xscale;
-         this.proximDistance=40*xscale;
 
          this.onScreen=true;
          this.isActive=true;
         }
 
-     setGetMoving()
-        {
-         if(!this.permissionToMove)
-            return false;
-        if(this.getMoving)
-            return true;
-        if(gameManager.runningClock - this.moveStartTime > this.waitBeforeShoot)
-            {
-             this.getMoving=true;
-             this.destinationAngle=this.dest.copy().sub(this.position).heading();
-            }
-        }
-     moveToDestination()
-        {
-            if(!this.getMoving) return false;
-            this.angle=AngleLerp(this.angle,this.destinationAngle,this.turnSpeed);
-            this.acceleration.set(1,0);  
-            this.acceleration.pointToAngle(this.angle);
-            this.reachedTarget();           
-
-        }
-     reachedTarget()
-        {
-         if(this.dest.copy().sub(this.position).mag()<this.proximDistance)
-            {
-            this.permissionToMove=false;
-            this.getMoving=false;
-            this.velocity.set(0,0);
-            this.acceleration.set(0,0);
-            }
-        }
-
-     detectMouseClicks_Listener()
-        {
-         if(gameManager.numClicks !=this.prevMouseClicks)
-            {
-             this.prevMouseClicks=gameManager.numClicks;             
-            if(gameManager.numClicks==1)
-                {                 
-                 // console.log(`mouse clicked once at ${mouseX.toFixed(2)},${mouseY.toFixed(2)}`);
-                 this.getMoving=false;
-                 this.dest.set(mouseX,mouseY);                 
-                 this.moveStartTime=gameManager.runningClock;
-                 this.permissionToMove=true;
-                }
-            else if(gameManager.numClicks==2)
-                {                   
-                    this.permissionToMove=false;
-                    //shoot logic here
-                    
-                 // console.log(`mouse clicked twice at ${mouseX.toFixed(2)},${mouseY.toFixed(2)}`);
-                }
-            else if(gameManager.numClicks==3)
-                {                 
-                 // console.log(`mouse clicked thrice at ${mouseX.toFixed(2)},${mouseY.toFixed(2)}`);
-                }
-            }
-        }
      update_and_display_hitbox()
         {
         // this.hit_box.updatePosition(this.position);
@@ -1047,17 +945,13 @@ class Soldier
             this.animationFrame=0;
             }
         }
-
     move()
         {
-         this.setGetMoving();
-         this.moveToDestination();
          this.velocity.add(this.acceleration);
          this.acceleration.set(0,0);
          this.applyVelocity();
          this.applyVelocityRestrictions();
          this.update_and_display_hitbox();
-         this.detectMouseClicks_Listener();
         }
      applyVelocity()
         {                    
@@ -1103,14 +997,13 @@ class Soldier
      applyVelocityRestrictions()
         {
         if(this.velocity.mag() < this.maxVelocity) return;
-        this.velocity.normalize().mult(this.maxVelocity);         
+        this.velocity.normalize.mult(this.maxVelocity);         
         }
      update()
         {
          if(!this.isActive) return false;
          this.runAnimation();
-         this.move(); 
-
+         this.move();        
          // this.testCollisionWithLoot();
         }
     display()
