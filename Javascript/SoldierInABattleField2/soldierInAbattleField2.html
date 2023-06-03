@@ -354,7 +354,7 @@
     function LoadImagex(folderPath,imageName)
         {
             let createdImage= new Image();
-            createdImage.src='./'+folderPath+'/'+imageName;
+            createdImage.src=folderPath+'/'+imageName;
             return createdImage;
         }
     function LoadImagexArray(imagePathArray)
@@ -706,6 +706,57 @@
                 sprite.update();
                 }
             }
+    applyVelocity(movingObj)
+            {                    
+             movingObj.hit_box.position.x+=movingObj.velocity.x;         
+             for(let k in gameManager.collission_sprites)
+                { 
+                 let x=gameManager.collission_sprites[k];
+                 if(!x.onScreen) continue;
+                 if(x==movingObj || x==movingObj.hit_box) continue;                
+                 if(b_collision(movingObj.hit_box,x)) 
+                    {        
+                    // console.log('collision with '+x.sprite_type);         
+                     if(movingObj.velocity.x > 0)
+                        {                    
+                        movingObj.hit_box.position.x=x.position.x - x.width/2-movingObj.hit_box.width/2-2;                        
+                        }
+                     else 
+                        {
+                        movingObj.hit_box.position.x=x.position.x + x.width/2 + movingObj.hit_box.width/2+2;                      
+                        }
+                    }
+                }
+
+             movingObj.hit_box.position.y+=movingObj.velocity.y;           
+             for(let x of gameManager.collission_sprites)
+                {
+                 if(!x.onScreen) continue;
+                 if(x==movingObj || x==movingObj.hit_box) continue;                
+                 if(b_collision(movingObj.hit_box,x)) 
+                    {
+                    // console.log('collision with '+x.sprite_type);
+                    if(movingObj.velocity.y > 0)
+                        {
+                        movingObj.hit_box.position.y=x.position.y-x.height/2-movingObj.hit_box.height/2-2;                        
+                        }
+                    else
+                        {
+                        movingObj.hit_box.position.y=x.position.y+x.height/2+movingObj.hit_box.height/2+2;                        
+                        }
+                    }
+                }
+            }
+         applyVelocityRestrictions(movingObj)
+            {
+            if(movingObj.velocity.mag() < movingObj.maxVelocity) return;
+            movingObj.velocity.normalize().mult(movingObj.maxVelocity);         
+            }
+        update_and_display_hitbox(movingObj)
+            {
+            // this.hit_box.updatePosition(this.position);
+            movingObj.position.setVec(movingObj.hit_box.position);
+            }
          alterSceneData()
             {
             //todo;
@@ -905,6 +956,7 @@ let SOLDIER_IDLE=["https://drive.google.com/uc?export=view&id=1TnEzgF4aAX-Fz67GU
 let SOLDIER_IDLE_OBJS=LoadImagexArray(SOLDIER_IDLE);
 //This was not working
 */
+let sprite_folder="F:\\gitClones\\GamesPythonJavascript\\Python\\TopDownBossFight1\\sprites";
 let folder_name="F:\\gitClones\\GamesPythonJavascript\\Python\\TopDownBossFight1\\sprites\\soldier\\idle";
 let folder_name2="F:\\gitClones\\GamesPythonJavascript\\Python\\TopDownBossFight1\\sprites\\soldier\\move";
 let soldier_image_names=Array(20).fill(0).map((x,i)=>`survivor-idle_handgun_${i}.png`);
@@ -954,7 +1006,7 @@ class Soldier
          this.getMoving=false;
          this.destinationAngle=0;         
          this.waitBeforeShoot=gameManager.maxClickGap+10*xscale;
-         this.proximDistance=40*xscale;
+         this.proximDistance=60*xscale;
 
          this.onScreen=true;
          this.isActive=true;
@@ -1017,12 +1069,7 @@ class Soldier
                  // console.log(`mouse clicked thrice at ${mouseX.toFixed(2)},${mouseY.toFixed(2)}`);
                 }
             }
-        }
-     update_and_display_hitbox()
-        {
-        // this.hit_box.updatePosition(this.position);
-        this.position.setVec(this.hit_box.position);
-        }
+        }     
     runAnimation()
         {
         this.animationFrame+=this.animationFractions[this.animation];           
@@ -1054,57 +1101,12 @@ class Soldier
          this.moveToDestination();
          this.velocity.add(this.acceleration);
          this.acceleration.set(0,0);
-         this.applyVelocity();
-         this.applyVelocityRestrictions();
-         this.update_and_display_hitbox();
+         gameManager.applyVelocity(this);
+         gameManager.applyVelocityRestrictions(this);
+         gameManager.update_and_display_hitbox(this);
          this.detectMouseClicks_Listener();
         }
-     applyVelocity()
-        {                    
-         this.hit_box.position.x+=this.velocity.x;         
-         for(let k in gameManager.collission_sprites)
-            { 
-             let x=gameManager.collission_sprites[k];
-             if(!x.onScreen) continue;
-             if(x==this || x==this.hit_box) continue;                
-             if(b_collision(this.hit_box,x)) 
-                {        
-                // console.log('collision with '+x.sprite_type);         
-                 if(this.velocity.x > 0)
-                    {                    
-                    this.hit_box.position.x=x.position.x - x.width/2-this.hit_box.width/2-2;                        
-                    }
-                 else 
-                    {
-                    this.hit_box.position.x=x.position.x + x.width/2 + this.hit_box.width/2+2;                      
-                    }
-                }
-            }
-
-         this.hit_box.position.y+=this.velocity.y;           
-         for(let x of gameManager.collission_sprites)
-            {
-             if(!x.onScreen) continue;
-             if(x==this || x==this.hit_box) continue;                
-             if(b_collision(this.hit_box,x)) 
-                {
-                // console.log('collision with '+x.sprite_type);
-                if(this.velocity.y > 0)
-                    {
-                    this.hit_box.position.y=x.position.y-x.height/2-this.hit_box.height/2-2;                        
-                    }
-                else
-                    {
-                    this.hit_box.position.y=x.position.y+x.height/2+this.hit_box.height/2+2;                        
-                    }
-                }
-            }
-        }
-     applyVelocityRestrictions()
-        {
-        if(this.velocity.mag() < this.maxVelocity) return;
-        this.velocity.normalize().mult(this.maxVelocity);         
-        }
+     
      update()
         {
          if(!this.isActive) return false;
@@ -1145,6 +1147,38 @@ class Soldier
         }
     }
 //5. soldier ends
+//projectile image load
+  let projectile_image=LoadImagex(sprite_folder,'redcube.png');
+  class Projectile
+    {
+      constructor(x,y,wid,hei,parent,spriteGroups)
+        {
+          this.position= new CreateVector(x,y);
+          this.imagex=projectile_image;
+          this.parent=parent;
+          this.onScreen=true;
+          this.isActive=true;
+          this.angle=0;
+          this.rotAngle=0;
+          this.velocity=new CreateVector(0,0);
+          this.acceleration=new CreateVector(0,0);
+        }
+      display()
+            {            
+             if(!this.onScreen) return false;
+             ctx.save();
+             ctx.translate(this.position.x-gameManager.camera.position.x, 
+                           this.position.y-gameManager.camera.position.y);
+             ctx.rotate(d2r(this.rotAngle));             
+             ctx.drawImage(this.imagex,-this.width/2,-this.height/2,this.width,this.height);             
+             ctx.restore();
+            }
+      update()
+        {
+         ;
+        }
+    }
+
 //Game Classes end
     </script>
 
