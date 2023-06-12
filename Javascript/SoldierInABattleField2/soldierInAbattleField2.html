@@ -2,6 +2,7 @@
 <html>
 <head>
     <title> Soldier in a battle field</title>
+    <script src="scenedata.js"></script>
     <!-- function group1: Basic functions -->
     <script>
     let FPS=60;
@@ -406,13 +407,13 @@
         }
     </script>
 
-    <script>
+<!--     <script>
         let scenes=[
                 [                               
                 {"sprite":"player","x":400,"y":300,"width":100,"height":100},                              
                 ],
             ];
-    </script>
+    </script> -->
 </head>
 <body style='background-color:black;'>
     <canvas style='border:3px solid black;' onmousemove="trackMouse(event)"></canvas>
@@ -813,6 +814,18 @@
                     console.log('player loaded from scene data');
                    // this.levelUpBox.receiveGameObject(this.player);
                    }
+                 else if(elem['sprite']=='wall')  
+                    {                                   
+                    new Wall(elem['x']*xscale,
+                               elem['y']*yscale,
+                               elem['width']*xscale,
+                               elem['height']*yscale,
+                               elem['hitboxoffsetx']*xscale,
+                               elem['hitboxoffsety']*yscale,
+                               elem['isHori'],
+                               [this.visible_sprites,this.active_sprites]
+                               );                   
+                   }
                 }
             // this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');
             // this.camera.tgt=this.camera_stop_sprites[this.sceneForward?0:1];
@@ -956,9 +969,11 @@ let SOLDIER_IDLE=["https://drive.google.com/uc?export=view&id=1TnEzgF4aAX-Fz67GU
 let SOLDIER_IDLE_OBJS=LoadImagexArray(SOLDIER_IDLE);
 //This was not working
 */
-let sprite_folder="F:\\gitClones\\GamesPythonJavascript\\Python\\TopDownBossFight1\\sprites";
-let folder_name="F:\\gitClones\\GamesPythonJavascript\\Python\\TopDownBossFight1\\sprites\\soldier\\idle";
-let folder_name2="F:\\gitClones\\GamesPythonJavascript\\Python\\TopDownBossFight1\\sprites\\soldier\\move";
+// let sprite_folder="F:\\gitClones\\GamesPythonJavascript\\Python\\TopDownBossFight1\\sprites";
+// let sprite_folder="D:\\git_loc\\GDev_Javascript_Python_C++\\Python\\TopDownBossFight1\\sprites";
+let sprite_folder="../../Python/TopDownBossFight1/sprites";
+let folder_name=sprite_folder+"\\soldier\\idle";
+let folder_name2=sprite_folder+"\\soldier\\move";
 let soldier_image_names=Array(20).fill(0).map((x,i)=>`survivor-idle_handgun_${i}.png`);
 let SOLDIER_IDLE_OBJS=LoadImages(folder_name,soldier_image_names);
 soldier_image_names=Array(20).fill(0).map((x,i)=>`survivor-move_handgun_${i}.png`);
@@ -1179,6 +1194,57 @@ class Soldier
          ;
         }
     }
+    let WHITECLOUD=LoadImagex(sprite_folder,'cloud-1.png');
+    class GeneralSprite
+        {
+        constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups)
+            {            
+             this.position= new CreateVector(x,y);           
+             this.hitboxOffset= new CreateVector(hitboxoffsetx,hitboxoffsety);
+             this.width = wid * xscale;
+             this.height = hei * yscale;
+             this.onScreen=true;
+             this.angle=0;
+             this.imagex= WHITECLOUD;       
+             this.sprite_type='generalSprite';  
+             this.spriteGroups= spriteGroups; 
+             for(let x of this.spriteGroups)
+                x.push(this);
+            }
+        display()
+            {            
+             if(!this.onScreen) return false;
+             ctx.save();
+             ctx.translate(this.position.x-gameManager.camera.position.x, 
+                           this.position.y-gameManager.camera.position.y);  
+             ctx.rotate(d2r(this.rotAngle));          
+             ctx.drawImage(this.imagex,-this.width/2,-this.height/2,this.width,this.height);             
+             ctx.restore();
+            }
+         update()
+            {
+             return true;
+            }
+        }
+    let HORIZONTALWALL=LoadImagex(sprite_folder+'/Pipes','pipeHori.png');
+    let VERTICALWALL=LoadImagex(sprite_folder+'/Pipes','pipe.png');
+    class Wall extends GeneralSprite
+        {
+          constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,isHori,spriteGroups)
+            {
+              super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
+              this.sprite_type='horizontalwall';
+              this.hit_box=new HitBox(x,y,this.width*0.5,this.height,
+                                 [gameManager.collission_sprites,gameManager.visible_sprites],
+                                 'pipehitbox');
+              if(isHori)
+                this.imagex=HORIZONTALWALL;
+              else
+                this.imagex=VERTICALWALL;
+            }
+        }
+
+
 
 //Game Classes end
     </script>
