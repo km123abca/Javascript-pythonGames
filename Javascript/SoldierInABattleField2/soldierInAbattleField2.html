@@ -698,6 +698,18 @@
             }
           runGame()
             {
+             const [hori,vert]=this.camChecker();
+             if(!this.followMouse)
+                 {               
+                 this.camera.smoothFocus(hori,vert);
+                 }
+             else
+                 {
+                    if(this.runningClock - this.sceneStartTime < 2000)                  
+                     this.camera.smoothFocus(hori,vert);
+                    else
+                     this.camera.runWithMouse();
+                 }
              for(let sprite of this.visible_sprites)
                 {                                              
                 sprite.display();
@@ -706,6 +718,10 @@
                 {                                              
                 sprite.update();
                 }
+            }
+           camChecker()
+            {
+                return [true,true];
             }
     applyVelocity(movingObj)
             {                    
@@ -810,7 +826,8 @@
                                elem['width']*xscale,
                                elem['height']*yscale,
                                [this.visible_sprites,this.active_sprites]
-                               );   
+                               );  
+                    this.camera.tgt=this.player; 
                     console.log('player loaded from scene data');
                    // this.levelUpBox.receiveGameObject(this.player);
                    }
