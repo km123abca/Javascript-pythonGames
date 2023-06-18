@@ -595,19 +595,6 @@
             }
         }
   //3. Indicator Objs end
-  //7 EntryExitPoint start
-    class EntryExitPoint extends IndicatorObjs
-        {
-        constructor(x,y,sprite_type,spriteGroups)
-            {
-              super(x,y,'#0000FF',sprite_type,spriteGroups);             
-            }
-         update()
-          { 
-            return false;
-          }
-        }
-  //EntryExitPoint end
   //5. Hitbox starts
     class HitBox
         {
@@ -664,12 +651,10 @@
           this.visible_sprites=[];
           this.active_sprites=[];
           this.collission_sprites=[];
-          this.entryexit_sprites=[];
           this.scenesReady=[];
           this.scenesLoaded=[];
           this.tempCounter=0;
           this.player=null;
-          this.sceneForward=true;
 
           //mouse click detection variables
           this.numClicks=0;
@@ -795,19 +780,7 @@
             }
          unload_components()
             {
-             this.visible_sprites=[];
-             this.active_sprites=[];
-             this.collission_sprites=[];
-             if(this.player)
-                {
-                 this.visible_sprites=[this.positionAdjuster];
-                 this.active_sprites=[this.positionAdjuster];
-                }
-             else
-                {
-                 this.visible_sprites=[this.positionAdjuster];
-                 this.active_sprites=[this.positionAdjuster];  
-                }
+             //todo;
             }
          checkScenes()
             {
@@ -870,30 +843,12 @@
                                [this.visible_sprites,this.active_sprites]
                                );                   
                    }
-                 else if(elem['sprite'].split('_')[0]=='entryexit')
-                    new EntryExitPoint(elem['x']*xscale,
-                               elem['y']*yscale,
-                               elem['sprite'].split('_')[1],
-                               [this.visible_sprites,this.entryexit_sprites,this.active_sprites]
-                               );
                 }
-            this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');
+            // this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');
             // this.camera.tgt=this.camera_stop_sprites[this.sceneForward?0:1];
             this.scenesLoaded[n]=true;
             this.sceneStartTime= this.runningClock;
             console.log('scene No'+n+' loaded');
-            }
-        placePlayerOnEntryExit(ent_ex)
-            {
-            
-            for(let elem of this.entryexit_sprites)
-                {
-                if(elem.sprite_type==ent_ex)
-                    {
-                     // console.log(`player placed at ${elem.position.x},${elem.position.y} of ${elem.sprite_type}`);
-                     gameManager.player.hit_box.position.setVec(elem.position);
-                    }
-                }
             }
 
         }
@@ -937,7 +892,8 @@
             ctx.restore();
             }
         update()
-            {             
+            {
+             // console.log('here');
              this.attractFocus();
              if(!this.obj) return false;
              this.adjustObjPosition();
