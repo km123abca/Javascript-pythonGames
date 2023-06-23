@@ -651,6 +651,88 @@
 
         }
   //5. Hitbox ends
+  //8. Camera stop sprites
+    class CameraStopper extends IndicatorObjs
+        {
+        constructor(x,y,sprite_type,spriteGroups)
+          {
+            super(x,y,'#00FF00',sprite_type,spriteGroups);
+            // this.sprite_type=sprite_type;
+            if(sprite_type=='camstopper_right') gameManager.bottomY=y;
+          }
+        cameraCanFollow(objx)
+          {
+            let resultArray=[true,true];
+            if((this.sprite_type=='camstopper_left' && objx.position.x < this.position.x) ||
+               (this.sprite_type=='camstopper_right' && objx.position.x > this.position.x)
+              )
+                resultArray[0]=false;//return [false,true];
+            if((this.sprite_type=='camstopper_left' && objx.position.y < this.position.y) ||
+               (this.sprite_type=='camstopper_right' && objx.position.y > this.position.y)
+              )
+                resultArray[1]=false;//return [true,false];
+            return resultArray;//return [true,true];
+          }
+         update()
+          {     
+          if(!gameManager.player) return false;  
+          if(gameManager.camera.tgt==this)
+            {            
+             switch(this.sprite_type)
+                {
+                 case 'camstopper_left':
+                    if(gameManager.player.position.x > this.position.x)
+                        gameManager.camera.tgt=gameManager.player;
+                        break;
+                 case 'camstopper_right':
+                    if(gameManager.player.position.x < this.position.x)
+                        gameManager.camera.tgt=gameManager.player;
+                        break;
+                }
+            }
+          }
+        }
+  //8. Camera stop sprites ends
+  //11. SceneChanger
+    class SceneChanger extends IndicatorObjs
+        {
+        constructor(x,y,sprite_type,spriteGroups)
+            {
+              super(x,y,'#00FFFF',sprite_type,spriteGroups);
+              // this.sprite_type=sprite_type;
+              this.width=50*xscale;
+              this.height=200*yscale;
+              this.cornerPts=[[-1,-1],[1,-1],[1,1],[-1,1]];
+              this.cornerPts=this.cornerPts.map(x=>[x[0]*this.width/2,x[1]*this.height/2]);
+              
+            }
+        update()
+            {           
+             if(!gameManager.player) return false; 
+             if(!gameManager.inTransition && b_collision(this,gameManager.player))
+                {                 
+                  gameManager.changeScene(this.sprite_type);
+                }
+            }
+        display()
+            {           
+            if(!this.onScreen)
+                return false;
+            ctx.save();
+            ctx.translate(this.position.x - gameManager.camera.position.x,this.position.y - gameManager.camera.position.y);                          
+            ctx.fillStyle=this.colorx;
+            ctx.strokeStyle=this.colorx;
+            ctx.beginPath();
+            ctx.moveTo(this.cornerPts[0][0],this.cornerPts[0][1]);
+            for(var g=1;g<this.cornerPts.length;g++)
+                ctx.lineTo(this.cornerPts[g][0],this.cornerPts[g][1]);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();               
+            ctx.restore();
+            }
+        }
+  //11. SceneChanger ends
   //2. Gamemanager start
   class GameManager
         {
@@ -659,16 +741,19 @@
           this.camera=new Camera(0,0);
           this.gamePaused=false;
           this.runningClock=0;  
+          this.testing=false;
           
           this.followMouse=true;
           this.visible_sprites=[];
           this.active_sprites=[];
           this.collission_sprites=[];
           this.entryexit_sprites=[];
+          this.camera_stop_sprites=[];
           this.scenesReady=[];
           this.scenesLoaded=[];
           this.tempCounter=0;
           this.player=null;
+          this.playerDied=false;
           this.sceneForward=true;
 
           //mouse click detection variables
@@ -736,7 +821,17 @@
             }
            camChecker()
             {
+             if(gameManager.playerDied) return [false,false];
+             if(!(this.camera.tgt && this.camera.tgt==this.player))
+                {               
                 return [true,true];
+                }
+             let resultMat=[true,true];          
+             for(let camstopper of this.camera_stop_sprites)
+                {
+                 resultMat=camstopper.cameraCanFollow(this.player).map((x,i)=>x?resultMat[i]:false);                 
+                }
+             return resultMat;
             }
     applyVelocity(movingObj)
             {                    
@@ -791,6 +886,7 @@
             }
          alterSceneData()
             {
+            //check for player data from local storage and load appropriately
             //todo;
             }
          unload_components()
@@ -805,8 +901,10 @@
                 }
              else
                 {
-                 this.visible_sprites=[this.positionAdjuster];
-                 this.active_sprites=[this.positionAdjuster];  
+                 this.visible_sprites=[this.positionAdjuster,this.player];
+                 this.active_sprites=[this.positionAdjuster,this.player];  
+                 this.collission_sprites=[this.player.hit_box];
+                 this.player.spriteGroups=[this.visible_sprites,this.active_sprites];
                 }
             }
          checkScenes()
@@ -823,7 +921,7 @@
                  {
                  if(this.scenesReady[i]==true && this.scenesLoaded[i]==false)
                     {
-                    // if(!(n==1 && this.sceneForward) && !this.testing)
+                    if(!(n==1 && this.sceneForward) && !this.testing)
                     this.unload_components();
                     this.loadScene(i);
                     break;
@@ -876,9 +974,21 @@
                                elem['sprite'].split('_')[1],
                                [this.visible_sprites,this.entryexit_sprites,this.active_sprites]
                                );
+                 else if(elem['sprite'].split('_')[0]=='camstopper')
+                    new CameraStopper(elem['x']*xscale,
+                               elem['y']*yscale,
+                               elem['sprite'],
+                               [this.visible_sprites,this.camera_stop_sprites,this.active_sprites]
+                               );
+                else if(elem['sprite'].split('_')[0]=='scenechanger')
+                    new SceneChanger(elem['x']*xscale,
+                               elem['y']*yscale,
+                               elem['sprite'].split('_')[1],
+                               [this.visible_sprites,this.active_sprites]
+                               );
                 }
             this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');
-            // this.camera.tgt=this.camera_stop_sprites[this.sceneForward?0:1];
+            this.camera.tgt=this.camera_stop_sprites[this.sceneForward?0:1];
             this.scenesLoaded[n]=true;
             this.sceneStartTime= this.runningClock;
             console.log('scene No'+n+' loaded');
@@ -893,6 +1003,31 @@
                      // console.log(`player placed at ${elem.position.x},${elem.position.y} of ${elem.sprite_type}`);
                      gameManager.player.hit_box.position.setVec(elem.position);
                     }
+                }
+            }
+         changeScene(sc_id)
+            {       
+             this.inTransition=true;                 
+             
+
+             if(sc_id=="scright")
+                {
+                 this.sceneForward=true;
+                 this.scenesReady.push(true);
+                 this.scenesLoaded.push(false);
+                }
+             else if(sc_id=="scleft")
+                {
+                console.log('going back to previous scene');
+                this.sceneForward=false;
+                this.scenesReady.pop();
+                this.scenesLoaded.pop();
+                this.scenesLoaded[this.scenesLoaded.length-1]=false;
+                }
+             else
+                {
+                this.sceneForward=true;
+                this.scenesLoaded[this.scenesLoaded.length-1]=false;
                 }
             }
 
