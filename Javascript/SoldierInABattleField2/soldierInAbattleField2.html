@@ -124,7 +124,11 @@
         dot(vec)
             {
             return this.x*vec.x+this.y*vec.y;
-            }       
+            }    
+        announce()
+            {
+             return this.x+','+this.y;
+            }   
         }
     function PointInsideObject(objToCheck,pt)
         {
@@ -553,6 +557,7 @@
              if(!this.tgt) return false;
              // if(!this.tgt || !this.tgt.isActive) return false;
              // DisplayInGaps(`camera is following ${this.tgt.sprite_type}`);
+             // DisplayInGaps(`camera position is ${this.position.announce()} and tgt is at ${this.tgt.position.announce()}, ${canvas.width/2},${canvas.height}`)
              if(followH)
                 this.position.x=Lerp(this.position.x,this.tgt.position.x-canvas.width/2,this.lerpFactor);
              if(followV)
@@ -704,13 +709,20 @@
               this.height=200*yscale;
               this.cornerPts=[[-1,-1],[1,-1],[1,1],[-1,1]];
               this.cornerPts=this.cornerPts.map(x=>[x[0]*this.width/2,x[1]*this.height/2]);
+              this.usedAlready=false;
               
             }
         update()
-            {           
+            {       
+             if(this.usedAlready)
+                {
+                    return false;
+                }    
              if(!gameManager.player) return false; 
              if(!gameManager.inTransition && b_collision(this,gameManager.player))
-                {                 
+                {  
+                  console.log('hit scene changer');            
+                  this.usedAlready=true;   
                   gameManager.changeScene(this.sprite_type);
                 }
             }
@@ -743,7 +755,7 @@
           this.runningClock=0;  
           this.testing=false;
           
-          this.followMouse=true;
+          this.followMouse=false;
           this.visible_sprites=[];
           this.active_sprites=[];
           this.collission_sprites=[];
@@ -823,7 +835,8 @@
             {
              if(gameManager.playerDied) return [false,false];
              if(!(this.camera.tgt && this.camera.tgt==this.player))
-                {               
+                {  
+
                 return [true,true];
                 }
              let resultMat=[true,true];          
@@ -894,7 +907,9 @@
              this.visible_sprites=[];
              this.active_sprites=[];
              this.collission_sprites=[];
-             if(this.player)
+             this.camera_stop_sprites=[]; 
+             this.entryexit_sprites=[];
+             if(!this.player)
                 {
                  this.visible_sprites=[this.positionAdjuster];
                  this.active_sprites=[this.positionAdjuster];
@@ -930,11 +945,11 @@
             }
          loadScene(n)
             {
+            console.log('loading scene:'+n);
             this.tempCounter+=1;
             console.log('gameManager called '+this.tempCounter+ ' times for scene:'+n);
-            if(this.tempCounter > 1) 
+            if(this.tempCounter > 30) 
                 {
-
                 console.log('something is wrong');
                 console.log(JSON.stringify(this.scenesReady));
                 console.log(JSON.stringify(this.scenesLoaded));
@@ -989,29 +1004,30 @@
                 }
             this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');
             this.camera.tgt=this.camera_stop_sprites[this.sceneForward?0:1];
-            this.scenesLoaded[n]=true;
+            this.scenesLoaded[n]=true;           
+            this.inTransition=false;
             this.sceneStartTime= this.runningClock;
             console.log('scene No'+n+' loaded');
             }
         placePlayerOnEntryExit(ent_ex)
             {
-            
+            this.player.stopEverything();
             for(let elem of this.entryexit_sprites)
                 {
                 if(elem.sprite_type==ent_ex)
                     {
-                     // console.log(`player placed at ${elem.position.x},${elem.position.y} of ${elem.sprite_type}`);
+                     console.log(`player placed at ${elem.position.x},${elem.position.y} of ${elem.sprite_type}`);
                      gameManager.player.hit_box.position.setVec(elem.position);
                     }
                 }
             }
          changeScene(sc_id)
             {       
-             this.inTransition=true;                 
-             
+             this.inTransition=true;           
 
              if(sc_id=="scright")
                 {
+                 console.log('going forward to the next scene');
                  this.sceneForward=true;
                  this.scenesReady.push(true);
                  this.scenesLoaded.push(false);
@@ -1026,6 +1042,7 @@
                 }
              else
                 {
+
                 this.sceneForward=true;
                 this.scenesLoaded[this.scenesLoaded.length-1]=false;
                 }
@@ -1226,6 +1243,8 @@ class Soldier
 
      setGetMoving()
         {
+         if (gameManager.followMouse && !GetKeyPressedx('e'))
+            return false;
          if(!this.permissionToMove)
             return false;
         if(this.getMoving)
@@ -1238,7 +1257,7 @@ class Soldier
         }
      moveToDestination()
         {
-            if(!this.getMoving || gameManager.followMouse) return false;
+            if(!this.getMoving  ) return false;
             this.angle=AngleLerp(this.angle,this.destinationAngle,this.turnSpeed);
             this.acceleration.setVec(this.dest.copy().sub(this.position));  
             this.acceleration.normalize();
@@ -1250,11 +1269,19 @@ class Soldier
         {
          if(this.dest.copy().sub(this.position).mag()<this.proximDistance)
             {
-            this.permissionToMove=false;
-            this.getMoving=false;
-            this.velocity.set(0,0);
-            this.acceleration.set(0,0);
+            // this.permissionToMove=false;
+            // this.getMoving=false;
+            // this.velocity.set(0,0);
+            // this.acceleration.set(0,0);
+            this.stopEverything();
             }
+        }
+     stopEverything()
+        {
+        this.permissionToMove=false;
+        this.getMoving=false;
+        this.velocity.set(0,0);
+        this.acceleration.set(0,0);
         }
 
      detectMouseClicks_Listener()
@@ -1325,8 +1352,7 @@ class Soldier
         {
          if(!this.isActive) return false;
          this.runAnimation();
-         this.move(); 
-
+         this.move();
          // this.testCollisionWithLoot();
         }
     display()
