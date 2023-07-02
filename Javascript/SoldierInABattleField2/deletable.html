@@ -124,7 +124,11 @@
         dot(vec)
             {
             return this.x*vec.x+this.y*vec.y;
-            }       
+            }    
+        announce()
+            {
+             return this.x+','+this.y;
+            }   
         }
     function PointInsideObject(objToCheck,pt)
         {
@@ -553,6 +557,7 @@
              if(!this.tgt) return false;
              // if(!this.tgt || !this.tgt.isActive) return false;
              // DisplayInGaps(`camera is following ${this.tgt.sprite_type}`);
+             // DisplayInGaps(`camera position is ${this.position.announce()} and tgt is at ${this.tgt.position.announce()}, ${canvas.width/2},${canvas.height}`)
              if(followH)
                 this.position.x=Lerp(this.position.x,this.tgt.position.x-canvas.width/2,this.lerpFactor);
              if(followV)
@@ -595,6 +600,19 @@
             }
         }
   //3. Indicator Objs end
+  //7 EntryExitPoint start
+    class EntryExitPoint extends IndicatorObjs
+        {
+        constructor(x,y,sprite_type,spriteGroups)
+            {
+              super(x,y,'#0000FF',sprite_type,spriteGroups);             
+            }
+         update()
+          { 
+            return false;
+          }
+        }
+  //EntryExitPoint end
   //5. Hitbox starts
     class HitBox
         {
@@ -638,6 +656,95 @@
 
         }
   //5. Hitbox ends
+  //8. Camera stop sprites
+    class CameraStopper extends IndicatorObjs
+        {
+        constructor(x,y,sprite_type,spriteGroups)
+          {
+            super(x,y,'#00FF00',sprite_type,spriteGroups);
+            // this.sprite_type=sprite_type;
+            if(sprite_type=='camstopper_right') gameManager.bottomY=y;
+          }
+        cameraCanFollow(objx)
+          {
+            let resultArray=[true,true];
+            if((this.sprite_type=='camstopper_left' && objx.position.x < this.position.x) ||
+               (this.sprite_type=='camstopper_right' && objx.position.x > this.position.x)
+              )
+                resultArray[0]=false;//return [false,true];
+            if((this.sprite_type=='camstopper_left' && objx.position.y < this.position.y) ||
+               (this.sprite_type=='camstopper_right' && objx.position.y > this.position.y)
+              )
+                resultArray[1]=false;//return [true,false];
+            return resultArray;//return [true,true];
+          }
+         update()
+          {     
+          if(!gameManager.player) return false;  
+          if(gameManager.camera.tgt==this)
+            {            
+             switch(this.sprite_type)
+                {
+                 case 'camstopper_left':
+                    if(gameManager.player.position.x > this.position.x)
+                        gameManager.camera.tgt=gameManager.player;
+                        break;
+                 case 'camstopper_right':
+                    if(gameManager.player.position.x < this.position.x)
+                        gameManager.camera.tgt=gameManager.player;
+                        break;
+                }
+            }
+          }
+        }
+  //8. Camera stop sprites ends
+  //11. SceneChanger
+    class SceneChanger extends IndicatorObjs
+        {
+        constructor(x,y,sprite_type,spriteGroups)
+            {
+              super(x,y,'#00FFFF',sprite_type,spriteGroups);
+              // this.sprite_type=sprite_type;
+              this.width=50*xscale;
+              this.height=200*yscale;
+              this.cornerPts=[[-1,-1],[1,-1],[1,1],[-1,1]];
+              this.cornerPts=this.cornerPts.map(x=>[x[0]*this.width/2,x[1]*this.height/2]);
+              this.usedAlready=false;
+              
+            }
+        update()
+            {       
+             if(this.usedAlready)
+                {
+                    return false;
+                }    
+             if(!gameManager.player) return false; 
+             if(!gameManager.inTransition && b_collision(this,gameManager.player))
+                {  
+                  console.log('hit scene changer');            
+                  this.usedAlready=true;   
+                  gameManager.changeScene(this.sprite_type);
+                }
+            }
+        display()
+            {           
+            if(!this.onScreen)
+                return false;
+            ctx.save();
+            ctx.translate(this.position.x - gameManager.camera.position.x,this.position.y - gameManager.camera.position.y);                          
+            ctx.fillStyle=this.colorx;
+            ctx.strokeStyle=this.colorx;
+            ctx.beginPath();
+            ctx.moveTo(this.cornerPts[0][0],this.cornerPts[0][1]);
+            for(var g=1;g<this.cornerPts.length;g++)
+                ctx.lineTo(this.cornerPts[g][0],this.cornerPts[g][1]);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();               
+            ctx.restore();
+            }
+        }
+  //11. SceneChanger ends
   //2. Gamemanager start
   class GameManager
         {
@@ -646,15 +753,20 @@
           this.camera=new Camera(0,0);
           this.gamePaused=false;
           this.runningClock=0;  
+          this.testing=false;
           
-          this.followMouse=true;
+          this.followMouse=false;
           this.visible_sprites=[];
           this.active_sprites=[];
           this.collission_sprites=[];
+          this.entryexit_sprites=[];
+          this.camera_stop_sprites=[];
           this.scenesReady=[];
           this.scenesLoaded=[];
           this.tempCounter=0;
           this.player=null;
+          this.playerDied=false;
+          this.sceneForward=true;
 
           //mouse click detection variables
           this.numClicks=0;
@@ -721,7 +833,18 @@
             }
            camChecker()
             {
+             if(gameManager.playerDied) return [false,false];
+             if(!(this.camera.tgt && this.camera.tgt==this.player))
+                {  
+
                 return [true,true];
+                }
+             let resultMat=[true,true];          
+             for(let camstopper of this.camera_stop_sprites)
+                {
+                 resultMat=camstopper.cameraCanFollow(this.player).map((x,i)=>x?resultMat[i]:false);                 
+                }
+             return resultMat;
             }
     applyVelocity(movingObj)
             {                    
@@ -776,11 +899,28 @@
             }
          alterSceneData()
             {
+            //check for player data from local storage and load appropriately
             //todo;
             }
          unload_components()
             {
-             //todo;
+             this.visible_sprites=[];
+             this.active_sprites=[];
+             this.collission_sprites=[];
+             this.camera_stop_sprites=[]; 
+             this.entryexit_sprites=[];
+             if(!this.player)
+                {
+                 this.visible_sprites=[this.positionAdjuster];
+                 this.active_sprites=[this.positionAdjuster];
+                }
+             else
+                {
+                 this.visible_sprites=[this.positionAdjuster,this.player];
+                 this.active_sprites=[this.positionAdjuster,this.player];  
+                 this.collission_sprites=[this.player.hit_box];
+                 this.player.spriteGroups=[this.visible_sprites,this.active_sprites];
+                }
             }
          checkScenes()
             {
@@ -796,7 +936,7 @@
                  {
                  if(this.scenesReady[i]==true && this.scenesLoaded[i]==false)
                     {
-                    // if(!(n==1 && this.sceneForward) && !this.testing)
+                    if(!(n==1 && this.sceneForward) && !this.testing)
                     this.unload_components();
                     this.loadScene(i);
                     break;
@@ -805,11 +945,11 @@
             }
          loadScene(n)
             {
+            console.log('loading scene:'+n);
             this.tempCounter+=1;
             console.log('gameManager called '+this.tempCounter+ ' times for scene:'+n);
-            if(this.tempCounter > 1) 
+            if(this.tempCounter > 30) 
                 {
-
                 console.log('something is wrong');
                 console.log(JSON.stringify(this.scenesReady));
                 console.log(JSON.stringify(this.scenesLoaded));
@@ -843,12 +983,69 @@
                                [this.visible_sprites,this.active_sprites]
                                );                   
                    }
+                 else if(elem['sprite'].split('_')[0]=='entryexit')
+                    new EntryExitPoint(elem['x']*xscale,
+                               elem['y']*yscale,
+                               elem['sprite'].split('_')[1],
+                               [this.visible_sprites,this.entryexit_sprites,this.active_sprites]
+                               );
+                 else if(elem['sprite'].split('_')[0]=='camstopper')
+                    new CameraStopper(elem['x']*xscale,
+                               elem['y']*yscale,
+                               elem['sprite'],
+                               [this.visible_sprites,this.camera_stop_sprites,this.active_sprites]
+                               );
+                else if(elem['sprite'].split('_')[0]=='scenechanger')
+                    new SceneChanger(elem['x']*xscale,
+                               elem['y']*yscale,
+                               elem['sprite'].split('_')[1],
+                               [this.visible_sprites,this.active_sprites]
+                               );
                 }
-            // this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');
-            // this.camera.tgt=this.camera_stop_sprites[this.sceneForward?0:1];
-            this.scenesLoaded[n]=true;
+            this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');
+            this.camera.tgt=this.camera_stop_sprites[this.sceneForward?0:1];
+            this.scenesLoaded[n]=true;           
+            this.inTransition=false;
             this.sceneStartTime= this.runningClock;
             console.log('scene No'+n+' loaded');
+            }
+        placePlayerOnEntryExit(ent_ex)
+            {
+            this.player.stopEverything();
+            for(let elem of this.entryexit_sprites)
+                {
+                if(elem.sprite_type==ent_ex)
+                    {
+                     console.log(`player placed at ${elem.position.x},${elem.position.y} of ${elem.sprite_type}`);
+                     gameManager.player.hit_box.position.setVec(elem.position);
+                    }
+                }
+            }
+         changeScene(sc_id)
+            {       
+             this.inTransition=true;           
+
+             if(sc_id=="scright")
+                {
+                 console.log('going forward to the next scene');
+                 this.sceneForward=true;
+                 this.scenesReady.push(true);
+                 this.scenesLoaded.push(false);
+                }
+             else if(sc_id=="scleft")
+                {
+                console.log('going back to previous scene');
+                this.sceneForward=false;
+                this.scenesReady.pop();
+                this.scenesLoaded.pop();
+                this.scenesLoaded[this.scenesLoaded.length-1]=false;
+                }
+             else
+                {
+
+                this.sceneForward=true;
+                this.scenesLoaded[this.scenesLoaded.length-1]=false;
+                }
             }
 
         }
@@ -892,8 +1089,7 @@
             ctx.restore();
             }
         update()
-            {
-             // console.log('here');
+            {             
              this.attractFocus();
              if(!this.obj) return false;
              this.adjustObjPosition();
@@ -997,6 +1193,14 @@ let SOLDIER_IDLE_OBJS=LoadImages(folder_name,soldier_image_names);
 soldier_image_names=Array(20).fill(0).map((x,i)=>`survivor-move_handgun_${i}.png`);
 let SOLDIER_MOVE_OBJS=LoadImages(folder_name2,soldier_image_names);
 //image list for soldier ends
+//image list for soldier feet
+folder_name=sprite_folder+"\\soldierFeet\\idle";
+folder_name2=sprite_folder+"\\soldierFeet\\run";
+let soldier_feet_image_names=Array(1).fill(0).map((x,i)=>`survivor-idle_${i}.png`);
+let SOLDIER_FEET_IDLE_OBJS=LoadImages(folder_name,soldier_feet_image_names);
+soldier_feet_image_names=Array(20).fill(0).map((x,i)=>`survivor-run_${i}.png`);
+let SOLDIER_FEET_MOVE_OBJS=LoadImages(folder_name2,soldier_feet_image_names);
+//image list for soldier feet ends
 //5. soldier starts
 class Soldier
     {
@@ -1005,14 +1209,23 @@ class Soldier
          this.position=new CreateVector(x,y);
          this.width=wid*xscale;
          this.height=hei*yscale;
+         this.feetOffset=new CreateVector(-2*xscale,10*yscale);
          this.animations={
                           'idle':SOLDIER_IDLE_OBJS,
                           'move':SOLDIER_MOVE_OBJS
                          };
-         this.animationFractions={'idle':0.8,'run':0.4,'slash':0.2};
+         this.feetAnimations={
+                              'idle':SOLDIER_FEET_IDLE_OBJS,
+                              'move':SOLDIER_FEET_MOVE_OBJS
+         };
+         this.animationFractions={'idle':0.8,'move':0.4,'slash':0.2};
+         this.feetAnimationFractions={'idle':1,'move':1};
          this.animation='idle';
+         this.feetAnimation='idle';
          this.animationFrame=0;
+         this.feetAnimationFrame=0;
          this.animInQueue=null;
+         this.feetAnimInQueue=null;
          
          this.sprite_type='player';
          this.spriteGroups=spriteGroups;
@@ -1047,19 +1260,23 @@ class Soldier
 
      setGetMoving()
         {
+         if (gameManager.followMouse && !GetKeyPressedx('e'))
+            return false;
          if(!this.permissionToMove)
             return false;
         if(this.getMoving)
             return true;
         if(gameManager.runningClock - this.moveStartTime > this.waitBeforeShoot)
             {
+             this.changeAnimation('move');
+             this.changeFeetAnimation('move');
              this.getMoving=true;
              this.destinationAngle=this.dest.copy().sub(this.position).heading();
             }
         }
      moveToDestination()
         {
-            if(!this.getMoving || gameManager.followMouse) return false;
+            if(!this.getMoving  ) return false;
             this.angle=AngleLerp(this.angle,this.destinationAngle,this.turnSpeed);
             this.acceleration.setVec(this.dest.copy().sub(this.position));  
             this.acceleration.normalize();
@@ -1071,11 +1288,21 @@ class Soldier
         {
          if(this.dest.copy().sub(this.position).mag()<this.proximDistance)
             {
-            this.permissionToMove=false;
-            this.getMoving=false;
-            this.velocity.set(0,0);
-            this.acceleration.set(0,0);
+            // this.permissionToMove=false;
+            // this.getMoving=false;
+            // this.velocity.set(0,0);
+            // this.acceleration.set(0,0);
+            this.stopEverything();
             }
+        }
+     stopEverything()
+        {
+        this.permissionToMove=false;
+        this.getMoving=false;
+        this.velocity.set(0,0);
+        this.acceleration.set(0,0);
+        this.changeAnimation('idle');
+        this.changeFeetAnimation('idle');
         }
 
      detectMouseClicks_Listener()
@@ -1129,6 +1356,29 @@ class Soldier
             this.animationFrame=0;
             }
         }
+    runFeetAnimation()
+        {
+        this.feetAnimationFrame+=this.feetAnimationFractions[this.feetAnimation];           
+        if(this.feetAnimationFrame >= this.feetAnimations[this.feetAnimation].length)
+            {
+             this.feetAnimationFrame=0;
+             if(this.feetAnimInQueue) 
+                {
+                this.feetAnimation=this.feetAnimInQueue;
+                this.feetAnimInQueue=null;
+                }
+            }
+        }
+    changeFeetAnimation(anim)
+        {       
+        
+        if(this.feetAnimation == anim) return false;
+        else
+            {
+            this.feetAnimation=anim;
+            this.feetAnimationFrame=0;
+            }
+        }
 
     move()
         {
@@ -1146,12 +1396,13 @@ class Soldier
         {
          if(!this.isActive) return false;
          this.runAnimation();
-         this.move(); 
-
+         this.runFeetAnimation();
+         this.move();
          // this.testCollisionWithLoot();
         }
     display()
-        {            
+        {     
+          this.displayFeet();       
          /*if(!this.onScreen || !this.flickerControl()) return false;*/
          if(!this.onScreen ) return false;
          ctx.save();
@@ -1180,6 +1431,39 @@ class Soldier
                       );*/
          ctx.restore(); 
         }
+
+    displayFeet()
+        {            
+         /*if(!this.onScreen || !this.flickerControl()) return false;*/
+         if(!this.onScreen ) return false;
+         ctx.save();
+         ctx.translate(this.position.x-gameManager.camera.position.x+this.feetOffset.x, 
+                       this.position.y-gameManager.camera.position.y+this.feetOffset.y);
+         ctx.rotate(d2r(this.angle));
+         // ctx.scale(this.sx,this.sy);
+         try{
+         ctx.drawImage(this.feetAnimations[this.feetAnimation][parseInt(this.feetAnimationFrame)],
+                       -this.width/2,
+                       -this.height/2,
+                       this.width,
+                       this.height
+                      );
+        }catch(err){
+            console.log('error at display feet');
+            console.log(this.feetAnimations[this.feetAnimation][parseInt(this.animationFrame)]);
+        }
+
+         /*
+         if(this.flashThis())
+         ctx.drawImage(this.healFlash,
+                      -this.width/2,
+                      -this.height/2,
+                      this.width,
+                      this.height
+                      );*/
+         ctx.restore(); 
+        }
+
     }
 //5. soldier ends
 //projectile image load

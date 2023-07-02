@@ -1209,7 +1209,7 @@ class Soldier
          this.position=new CreateVector(x,y);
          this.width=wid*xscale;
          this.height=hei*yscale;
-         this.feetOffset=new CreateVector(-2*xscale,0*yscale);
+         this.feetOffset=new CreateVector(-2*xscale,10*yscale);
          this.animations={
                           'idle':SOLDIER_IDLE_OBJS,
                           'move':SOLDIER_MOVE_OBJS
@@ -1236,7 +1236,7 @@ class Soldier
          this.velocity=new CreateVector(0,0);
          this.targetVelocity=this.velocity.copy();
          this.maxVelocity=10*xscale;
-         this.hit_box=new HitBox(x,y,this.width*0.5,this.height*0.5,
+         this.hit_box=new HitBox(x,y,this.width*0.5,this.height,
                                  [gameManager.collission_sprites],
                                  'playerhitbox');
          this.sceneStartTime=0;
@@ -1256,8 +1256,6 @@ class Soldier
 
          this.onScreen=true;
          this.isActive=true;
-
-         this.bulletOffset=new CreateVector(55*xscale,25*yscale);
         }
 
      setGetMoving()
@@ -1289,7 +1287,11 @@ class Soldier
      reachedTarget()
         {
          if(this.dest.copy().sub(this.position).mag()<this.proximDistance)
-            {           
+            {
+            // this.permissionToMove=false;
+            // this.getMoving=false;
+            // this.velocity.set(0,0);
+            // this.acceleration.set(0,0);
             this.stopEverything();
             }
         }
@@ -1320,8 +1322,8 @@ class Soldier
             else if(gameManager.numClicks==2)
                 {                   
                     this.permissionToMove=false;
-                    this.turnToFaceMousePointer();
-                    this.shoot();                   
+                    //shoot logic here
+                    
                  // console.log(`mouse clicked twice at ${mouseX.toFixed(2)},${mouseY.toFixed(2)}`);
                 }
             else if(gameManager.numClicks==3)
@@ -1329,23 +1331,7 @@ class Soldier
                  // console.log(`mouse clicked thrice at ${mouseX.toFixed(2)},${mouseY.toFixed(2)}`);
                 }
             }
-        } 
-    turnToFaceMousePointer()
-        {
-         let dir=new CreateVector(mouseX,mouseY);
-         dir.add(gameManager.camera.position);
-         dir.sub(this.position);
-         this.angle=dir.heading();
-        }
-    shoot()
-        {  
-        let bulletOffset=this.bulletOffset.copy().rotateByAngle(this.angle);          
-        new Projectile(this.position.x+bulletOffset.x,
-                       this.position.y+bulletOffset.y,
-                       5*xscale,5*yscale,this,
-                       [gameManager.visible_sprites,gameManager.active_sprites]
-                       ); 
-        }    
+        }     
     runAnimation()
         {
         this.animationFrame+=this.animationFractions[this.animation];           
@@ -1450,10 +1436,9 @@ class Soldier
         {            
          /*if(!this.onScreen || !this.flickerControl()) return false;*/
          if(!this.onScreen ) return false;
-         let feetOffset=this.feetOffset.copy().rotateByAngle(this.angle);
          ctx.save();
-         ctx.translate(this.position.x-gameManager.camera.position.x+feetOffset.x, 
-                       this.position.y-gameManager.camera.position.y+feetOffset.y);
+         ctx.translate(this.position.x-gameManager.camera.position.x+this.feetOffset.x, 
+                       this.position.y-gameManager.camera.position.y+this.feetOffset.y);
          ctx.rotate(d2r(this.angle));
          // ctx.scale(this.sx,this.sy);
          try{
@@ -1488,9 +1473,6 @@ class Soldier
       constructor(x,y,wid,hei,parent,spriteGroups)
         {
           this.position= new CreateVector(x,y);
-          this.width=wid;
-          this.height=hei;
-          this.spriteGroups=spriteGroups;
           this.imagex=projectile_image;
           this.parent=parent;
           this.onScreen=true;
@@ -1498,55 +1480,21 @@ class Soldier
           this.angle=0;
           this.rotAngle=0;
           this.velocity=new CreateVector(0,0);
-          this.maxVelocity=5*xscale;
-          this.acceleration=new CreateVector(1,0);
-          this.accelerationInit=this.acceleration.copy().pointToAngle(this.parent.angle).normalize();
-
-          this.hit_box=new HitBox(x,y,this.width*0.5,this.height,
-                                 [gameManager.collission_sprites],
-                                 'projectilehitbox');
-          this.birthTime= gameManager.runningClock;
-          this.sprite_type='projectile';
-          for(let x of this.spriteGroups) x.push(this);
+          this.acceleration=new CreateVector(0,0);
         }
       display()
-        {            
-         if(!this.onScreen) return false;         
-         ctx.save();
-         ctx.translate(this.position.x- gameManager.camera.position.x, 
-                       this.position.y- gameManager.camera.position.y);
-         ctx.rotate(d2r(this.rotAngle));             
-         ctx.drawImage(this.imagex,-this.width/2,-this.height/2,this.width,this.height);            
-         ctx.restore();
-        }
-
+            {            
+             if(!this.onScreen) return false;
+             ctx.save();
+             ctx.translate(this.position.x-gameManager.camera.position.x, 
+                           this.position.y-gameManager.camera.position.y);
+             ctx.rotate(d2r(this.rotAngle));             
+             ctx.drawImage(this.imagex,-this.width/2,-this.height/2,this.width,this.height);             
+             ctx.restore();
+            }
       update()
         {
-         this.move();
-         this.checkLifeSpan();
-        }
-      applyForce()
-        {
-            this.acceleration.setVec(this.accelerationInit);
-
-        }
-      move()
-        {
-         this.applyForce(); 
-         this.velocity.add(this.acceleration);        
-         gameManager.applyVelocity(this);
-         gameManager.applyVelocityRestrictions(this);
-         this.acceleration.set(0,0);
-         gameManager.update_and_display_hitbox(this);
-        }
-      checkLifeSpan()
-        {
-            if(gameManager.runningClock - this.birthTime > 2000)
-            {
-                destroySelf(this.hit_box);
-                destroySelf(this);
-                console.log('projectile destroyed');
-            }
+         ;
         }
     }
     let WHITECLOUD=LoadImagex(sprite_folder,'cloud-1.png');
