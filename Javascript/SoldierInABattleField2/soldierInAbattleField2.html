@@ -435,6 +435,9 @@
         canvas.height = window.innerHeight-100;
         };
     window.addEventListener('resize', resize);
+    canvas.addEventListener('contextmenu', function(event) {
+    event.preventDefault();
+    });
     let upArrow=false,leftArrow=false,rightArrow=false,downArrow=false;
     let keysPressed=new Set();
     CapturePressedKey=(keyCode,pressed=true)=>{
@@ -477,6 +480,7 @@
                         if(e.keyCode==40) downArrow=true;
                      }
     let spacePress,enterPress,upPress,rightPress,downPress,leftPress;
+    let mouseRightPressed=false;
     document.onkeypress=function (e)
                     {
                     pressedKeyCode=e.keyCode;
@@ -512,12 +516,54 @@
                     };
     document.onmousedown=function(e)
                     {
-                    mousePressed=true;                                                  
+                    if(processMouseClick(e)==1)
+                    mousePressed=true;  
+                    else
+                    mouseRightPressed=true;                                                
                     };  
     document.onmouseup=function(e)
                     {
-                    mousePressed=false;                                             
+                    if(processMouseClick(e)==1)
+                    mousePressed=false;   
+                    else
+                    mouseRightPressed=false;                                          
                     };
+
+    function processMouseClick(e)
+        {
+            e=e||window.event;
+            if('which' in e){
+                return e.which;
+            }
+            return 1;
+        }
+
+   /*
+document.onmousedown = function(event) {
+  event = event || window.event;
+  
+  if ('which' in event) {
+    // For modern browsers
+    if (event.which === 1) {
+      // Left mouse click
+      // Handle left click here
+    } else if (event.which === 3) {
+      // Right mouse click
+      // Handle right click here
+    }
+  } else if ('button' in event) {
+    // For older IE browsers
+    if (event.button === 0) {
+      // Left mouse click
+      // Handle left click here
+    } else if (event.button === 2) {
+      // Right mouse click
+      // Handle right click here
+    }
+  }
+};
+
+   */
 
 //Game classes start
     //1. Camera starts
@@ -616,7 +662,7 @@
   //5. Hitbox starts
     class HitBox
         {
-         constructor(x,y,wid,hei,spriteGroups,hitboxName="unknown hitbox")
+         constructor(x,y,wid,hei,spriteGroups,hitboxName="unknown hitbox",parent=false)
             {
              this.position= new CreateVector(x,y);
              this.width = wid;
@@ -627,6 +673,7 @@
              this.spriteGroups=spriteGroups;
              for(let grp of spriteGroups)
                 grp.push(this);
+             this.parent=parent;
             }
          update()
             {
@@ -773,6 +820,7 @@
           this.clickStartTime=0;
           this.mouseClickTrigger=true;
           this.maxClickGap=500;
+          this.mouseRightTrigger=false;
 
           // new IndicatorObjs(300,300,'#00FF00','indicator',[this.visible_sprites]);
           // new Soldier(300,300,200*xscale,200*yscale,[this.visible_sprites]);
@@ -804,7 +852,7 @@
           update()
             {            
             this.runClock();
-            this.runGame();
+            this.runGame();            
             this.detectMouseClicks();
             if(!this.gamePaused) this.checkScenes();
             }
@@ -826,11 +874,23 @@
                 {                                              
                 sprite.display();
                 }
+             if(!this.gamePaused)
              for(let sprite of this.active_sprites)
                 {                                              
                 sprite.update();
                 }
+             this.runUI();
             }
+            runUI()
+                {
+                    if(mouseRightPressed && !this.mouseRightTrigger)
+                        {
+                        this.mouseRightTrigger=true;
+                        this.gamePaused=!this.gamePaused;
+                        }
+                    else if(!mouseRightPressed && this.mouseRightTrigger)
+                        this.mouseRightTrigger=false;
+                }
            camChecker()
             {
              if(gameManager.playerDied) return [false,false];
@@ -853,9 +913,12 @@
                 { 
                  let x=gameManager.collission_sprites[k];
                  if(!x.onScreen) continue;
-                 if(x==movingObj || x==movingObj.hit_box) continue;                
+                 if(x==movingObj || x==movingObj.hit_box) continue; 
+                                
                  if(b_collision(movingObj.hit_box,x)) 
-                    {        
+                    {  
+                    
+                    movingObj.performSpecTaskOnCollision(x);                           
                     // console.log('collision with '+x.sprite_type);         
                      if(movingObj.velocity.x > 0)
                         {                    
@@ -875,6 +938,9 @@
                  if(x==movingObj || x==movingObj.hit_box) continue;                
                  if(b_collision(movingObj.hit_box,x)) 
                     {
+                    
+                        movingObj.performSpecTaskOnCollision(x);  
+                         
                     // console.log('collision with '+x.sprite_type);
                     if(movingObj.velocity.y > 0)
                         {
@@ -892,10 +958,20 @@
             if(movingObj.velocity.mag() < movingObj.maxVelocity) return;
             movingObj.velocity.normalize().mult(movingObj.maxVelocity);         
             }
-        update_and_display_hitbox(movingObj)
-            {
-            // this.hit_box.updatePosition(this.position);
+        update_and_display_hitbox(movingObj,show=false)
+            {  
+            if(show) movingObj.hit_box.display();         
             movingObj.position.setVec(movingObj.hit_box.position);
+            }
+         performSpecTaskOnCollision(collidedObjType,dmg)
+            {
+            let arr=collidedObjType.sprite_type.split('_');
+            if(arr.length<2) return false;
+            if(arr[1]=='damagable')
+                {
+                collidedObjType.parent.takeDamage(dmg);                
+                }
+
             }
          alterSceneData()
             {
@@ -1001,6 +1077,13 @@
                                elem['sprite'].split('_')[1],
                                [this.visible_sprites,this.active_sprites]
                                );
+                else if(elem['sprite']=='flower')
+                    new Flower(elem['x']*xscale,
+                               elem['y']*yscale,
+                               elem['width']*xscale,
+                               elem['height']*yscale,
+                               [this.visible_sprites]
+                               );
                 }
             this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');
             this.camera.tgt=this.camera_stop_sprites[this.sceneForward?0:1];
@@ -1050,6 +1133,48 @@
 
         }
 //2. Gamemanager ends
+//20. levelup box starts
+    class LevelUpBox
+        {
+         constructor(go)
+            {
+             
+            }
+        }
+//20. levelup box ends
+    let sprite_folder="../../Python/TopDownBossFight1/sprites";
+    let WHITECLOUD=LoadImagex(sprite_folder,'cloud-1.png');
+    class GeneralSprite
+        {
+        constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups)
+            {            
+             this.position= new CreateVector(x,y);           
+             this.hitboxOffset= new CreateVector(hitboxoffsetx,hitboxoffsety);
+             this.width = wid * xscale;
+             this.height = hei * yscale;
+             this.onScreen=true;
+             this.angle=0;
+             this.imagex= WHITECLOUD;       
+             this.sprite_type='generalSprite';  
+             this.spriteGroups= spriteGroups; 
+             for(let x of this.spriteGroups)
+                x.push(this);
+            }
+        display()
+            {            
+             if(!this.onScreen) return false;
+             ctx.save();
+             ctx.translate(this.position.x-gameManager.camera.position.x, 
+                           this.position.y-gameManager.camera.position.y);  
+             ctx.rotate(d2r(this.rotAngle));          
+             ctx.drawImage(this.imagex,-this.width/2,-this.height/2,this.width,this.height);             
+             ctx.restore();
+            }
+         update()
+            {
+             return true;
+            }
+        }
 //4. position adjuster start
     //positionAdjuster start
     class PositionAdjuster
@@ -1185,7 +1310,8 @@ let SOLDIER_IDLE_OBJS=LoadImagexArray(SOLDIER_IDLE);
 */
 // let sprite_folder="F:\\gitClones\\GamesPythonJavascript\\Python\\TopDownBossFight1\\sprites";
 // let sprite_folder="D:\\git_loc\\GDev_Javascript_Python_C++\\Python\\TopDownBossFight1\\sprites";
-let sprite_folder="../../Python/TopDownBossFight1/sprites";
+sprite_folder="../../Python/TopDownBossFight1/sprites";
+
 let folder_name=sprite_folder+"\\soldier\\idle";
 let folder_name2=sprite_folder+"\\soldier\\move";
 let soldier_image_names=Array(20).fill(0).map((x,i)=>`survivor-idle_handgun_${i}.png`);
@@ -1201,6 +1327,8 @@ let SOLDIER_FEET_IDLE_OBJS=LoadImages(folder_name,soldier_feet_image_names);
 soldier_feet_image_names=Array(20).fill(0).map((x,i)=>`survivor-run_${i}.png`);
 let SOLDIER_FEET_MOVE_OBJS=LoadImages(folder_name2,soldier_feet_image_names);
 //image list for soldier feet ends
+
+
 //5. soldier starts
 class Soldier
     {
@@ -1405,7 +1533,10 @@ class Soldier
          gameManager.update_and_display_hitbox(this);
          this.detectMouseClicks_Listener();
         }
-     
+     performSpecTaskOnCollision()
+        {
+         return false;
+        }
      update()
         {
          if(!this.isActive) return false;
@@ -1481,6 +1612,94 @@ class Soldier
 
     }
 //5. soldier ends
+
+//image list for flower
+folder_name="../Insects/Sprites/flowers";
+soldier_feet_image_names=Array(7).fill(0).map((x,i)=>`flower${i}.png`);
+FLOWER_STAGES=LoadImages(folder_name,soldier_feet_image_names);
+//image list for flower ends
+//class flower
+class Flower extends GeneralSprite
+    {
+      constructor(x,y,wid,hei,spriteGroups)
+        {
+         super(x,y,wid,hei,0,0,spriteGroups);
+         this.imageStages=FLOWER_STAGES; 
+         this.i=0
+         this.imagex=this.imageStages[this.i]; 
+         this.onScreen=true;
+         this.sprite_type='flower';  
+         this.hit_box=new HitBox(x,y,this.width*0.5,this.height*0.5,
+                                 [gameManager.collission_sprites],
+                                 'flowerhitbox_damagable',this);     
+        }
+      display()
+        {            
+         if(!this.onScreen) return false;
+         ctx.save();
+         ctx.translate(this.position.x-gameManager.camera.position.x, 
+                       this.position.y-gameManager.camera.position.y);           
+         ctx.drawImage(this.imagex,-this.width/2,-this.height/2,this.width,this.height);             
+         ctx.restore();
+        }
+      takeDamage(dmg)
+        {
+         console.log("damage taken"); 
+         SpawnClouds(this.position);
+         destroySelf(this.hit_box);
+         destroySelf(this);
+        }
+       
+    }
+//class flower ends
+//cloud burst
+    class CloudBurst
+        {
+         constructor(x,y,spriteGroups)
+            {
+             this.position = new CreateVector(x,y);
+             this.width= 15 * xscale;
+             this.sprite_type='cloud';
+             this.height= 15 * yscale;
+             this.imagex= WHITECLOUD;
+             this.onScreen=true;
+             this.isActive=true;
+             this.spriteGroups=spriteGroups;
+             for(let grp of spriteGroups)
+                grp.push(this);
+             this.angle=0;  
+             this.birthTime=gameManager.runningClock;   
+             this.maxLife=1500; 
+             this.velocity=new CreateVector((Math.random()-0.5)*4,(Math.random()-0.5)*4);
+
+            }
+         display()
+            {
+            if(!this.onScreen) return false;                
+            ctx.save();         
+            ctx.translate(this.position.x - gameManager.camera.position.x,this.position.y - gameManager.camera.position.y); 
+            ctx.drawImage(this.imagex,-this.width/2,-this.height/2,this.width,this.height);
+            ctx.restore();
+            }
+         update()
+            {
+             this.move();
+             if(gameManager.runningClock - this.birthTime > this.maxLife)
+                {
+                 destroySelf(this);
+                }            
+            }
+         move()
+            {
+             this.position.add(this.velocity);
+            }
+        }
+function SpawnClouds(pos,n=60)
+    {
+     for(let i=0;i<n;i++)
+        new CloudBurst(pos.x,pos.y,[gameManager.visible_sprites,gameManager.active_sprites]);
+    }
+//cloud burst ends
 //projectile image load
   let projectile_image=LoadImagex(sprite_folder,'redcube.png');
   class Projectile
@@ -1508,6 +1727,7 @@ class Soldier
           this.birthTime= gameManager.runningClock;
           this.sprite_type='projectile';
           for(let x of this.spriteGroups) x.push(this);
+          this.damageCaused=5;
         }
       display()
         {            
@@ -1548,39 +1768,14 @@ class Soldier
                 console.log('projectile destroyed');
             }
         }
-    }
-    let WHITECLOUD=LoadImagex(sprite_folder,'cloud-1.png');
-    class GeneralSprite
+       performSpecTaskOnCollision(collidedObjType)
         {
-        constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups)
-            {            
-             this.position= new CreateVector(x,y);           
-             this.hitboxOffset= new CreateVector(hitboxoffsetx,hitboxoffsety);
-             this.width = wid * xscale;
-             this.height = hei * yscale;
-             this.onScreen=true;
-             this.angle=0;
-             this.imagex= WHITECLOUD;       
-             this.sprite_type='generalSprite';  
-             this.spriteGroups= spriteGroups; 
-             for(let x of this.spriteGroups)
-                x.push(this);
-            }
-        display()
-            {            
-             if(!this.onScreen) return false;
-             ctx.save();
-             ctx.translate(this.position.x-gameManager.camera.position.x, 
-                           this.position.y-gameManager.camera.position.y);  
-             ctx.rotate(d2r(this.rotAngle));          
-             ctx.drawImage(this.imagex,-this.width/2,-this.height/2,this.width,this.height);             
-             ctx.restore();
-            }
-         update()
-            {
-             return true;
-            }
+           gameManager.performSpecTaskOnCollision(collidedObjType,this.damageCaused);
+           destroySelf(this.hit_box);
+           destroySelf(this);
         }
+    }
+
     let HORIZONTALWALL=LoadImagex(sprite_folder+'/Pipes','pipeHori.png');
     let VERTICALWALL=LoadImagex(sprite_folder+'/Pipes','pipe.png');
     class Wall extends GeneralSprite

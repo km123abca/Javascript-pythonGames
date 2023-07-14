@@ -580,7 +580,12 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 					if(e.keyCode==112)
 									{
-									gameManager.gamePaused=!gameManager.gamePaused; 
+
+									// gameManager.gamePaused=!gameManager.gamePaused; 
+									if(gameManager)
+										{
+										 gameManager.togglePauseScreen();
+										}
 									ppress=true;
 									}	
 					};
@@ -3953,7 +3958,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 		if(this.health<=0)
 	 			{
 	 			if(this.tgt)
+	 				{
 	 				this.tgt.giveExp(this.expVal);
+	 				this.tgt.inEnemyRadar=false;
+	 				}
 	 			SpawnClouds(this.position);
 	 			destroySelf(this);
 	 			destroySelf(this.hit_box);
@@ -4042,12 +4050,12 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 		if(this.animation=="attack2" && parseInt(this.animationFrame)==1 && !this.hitBoxSpawned)
 	 			{
 	 			this.hitBoxSpawned=true;
-	 			let hbWidthRatio=0.2;
-	 			let hbHeightRatio=0.2;
+	 			let hbWidthRatio=0.6;
+	 			let hbHeightRatio=1;
 	 			if(this.state=="rush")
 	 				{
 	 				 hbWidthRatio=1;
-	 				 hbHeightRatio=0.5;	 				 
+	 				 hbHeightRatio=1;	 				 
 	 				}
 	 			if(this.state=="attack" || this.state=="rush")
 		 			new DamageHitBox(this.position.x,
@@ -4152,6 +4160,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 // this.velocity.x=Lerp(this.velocity.x,0,2*xscale);	
 			 this.velocity.x=0;
 			 this.state='agro';
+
 			 this.soundPlayed=false;
 			 this.meleeOver=false;
 			}
@@ -4192,8 +4201,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 		AgroBehav()
 			{
+			if(!gameManager.player.inEnemyRadar)
+				gameManager.player.inEnemyRadar=true;
 			if(!this.startled)
-				{
+				{					
 				 this.startled=true;
 				 this.animInQueue='idle';
 				 this.switchAnimation('startle');
@@ -4758,7 +4769,9 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.maxDashTime=200;
 		 	 this.dashSpeed=40*xscale;
 		 	 this.dashStarted=false;	
-		 	 this.reverseDashing=false;	 	 
+		 	 this.reverseDashing=false;	 
+
+		 	 this.inEnemyRadar=false;	 
 			}
 		
         CheckIfIsInContactWithWall()
@@ -5797,6 +5810,18 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 		 if(this.allKeys[i]==keyx) return false;
 		 	return true;		 		
 		 }
+		 togglePauseScreen(){
+		 	if(!this.player || this.playerDied) return false;
+		 	if(this.player.inEnemyRadar && !this.gamePaused)
+		 		{
+		 		 console.log('Cant do pause screen right now');		 		 
+		 		}
+		 	else 
+		 		{
+		 		 this.gamePaused=!this.gamePaused;
+		 		}
+
+		 }
 		 getKeyDataFromLocalStorage(){
 		 	let keyData=localStorage.getItem("gameKeyData");
 		 	if(!keyData) return false;
@@ -5880,7 +5905,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 		this.active_sprites=[this.player,this.positionAdjuster,this.playerHealthBar,this.playerEnergyBar];
 		 		this.killables=[this.player];
 		 		this.collission_sprites=[this.player.hit_box];
-		 		this.player.spriteGroups=[this.visible_sprites,this.active_sprites,this.killables];		 		
+		 		this.player.spriteGroups=[this.visible_sprites,this.active_sprites,this.killables];		
+		 		this.player.inEnemyRadar=false; 		
 		 		}
 		 			 	
 		 	}
