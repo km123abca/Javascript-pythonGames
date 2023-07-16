@@ -792,11 +792,79 @@ document.onmousedown = function(event) {
             }
         }
   //11. SceneChanger ends
+  //UI bar starts
+    class UIBar
+        {
+        constructor(x,y,wid,hei,val,maxVal,backgroundColor,mainColor,spriteGroups,screenOverlay=true,sprite_type="un_uibar")
+            {
+             this.position = new CreateVector(x,y);
+             this.width = wid * xscale;
+             this.height = hei * yscale;
+             this.fixedWidth= this.width;
+             this.onScreen = true;
+             // this.backgroundColor='#222222';
+             this.backgroundColor = backgroundColor;
+             this.mainColor = mainColor;
+             this.val = val;
+             this.maxVal = maxVal;
+             this.fixedMaxVal=maxVal;
+             this.spriteGroups=spriteGroups;
+             for(let grp of this.spriteGroups)
+                grp.push(this);
+             this.screenOverlay=screenOverlay;
+             this.sprite_type=sprite_type;
+            }
+        setValues(val,maxVal)
+            {
+             this.val = val;
+             this.maxVal = maxVal;
+             if(this.maxVal > this.fixedMaxVal)
+                this.width=this.fixedWidth*this.maxVal/this.fixedMaxVal;
+            }
+        updateValue(val)
+            {
+             this.val=val;
+            }
+         display()
+            {   
+             let camx=0,camy=0;
+             if(!this.screenOverlay)
+                {
+                 camx=gameManager.camera.position.x;
+                 camy=gameManager.camera.position.y;
+                }        
+             if(!this.onScreen) return false;
+             ctx.save();
+             ctx.translate(this.position.x-camx,this.position.y-camy);
+             // ctx.rotate(d2r(this.angle));
+             // ctx.scale(this.sx,this.sy);
+             ctx.beginPath();
+             ctx.fillStyle=this.backgroundColor;
+             ctx.strokeStyle=this.backgroundColor;
+             ctx.lineWidth="6";
+             ctx.rect(0,0,this.width,this.height);
+             ctx.fill();
+             ctx.stroke();
+             ctx.beginPath();
+             ctx.fillStyle=this.mainColor;
+             ctx.strokeStyle=this.backgroundColor;
+             ctx.lineWidth="6";
+             ctx.rect(0,0,this.width*this.val/this.maxVal,this.height);
+             ctx.fill();
+             ctx.restore(); 
+            }
+         update()
+            {
+             return false;
+            }
+        }
+  //UI bar ends
   //2. Gamemanager start
   class GameManager
         {
           constructor()
           {
+          this.userName='guest';
           this.camera=new Camera(0,0);
           this.gamePaused=false;
           this.runningClock=0;  
@@ -814,6 +882,11 @@ document.onmousedown = function(event) {
           this.player=null;
           this.playerDied=false;
           this.sceneForward=true;
+          this.localStorageChecked=false;
+          this.levelUpBox=new LevelUpBox(this.player);
+
+          this.playerHealthBar= new UIBar(50,20,300,30,100,100,'#222222','#FF0000',[this.visible_sprites,this.active_sprites],true,'playerhealth');
+          this.playerEnergyBar= new UIBar(50,100,300,30,100,100,'#222222','#0000FF',[this.visible_sprites,this.active_sprites],true,'playerenergy');
 
           //mouse click detection variables
           this.numClicks=0;
@@ -906,6 +979,28 @@ document.onmousedown = function(event) {
                 }
              return resultMat;
             }
+        getLocalStoragex(){            
+            let localStorage_local = localStorage.getItem("GameSaveDataUserWise");
+            if(!localStorage_local) return false;
+            localStorage_local= JSON.parse(localStorage_local);
+            if (this.userName in localStorage_local)
+                return localStorage_local[this.userName];
+            return false; 
+         }
+         saveStatusToLocalStoragex()
+            {
+            let sceneNo= this.scenesLoaded.filter(x=>x).length;
+            let datum={this.userName:{"sceneNo":sceneNo,
+                       "player":{"health":this.player.health,
+                                 "maxHealth":this.player.maxHealth,
+                                 "weaponDamage":this.player.weaponDamage,
+                                 "exp":this.player.experience,
+                                 "maxEnergy":this.player.maxEnergy
+                                },
+                       "listOfDestroyedSprites":this.listOfDestroyedSprites
+                      }};
+            localStorage.setItem("GameSaveDataUserWise",JSON.stringify(datum));
+            }
     applyVelocity(movingObj)
             {                    
              movingObj.hit_box.position.x+=movingObj.velocity.x;         
@@ -971,12 +1066,47 @@ document.onmousedown = function(event) {
                 {
                 collidedObjType.parent.takeDamage(dmg);                
                 }
-
             }
+
+         
+         
          alterSceneData()
             {
-            //check for player data from local storage and load appropriately
-            //todo;
+            if(this.localStorageChecked)
+                {               
+                return false;
+                }
+            this.localStorageChecked=true;           
+            let localStoragex=this.getLocalStoragex();
+            if(!localStoragex) 
+                {
+                console.log('nothing in localstorage..returning');
+                return true;
+                }
+            let scene=localStoragex.sceneNo;
+            this.player=new Player(100*xscale,
+                                   200*yscale,
+                                   100*xscale,
+                                   100*yscale,
+                                   [this.visible_sprites,this.active_sprites]
+                                  );
+            this.levelUpBox.receiveGameObject(this.player);
+            if(localStoragex.listOfDestroyedSprites)
+                this.listOfDestroyedSprites=localStoragex.listOfDestroyedSprites;
+            this.player.receiveParams(localStoragex.player.health,
+                                      localStoragex.player.maxHealth,
+                                      localStoragex.player.maxEnergy,
+                                      localStoragex.player.weaponDamage,
+                                      localStoragex.player.exp                                    
+                                     );
+            for(let i=0;i < scene;i++)
+                {
+                 this.scenesReady[i]=true;
+                 this.scenesLoaded[i]=true;
+                }
+             this.scenesLoaded[this.scenesLoaded.length-1]=false;
+
+
             }
          unload_components()
             {
@@ -1138,10 +1268,177 @@ document.onmousedown = function(event) {
         {
          constructor(go)
             {
+             this.go=go;
+             this.position=new CreateVector(canvas.width/2,canvas.height/2);
+             this.width=800;
+             this.height=600;
+             this.mouseTrigger=true;
              
+             this.btnGroups=[];
+             
+
+             this.showSecondScreen=false;
             }
+         clickedOutside()
+            {
+             if(mouseX > this.position.x-this.width/2 && mouseX < this.position.x+this.width/2)
+             if(mouseY > this.position.y-this.height/2 && mouseY < this.position.y+this.height/2)
+                return false;
+             return true;
+            }
+        receiveGameObject(obj)
+            {
+             this.go=obj;
+            }
+         mouseClickDetectedOutside()
+            {
+            if(this.clickedOutside() && mousePressed && this.mouseTrigger)
+                {
+                 this.mouseTrigger=false;
+                 gameManager.gamePaused=false;
+                }
+            }
+         turnBackMouseTriggerOn()
+            {
+             if(!mousePressed && !this.mouseTrigger)
+             this.mouseTrigger=true;
+            }
+          switchScreen()
+            {
+                return false;
+            }
+          update()
+            {
+             
+             if(!gameManager.gamePaused || !gameManager.player) 
+                {
+                if(this.showSecondScreen) this.switchScreen();
+                return false;   
+                }       
+             this.turnBackMouseTriggerOn();
+             this.mouseClickDetectedOutside();                         
+            }
+         display()
+            {
+             if(!gameManager.gamePaused) return false;
+             ctx.save();
+             ctx.translate(this.position.x,this.position.y);
+             ctx.fillStyle="#604020";
+             ctx.strokeStyle="#604020";
+             ctx.beginPath();
+             ctx.rect(-this.width/2,-this.height/2,this.width,this.height);          
+             ctx.stroke();
+             ctx.fill();             
+             ctx.restore();
+             // if(this.showSecondScreen) this.showKeyReAssignDetails();
+             // else this.showStats();
+             this.showStats();
+             this.displayAndUpdateButtons();
+            }
+        displayAndUpdateButtons()
+            {
+             for(let btn of this.btnGroups)
+                {
+                btn.update();
+                btn.display();  
+                }            
+            }
+
         }
 //20. levelup box ends
+//21. button starts
+class Button
+        {
+        constructor(x,y,tex,btnGroups,enclosingPanel)
+            {
+             this.position=new CreateVector(x,y);
+             this.tex=tex;
+             this.width=140;
+             this.height=50;
+             this.onScreen=true;
+             this.mouseTrigger=false;
+             this.fillColor='#a3a375';
+             this.clickColor='#ccccb3';
+             this.presentColor=this.fillColor;
+             this.btnGroups=btnGroups;
+             this.btnGroups.push(this);
+             this.eP=enclosingPanel;             
+            }
+        colorSwitch()
+            {           
+            let leftx=this.position.x - this.width/2;
+            let rightx = this.position.x + this.width/2;
+            let lefty=this.position.y - this.height/2;
+            let righty = this.position.y + this.height/2;        
+            if(mouseX > leftx && mouseX <rightx && mouseY > lefty && mouseY < righty )
+                {               
+                this.presentColor = this.clickColor;
+                }
+            else
+                {               
+                this.presentColor=this.fillColor;
+                }
+            }
+        update()
+            {
+             this.colorSwitch();
+             if(mousePressed && !this.mouseTrigger)
+                {
+                 this.mouseTrigger=true;
+                 let leftx=this.position.x - this.width/2;
+                 let rightx = this.position.x + this.width/2;
+                 let lefty=this.position.y - this.height/2;
+                 let righty = this.position.y + this.height/2;
+                 if(mouseX > leftx && mouseX <rightx && mouseY > lefty && mouseY < righty )
+                    {
+                    // this.presentColor = this.clickColor;
+                    if(!this.eP.showSecondScreen)
+                        {
+                         switch(this.tex)
+                            {
+                            case 'Save':                            
+                                gameManager.saveStatusToLocalStoragex();
+                                gameManager.gamePaused = false;
+                                break;
+                            case 'Restart':
+                                if(confirm("Press Ok to delete progress and restart game from start"))
+                                {
+                                localStorage.removeItem("GameSaveData");
+                                window.location.href='soldierInAbattleField2.html';
+                                }
+                                break;
+                            // case 'Controls':
+                            //     this.eP.switchScreen();
+                            //     break;
+                            }
+                        }
+                    }
+                }
+             else if(!mousePressed && this.mouseTrigger)
+                {
+                 this.mouseTrigger=false;                
+                }
+             // else if(!mousePressed)
+             //     {
+                // this.presentColor=this.fillColor;
+             //     }
+            }
+        display()
+            {
+             if(this.eP.showSecondScreen) return false;              
+             ctx.save();
+             ctx.translate(this.position.x,this.position.y);
+             ctx.fillStyle=this.presentColor;//#ccccb3
+             ctx.strokeStyle='#000000';
+             ctx.beginPath();
+             ctx.rect(-this.width/2,-this.height/2,this.width,this.height);
+             ctx.stroke();
+             ctx.fill();             
+             ctx.restore();
+             w2screen(this.tex,this.position.x-40,this.position.y+10);
+            }
+        }
+//21. button ends
     let sprite_folder="../../Python/TopDownBossFight1/sprites";
     let WHITECLOUD=LoadImagex(sprite_folder,'cloud-1.png');
     class GeneralSprite
@@ -1385,6 +1682,17 @@ class Soldier
          this.onScreen=true;
          this.isActive=true;
 
+         //health params
+         this.maxHealth=100;
+         this.health=this.maxHealth;
+         this.weaponDamage=10;
+         this.experience=0;
+         this.maxEnergy=100;
+         this.energy=this.maxEnergy;
+         this.listOfDestroyedSprites=[];
+         gameManager.playerHealthBar.setValues(this.health,this.maxHealth);
+         gameManager.playerEnergyBar.setValues(this.energy,this.maxEnergy);
+
          this.bulletOffset=new CreateVector(55*xscale,25*yscale);
         }
 
@@ -1420,6 +1728,16 @@ class Soldier
             {           
             this.stopEverything();
             }
+        }
+    receiveParams(health,maxHealth,maxEnergy,weaponDamage,experience)
+        {        
+        this.maxHealth = maxHealth;
+        this.maxEnergy = maxEnergy;
+        this.weaponDamage = weaponDamage;
+        this.experience = experience;
+        this.health = health;
+        // gameManager.playerHealthBar.setValues(this.health,this.maxHealth);
+        // gameManager.playerEnergyBar.setValues(this.energy,this.maxEnergy);  
         }
      stopEverything()
         {

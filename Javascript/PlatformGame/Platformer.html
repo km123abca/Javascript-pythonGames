@@ -141,11 +141,11 @@
     function Raycast(originx,direction,lenx,objToCheck)
     	{
 		//graphic	
-		 /*	 	 
+		  	 
 	 	 Draw_a_line(originx.copy().add(new CreateVector(0,0)),
 	 	 	 		 originx.copy().add(new CreateVector(0,0)).add(direction.copy().mult(lenx))
 	 	 	 		);	
-	 	 */	 
+	 	 	 
 	 	//graphic
 
 		let origin=originx.copy();
@@ -1290,7 +1290,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			  	 this.sprite_type='sawwheel';
 	  		 	 this.hit_box=new HitBox(this.position.x,this.position.y,this.width*0.9,this.height*0.5,
 	                         [ 
-	                         //gameManager.kill_plants,
+	                         gameManager.kill_plants,
 	                          // gameManager.visible_sprites
 	                         ],
 	                         'thornhitbox');
@@ -3556,6 +3556,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	    	 	 	{
 	    	 	 	 this.huskMusicStarted= true;
                      this.lookForBFightTrigger();
+                     pauseMusic();
 	    	 	 	 capraMusic.src="./sounds/Capra.mp3";
 	    	 	 	 capraMusic.play();
 	    	 	 	}
@@ -3565,7 +3566,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
          PlayerDetected(n,dist=this.minerAgroDistance)
             {
               if(!this.tgt || !this.tgt.isActive) return false;
-              let offsets=[-40*yscale,0,40*yscale];
+              let offsets=[-70*yscale,-40*yscale,0,40*yscale,70*yscale];
               for(let offset of offsets)
                 {
                 let yoffset=new CreateVector(0,offset);
@@ -5868,8 +5869,11 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	{		 	 
 		 	 if(this.playerDiedClock ==0) return false;
 		 	 w2screen("You Got Destroyed Bruh",300*xscale,400*yscale,'#FF0000',80);
-		 	 if(this.runningClock - this.playerDiedClock > 3000)
+		 	 if(this.runningClock - this.playerDiedClock > 1500)
+		 	 	{
+		 	 	console.log('time up reloading now');
 		 	 	window.location.href="./Platformer.html";
+		 	    }
 		 	}
 		 checkHitWithKillPlants()
 		 	{
