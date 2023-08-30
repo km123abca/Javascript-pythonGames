@@ -931,6 +931,7 @@ document.onmousedown = function(event) {
           this.mouseClickTrigger=true;
           this.maxClickGap=500;
           this.mouseRightTrigger=false;
+          this.freezeOneFrame=false;
 
           // new IndicatorObjs(300,300,'#00FF00','indicator',[this.visible_sprites]);
           // new Soldier(300,300,200*xscale,200*yscale,[this.visible_sprites]);
@@ -940,8 +941,13 @@ document.onmousedown = function(event) {
           
           detectMouseClicks()
             {
-             if(mousePressed && this.mouseClickTrigger)
-                {
+
+             if(!mousePressed && !this.gamePaused && this.freezeOneFrame)
+                {                
+                this.freezeOneFrame=false;
+                }
+             if(mousePressed && this.mouseClickTrigger && !this.freezeOneFrame)
+                {                 
                  this.numClicks+=1;
                  this.clickStartTime=this.runningClock;
                  this.mouseClickTrigger=false;
@@ -1003,12 +1009,24 @@ document.onmousedown = function(event) {
                 }
              this.runUI();
             }
+            unPauseGame()
+                {
+                 this.gamePaused=!this.gamePaused;
+                 
+                }
+            pauseGame()
+                {
+                    this.gamePaused=true;
+                    this.freezeOneFrame=true;
+                }
             runUI()
                 {
                     if(mouseRightPressed && !this.mouseRightTrigger)
                         {
                         this.mouseRightTrigger=true;
-                        this.gamePaused=!this.gamePaused;
+                        // if(!this.levelUpBox.confirmationBox.active)
+                        if(this.gamePaused) this.levelUpBox.confirmationBox.active=true;
+                        else this.pauseGame();
                         }
                     else if(!mouseRightPressed && this.mouseRightTrigger)
                         this.mouseRightTrigger=false;
@@ -1040,16 +1058,19 @@ document.onmousedown = function(event) {
             {
             let sceneNo= this.scenesLoaded.filter(x=>x).length;
             let presentUser=this.userName;
-            let datum={ presentUser:{"sceneNo":sceneNo,
-                       "player":{"health":this.player.health,
-                                 "maxHealth":this.player.maxHealth,
-                                 "weaponDamage":this.player.weaponDamage,
-                                 "exp":this.player.experience,
-                                 "maxEnergy":this.player.maxEnergy
-                                },
-                       "listOfDestroyedSprites":this.listOfDestroyedSprites
-                      }};
+            let datum={};
+            datum[presentUser]={"sceneNo":sceneNo,
+                               "player":{"health":this.player.health,
+                                         "maxHealth":this.player.maxHealth,
+                                         "weaponDamage":this.player.weaponDamage,
+                                         "exp":this.player.experience,
+                                         "maxEnergy":this.player.maxEnergy,
+                                         "expToll":this.player.experienceToll
+                                        },
+                                "listOfDestroyedSprites":this.listOfDestroyedSprites
+                                };
             localStorage.setItem("GameSaveDataUserWise",JSON.stringify(datum));
+            console.log("Game Data saved to local storage");
             }
     applyVelocity(movingObj)
             {                    
@@ -1134,21 +1155,24 @@ document.onmousedown = function(event) {
                 return true;
                 }
             let scene=localStoragex.sceneNo;
-            this.player=new Player(100*xscale,
+            this.player=new Soldier(100*xscale,
                                    200*yscale,
                                    100*xscale,
                                    100*yscale,
                                    [this.visible_sprites,this.active_sprites]
                                   );
-            this.levelUpBox.receiveGameObject(this.player);
+            
             if(localStoragex.listOfDestroyedSprites)
                 this.listOfDestroyedSprites=localStoragex.listOfDestroyedSprites;
             this.player.receiveParams(localStoragex.player.health,
                                       localStoragex.player.maxHealth,
                                       localStoragex.player.maxEnergy,
                                       localStoragex.player.weaponDamage,
-                                      localStoragex.player.exp                                    
+                                      localStoragex.player.exp,
+                                      localStoragex.player.expToll                                    
                                      );
+            this.levelUpBox.receiveGameObject(this.player);
+            console.log('player loaded from memory');
             for(let i=0;i < scene;i++)
                 {
                  this.scenesReady[i]=true;
@@ -1225,7 +1249,7 @@ document.onmousedown = function(event) {
                                );  
                     this.camera.tgt=this.player; 
                     console.log('player loaded from scene data');
-                   // this.levelUpBox.receiveGameObject(this.player);
+                   this.levelUpBox.receiveGameObject(this.player);
                    }
                  else if(elem['sprite']=='wall')  
                     {                                   
@@ -1313,6 +1337,61 @@ document.onmousedown = function(event) {
 
         }
 //2. Gamemanager ends
+
+//21. Confirmation box starts
+   class ConfirmationBox
+        {
+          constructor(x,y,parentScreen)
+            {
+              this.position=new CreateVector(x*xscale,y*yscale);
+              this.parentScreen=parentScreen;
+              this.width=400*xscale;
+              this.height=300*yscale;
+              this.btnGroups=[];
+              this.active=false;
+              this.sprite_type="confirmation_box";
+              new YesNoButton(410*xscale,360*yscale,
+                        80*xscale,80*yscale,'Yes',
+                        'square',[this.btnGroups,parentScreen.uiBtns],'Yes',this
+                       );
+              new YesNoButton(625*xscale,360*yscale,
+                        80*xscale,80*yscale,'No',
+                        'square',[this.btnGroups,parentScreen.uiBtns],'No',this
+                       );
+              this.tex_x_pos=410*xscale;
+              this.tex_y_pos=240*yscale;
+              this.queryTex="Confirm your changes?";
+            }
+            update()
+            {             
+             if(!this.active) return false;
+                                    
+            }
+         display()
+            {
+             if(!this.active) return false;
+             ctx.save();
+             ctx.translate(this.position.x,this.position.y);
+             ctx.fillStyle="#d9b0ad";
+             ctx.strokeStyle="#604020";
+             ctx.beginPath();
+             ctx.rect(-this.width/2,-this.height/2,this.width,this.height);          
+             ctx.stroke();
+             ctx.fill();             
+             ctx.restore();            
+             this.displayAndUpdateButtons();
+             w2screen(this.queryTex,this.tex_x_pos,this.tex_y_pos);
+            }
+        displayAndUpdateButtons()
+            {
+             for(let btn of this.btnGroups)
+                {                
+                btn.update();
+                btn.display();  
+                }            
+            }
+        }
+//21. Confirmation box ends
 //20. levelup box starts
     class LevelUpBox
         {
@@ -1321,33 +1400,51 @@ document.onmousedown = function(event) {
              //we may have passed in spritegroups and added the level up box to
              //visible and active, but this is not feasible as we have to display
              //the level up box at the very top of the canvas.
+             this.sprite_type="level up box";
              this.go=go;
              this.position=new CreateVector(canvas.width/2,canvas.height/2);
              this.width=800*xscale;
              this.height=600*yscale;
              this.mouseTrigger=true;
-             
+             this.uiBtns=[];
+             this.confirmationBox=new ConfirmationBox(canvas.width/2,canvas.height/2,this);
              this.btnGroups=[];
-            new Button(this.position.x-300*xscale,this.position.y-150*yscale,
-                        50*xscale,50*yscale,'',
-                        'leftArrow',[this.btnGroups],'HealthLeft'
-                       );
-            new Button(this.position.x+10*xscale,this.position.y-150*yscale,
-                        50*xscale,50*yscale,'',
-                        'rightArrow',[this.btnGroups],'HealthRight'
-                       );
-            new Button(this.position.x-300*xscale,this.position.y+50*yscale,
-                        50*xscale,50*yscale,'',
-                        'leftArrow',[this.btnGroups],'WeaponLeft'
-                       );
-            new Button(this.position.x+10*xscale,this.position.y+50*yscale,
-                        50*xscale,50*yscale,'',
-                        'rightArrow',[this.btnGroups],'WeaponRight'
-                       );
-            new UIBar(this.position.x,this.position.y,200*xscale,40*yscale,
-                      100,500,'#CCC','#5CB85C',[this.btnGroups]
+             
+            this.healthui=new UIBar(210*xscale,108*yscale,200*xscale,40*yscale,
+                      100,500,'#CCC','#5CB85C',[this.btnGroups,this.uiBtns],
+                      true,0,0,null,"healthuibar"
                      );
-
+            new ArrowButton(this.position.x-300*xscale,this.position.y-150*yscale,
+                        50*xscale,50*yscale,'',
+                        'leftArrow',[this.btnGroups,this.uiBtns],'HealthLeft',this,this.healthui
+                       );
+            new ArrowButton(this.position.x+10*xscale,this.position.y-150*yscale,
+                        50*xscale,50*yscale,'',
+                        'rightArrow',[this.btnGroups,this.uiBtns],'HealthRight',this,this.healthui
+                       );
+            let weaponui=new UIBar(210*xscale,310*yscale,200*xscale,40*yscale,
+                      100,500,'#CCC','#5CB85C',[this.btnGroups,this.uiBtns],
+                      true,0,0,null,"weaponuibar"
+                     );
+            new ArrowButton(this.position.x-300*xscale,this.position.y+50*yscale,
+                        50*xscale,50*yscale,'',
+                        'leftArrow',[this.btnGroups,this.uiBtns],'WeaponLeft',this,this.weaponui
+                       );
+            new ArrowButton(this.position.x+10*xscale,this.position.y+50*yscale,
+                        50*xscale,50*yscale,'',
+                        'rightArrow',[this.btnGroups,this.uiBtns],'WeaponRight',this,this.weaponui
+                       );
+            
+            
+            //save and close buttons
+            new Button(750*xscale,130*yscale,
+                        200*xscale,80*yscale,'Close',
+                        'square',[this.btnGroups,this.uiBtns],'Close',this
+                       );
+            new Button(750*xscale,310*yscale,
+                        200*xscale,80*yscale,'Reset',
+                        'square',[this.btnGroups,this.uiBtns],'Reset',this
+                       );
              this.showSecondScreen=false;
             }
          clickedOutside()
@@ -1360,13 +1457,15 @@ document.onmousedown = function(event) {
         receiveGameObject(obj)
             {
              this.go=obj;
+             this.healthui.updateValue(this.go.maxHealth);             
             }
          mouseClickDetectedOutside()
             {
             if(this.clickedOutside() && mousePressed && this.mouseTrigger)
                 {
                  this.mouseTrigger=false;
-                 gameManager.gamePaused=false;
+                 // gameManager.gamePaused=false;
+                 this.confirmationBox.active=true;
                 }
             }
          turnBackMouseTriggerOn()
@@ -1378,9 +1477,9 @@ document.onmousedown = function(event) {
             {
                 return false;
             }
-          showStats()
+          showExperience()
             {
-                return false;
+             w2screen("Experience: "+this.go.experience,600*xscale,490*yscale);
             }
           update()
             {
@@ -1391,11 +1490,13 @@ document.onmousedown = function(event) {
                 return false;   
                 }       
              this.turnBackMouseTriggerOn();
-             this.mouseClickDetectedOutside();                         
+             this.mouseClickDetectedOutside(); 
+                                    
             }
          display()
             {
              if(!gameManager.gamePaused) return false;
+             
              ctx.save();
              ctx.translate(this.position.x,this.position.y);
              ctx.fillStyle="#604020";
@@ -1407,8 +1508,10 @@ document.onmousedown = function(event) {
              ctx.restore();
              // if(this.showSecondScreen) this.showKeyReAssignDetails();
              // else this.showStats();
-             this.showStats();
+             this.showExperience();
              this.displayAndUpdateButtons();
+             
+             this.update_and_display_confirmation_box();
             }
         displayAndUpdateButtons()
             {
@@ -1419,23 +1522,33 @@ document.onmousedown = function(event) {
                 btn.display();  
                 }            
             }
+        update_and_display_confirmation_box()
+            {
+              this.confirmationBox.update();
+              this.confirmationBox.display();
+            }
 
         }
 //20. levelup box ends
 //21. button starts
 class GenericButton
     {
-        constructor(x,y,wid,hei,tex,btnType,btnGroups,btnName)
+        constructor(x,y,wid,hei,tex,btnType,btnGroups,btnName,parentPanel)
 //btnGroups are used for updation and display by parent levelup box        
           {
            this.position=new CreateVector(x,y);
+           this.parentPanel=parentPanel;
            this.tex=tex;
+           this.sprite_type="generic button";
            this.btnName=btnName;
            this.btnType=btnType;
            this.onScreen=true;
            this.width=wid;
            this.height=hei;
            this.arrowCornerPoints=[[-0.5,-0.5],[0.5,0],[-0.5,0.5]];
+           this.mouseOverMe=false;
+           this.x_text_offset=-40;
+           this.y_text_offset=10;
            
            if(this.btnType=='rightArrow')             
               this.tex='';
@@ -1452,6 +1565,7 @@ class GenericButton
               {
                grp.push(this);
               }
+           this.mouseTrigger=false;
            }
         colorSwitch()
             {           
@@ -1460,17 +1574,34 @@ class GenericButton
             let lefty=this.position.y - this.height/2;
             let righty = this.position.y + this.height/2;        
             if(mouseX > leftx && mouseX <rightx && mouseY > lefty && mouseY < righty )
-                {               
-                this.presentColor = this.clickColor;
+                { 
+                this.mouseOverMe=true;
+                if(mousePressed)
+                this.presentColor = this.fillColor;
+                else
+                this.presentColor=this.clickColor;  
                 }
             else
-                {               
+                {    
+                this.mouseOverMe=false;           
                 this.presentColor=this.fillColor;
                 }
             }
         update()
             {
-             this.colorSwitch();             
+             this.colorSwitch();  
+             if(mousePressed && !this.mouseTrigger)
+               {
+                this.mouseTrigger=true;
+                if(this.mouseOverMe)
+                    {
+                      this.specialButtonTask();
+                    }
+               }
+             else if(!mousePressed && this.mouseTrigger)
+                {
+                 this.mouseTrigger=false;                
+                }           
             }
         display()
             {              
@@ -1487,8 +1618,10 @@ class GenericButton
              ctx.stroke();
              ctx.fill();             
              ctx.restore();
-             w2screen(this.tex,this.position.x-40,this.position.y+10);
+             w2screen(this.tex,this.position.x+this.x_text_offset,
+                               this.position.y+this.y_text_offset);
             }
+
         draw_arrow_button()
             {                
                ctx.moveTo(this.arrowCornerPoints[0][0],this.arrowCornerPoints[0][1]);
@@ -1496,109 +1629,89 @@ class GenericButton
                ctx.lineTo(this.arrowCornerPoints[2][0],this.arrowCornerPoints[2][1]);
                ctx.closePath();
             }
+        specialButtonTask()
+            {
+                console.log(`${this.btnType}`);
+            }
 
     }
 class Button extends GenericButton
         {
-          constructor(x,y,wid,hei,tex,btnType,btnGroups,btnName)
+          constructor(x,y,wid,hei,tex,btnType,btnGroups,btnName,parentPanel)
             {
-             super(x,y,wid,hei,tex,btnType,btnGroups,btnName);                    
+             super(x,y,wid,hei,tex,btnType,btnGroups,btnName,parentPanel);                    
             }
-        }
-class ButtonImported
-        {
-        constructor(x,y,tex,btnGroups,enclosingPanel)
-            {
-             this.position=new CreateVector(x,y);
-             this.tex=tex;
-             this.width=140;
-             this.height=50;
-             this.onScreen=true;
-             this.mouseTrigger=false;
-             this.fillColor='#a3a375';
-             this.clickColor='#ccccb3';
-             this.presentColor=this.fillColor;
-             this.btnGroups=btnGroups;
-             this.btnGroups.push(this);
-             this.eP=enclosingPanel; 
-             
-
-            }
-        colorSwitch()
-            {           
-            let leftx=this.position.x - this.width/2;
-            let rightx = this.position.x + this.width/2;
-            let lefty=this.position.y - this.height/2;
-            let righty = this.position.y + this.height/2;        
-            if(mouseX > leftx && mouseX <rightx && mouseY > lefty && mouseY < righty )
-                {               
-                this.presentColor = this.clickColor;
-                }
-            else
-                {               
-                this.presentColor=this.fillColor;
-                }
-            }
-        update()
-            {
-             this.colorSwitch();
-             if(mousePressed && !this.mouseTrigger)
-                {
-                 this.mouseTrigger=true;
-                 let leftx=this.position.x - this.width/2;
-                 let rightx = this.position.x + this.width/2;
-                 let lefty=this.position.y - this.height/2;
-                 let righty = this.position.y + this.height/2;
-                 if(mouseX > leftx && mouseX <rightx && mouseY > lefty && mouseY < righty )
+          specialButtonTask()
+            {                
+                if(this.parentPanel.confirmationBox.active)                
+                return false;
+                if(this.tex=="Reset")
                     {
-                    // this.presentColor = this.clickColor;
-                    if(!this.eP.showSecondScreen)
-                        {
-                         switch(this.tex)
-                            {
-                            case 'Save':                            
-                                gameManager.saveStatusToLocalStoragex();
-                                gameManager.gamePaused = false;
-                                break;
-                            case 'Restart':
-                                if(confirm("Press Ok to delete progress and restart game from start"))
+                    if(confirm("Press Ok to delete progress and restart game from start"))
                                 {
-                                localStorage.removeItem("GameSaveData");
+                                localStorage.removeItem("GameSaveDataUserWise");
                                 window.location.href='soldierInAbattleField2.html';
                                 }
-                                break;
-                            // case 'Controls':
-                            //     this.eP.switchScreen();
-                            //     break;
-                            }
-                        }
                     }
-                }
-             else if(!mousePressed && this.mouseTrigger)
-                {
-                 this.mouseTrigger=false;                
-                }
-             // else if(!mousePressed)
-             //     {
-                // this.presentColor=this.fillColor;
-             //     }
-            }
-        display()
-            {
-             if(this.eP.showSecondScreen) return false;              
-             ctx.save();
-             ctx.translate(this.position.x,this.position.y);
-             ctx.fillStyle=this.presentColor;//#ccccb3
-             ctx.strokeStyle='#000000';
-             ctx.beginPath();
-             ctx.rect(-this.width/2,-this.height/2,this.width,this.height);
-             ctx.stroke();
-             ctx.fill();             
-             ctx.restore();
-             w2screen(this.tex,this.position.x-40,this.position.y+10);
+                if(this.tex=="Close")
+                    {
+                      this.parentPanel.confirmationBox.active=true;
+                    }
             }
         }
-//21. button ends
+class YesNoButton extends GenericButton
+        {
+          constructor(x,y,wid,hei,tex,btnType,btnGroups,btnName,parentPanel)
+            {
+             super(x,y,wid,hei,tex,btnType,btnGroups,btnName,parentPanel); 
+             this.sprite_type="yes_no_"+tex;  
+             this.x_text_offset=-20;                 
+            }
+          specialButtonTask()
+            {
+                
+                let go=this.parentPanel.parentScreen.go;//parentPanel is confirmation box
+                                                        //parentScreen is levelup box
+                switch(this.sprite_type)
+                    {
+                      case "yes_no_Yes":
+                            go.finalizeParamsUpgraded();
+                            break;
+                      case "yes_no_No":
+                            go.resetParamsUpgraded();
+                            break;
+                    }
+                // gameManager.gamePaused=false;
+                gameManager.unPauseGame();
+                this.parentPanel.active=false;
+            }
+        }
+class ArrowButton extends GenericButton
+        {
+          constructor(x,y,wid,hei,tex,btnType,btnGroups,btnName,parentPanel,parent_ui_bar)
+            {
+             super(x,y,wid,hei,tex,btnType,btnGroups,btnName,parentPanel);   
+             this.parent_ui_bar=parent_ui_bar; 
+             // console.log(this.parent_ui_bar.sprite_type);      
+                       
+            }
+          specialButtonTask()
+            {
+              if(this.parentPanel.confirmationBox.active)                
+                 return false; 
+              if(this.btnName=="HealthRight") 
+                  {             
+                  let updatedHealth=this.parentPanel.go.increaseMaxHealthVirt(10);
+                  this.parent_ui_bar.updateValue(updatedHealth);
+                  }
+              else if(this.btnName=="HealthLeft")
+                  {             
+                  let updatedHealth=this.parentPanel.go.decreaseMaxHealthVirt(10);
+                  this.parent_ui_bar.updateValue(updatedHealth);
+                  }
+            }
+        }
+
     let sprite_folder="../../Python/TopDownBossFight1/sprites";
     let WHITECLOUD=LoadImagex(sprite_folder,'cloud-1.png');
     class GeneralSprite
@@ -1690,7 +1803,7 @@ class ButtonImported
             {
             let groupToFocus;
             if (gameManager.gamePaused)
-                groupToFocus=gameManager.levelUpBox.btnGroups;
+                groupToFocus=gameManager.levelUpBox.uiBtns;
             else
                 groupToFocus=gameManager.visible_sprites;
             if(GetKeyPressedx('g'))
@@ -1700,10 +1813,10 @@ class ButtonImported
                     {
                       this.last_gpress_time=gameManager.runningClock;
                       this.objIndex+=1;
-                      if(this.objIndex >= gameManager.visible_sprites.length) this.objIndex=0;
-                      if(gameManager.visible_sprites[this.objIndex]==this)
+                      if(this.objIndex >= groupToFocus.length) this.objIndex=0;
+                      if(groupToFocus[this.objIndex]==this)
                         this.objIndex+=1;
-                      this.changeObject(gameManager.visible_sprites[this.objIndex]);
+                      this.changeObject(groupToFocus[this.objIndex]);
                     }
                 }
             }
@@ -1848,10 +1961,18 @@ class Soldier
          this.isActive=true;
 
          //health params
+         this.maximumPossibleHealth=500;
          this.maxHealth=100;
          this.health=this.maxHealth;
          this.weaponDamage=10;
-         this.experience=0;
+         this.experience=100;
+         this.experienceToll=1;
+         this.experienceTollArray=[this.experienceToll];
+         //vars to temporarily store values for use in levelup bax
+         this.prevMaxHealth=this.maxHealth;
+         this.prevExperience=this.experience;
+         this.prevWeaponDamage= this.weaponDamage;
+         //ends
          this.maxEnergy=100;
          this.energy=this.maxEnergy;
          this.listOfDestroyedSprites=[];
@@ -1860,6 +1981,81 @@ class Soldier
 
 
          this.bulletOffset=new CreateVector(55*xscale,25*yscale);
+        }
+     setMaxHealth(newval)
+        {
+           if(this.experience<this.experienceToll)
+             {
+                console.log('not enough experience');
+                return this.maxHealth;
+             }
+            if(this.maxHealth >= this.maximumPossibleHealth)
+            {
+                console.log('health already at peak');
+                return this.maxHealth;
+            }
+           this.experience-=this.experienceToll;
+           this.experienceToll=parseInt(this.experienceToll*1.2)+1;
+           this.maxHealth+=newval;
+           gameManager.playerHealthBar.setValues(this.health,this.maxHealth,this); 
+           return this.maxHealth;
+        }
+     increaseMaxHealthVirt(newval)
+        {
+           let n=this.experienceTollArray.length;
+           if(n==1)
+            {
+              this.prevExperience=this.experience;
+              this.prevMaxHealth=this.maxHealth;
+            }
+           if(this.experience<this.experienceTollArray[n-1])
+             {
+                console.log('not enough experience');
+                return this.maxHealth;
+             }
+            if(this.maxHealth >= this.maximumPossibleHealth)
+            {
+                console.log('health already at peak');
+                return this.maxHealth;
+            }
+
+           this.experience-=this.experienceTollArray[n-1];
+           this.experienceTollArray.push(parseInt(this.experienceTollArray[n-1]*1.2)+1);
+           this.maxHealth+=newval;
+           // gameManager.playerHealthBar.setValues(this.health,this.maxHealth,this); 
+           return this.maxHealth;
+        }
+
+     decreaseMaxHealthVirt(newval)
+        {
+           let n=this.experienceTollArray.length;
+           if(n<=1)
+            {
+              console.log("cant decrease any further");
+              return false;
+            }
+           this.experienceTollArray.pop();
+           this.experience+=this.experienceTollArray[n-2];  
+
+           this.maxHealth-=newval;            
+           return this.maxHealth;
+        }
+     finalizeParamsUpgraded()
+        {
+          let n=this.experienceTollArray.length;
+          this.experienceToll= this.experienceTollArray[n-1];
+          this.experienceTollArray=[this.experienceToll];
+          gameManager.playerHealthBar.setValues(this.health,this.maxHealth,this);
+          gameManager.saveStatusToLocalStoragex();
+        }
+    resetParamsUpgraded()
+        {
+            this.maxHealth=this.prevMaxHealth;
+            this.experience=this.prevExperience;
+            this.experienceToll= this.experienceTollArray[0];
+            this.experienceTollArray=[this.experienceToll];
+            console.log(`experience reset to ${this.experience}`)
+            gameManager.levelUpBox.healthui.updateValue(this.maxHealth);
         }
 
      setGetMoving()
@@ -1895,15 +2091,24 @@ class Soldier
             this.stopEverything();
             }
         }
-    receiveParams(health,maxHealth,maxEnergy,weaponDamage,experience)
+    receiveParams(health,maxHealth,maxEnergy,weaponDamage,experience,experienceToll)
         {        
         this.maxHealth = maxHealth;
         this.maxEnergy = maxEnergy;
         this.weaponDamage = weaponDamage;
         this.experience = experience;
-        this.health = health;
-        // gameManager.playerHealthBar.setValues(this.health,this.maxHealth);
-        // gameManager.playerEnergyBar.setValues(this.energy,this.maxEnergy);  
+        this.health = health; 
+        //had to do this as experienceToll was included later
+        if(experienceToll==undefined) this.experienceToll=1;
+        else this.experienceToll=experienceToll;
+
+        this.experienceTollArray=[this.experienceToll];         
+        this.prevMaxHealth=this.maxHealth;
+        this.prevExperience=this.experience;
+        this.prevWeaponDamage=this.weaponDamage;
+
+        gameManager.playerHealthBar.setValues(this.health,this.maxHealth,this);
+        gameManager.playerEnergyBar.setValues(this.energy,this.maxEnergy,this);          
         }
      stopEverything()
         {
@@ -1917,6 +2122,7 @@ class Soldier
 
      detectMouseClicks_Listener()
         {
+        
          if(gameManager.numClicks !=this.prevMouseClicks)
             {
              this.prevMouseClicks=gameManager.numClicks;             

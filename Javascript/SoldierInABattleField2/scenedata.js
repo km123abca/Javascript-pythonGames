@@ -21,6 +21,25 @@ let scenes=[
             ],
 
             [  
+                  {"sprite":"scenechanger_scleft","x":-300,"y":300},  
+                  {"sprite":"scenechanger_scright","x":925,"y":586}, 
+                  {"sprite":"entryexit_entry","x":-160,"y":300}, 
+                  {"sprite":"entryexit_exit","x":762,"y":586}, 
+                  {"sprite":"camstopper_left","x":100,"y":300},
+                  {"sprite":"camstopper_right","x":587,"y":600},                            
+                  // {"sprite":"player","x":400,"y":300,"width":100,"height":100},  
+                  {"sprite":"wall","x":338,"y":156,"width":1000,"height":52,
+                   "hitboxoffsetx":0,"hitboxoffsety":0,"isHori":true},
+                   {"sprite":"wall","x":338,"y":688,"width":1000,"height":52,
+                   "hitboxoffsetx":0,"hitboxoffsety":0,"isHori":true}, 
+                   {"sprite":"wall","x":-174,"y":538,"width":50,"height":340,
+                   "hitboxoffsetx":0,"hitboxoffsety":0,"isHori":false},  
+                   {"sprite":"wall","x":838,"y":347,"width":50,"height":340,
+                   "hitboxoffsetx":0,"hitboxoffsety":0,"isHori":false},
+                   {"sprite":"zombie","x":326,"y":395,"width":140 ,"height":140,
+                    "offsetx":0,"offsety":0, "sprite_id":"zombie1"},                                  
+            ],
+            [  
                   {"sprite":"scenechanger_scleft","x":-300,"y":300},   
                   {"sprite":"entryexit_entry","x":-50,"y":300}, 
                   {"sprite":"entryexit_exit","x":1363,"y":300}, 
@@ -30,7 +49,8 @@ let scenes=[
                   {"sprite":"wall","x":663,"y":156,"width":1608,"height":52,
                    "hitboxoffsetx":0,"hitboxoffsety":0,"isHori":true},
                    {"sprite":"wall","x":663,"y":392,"width":1608,"height":52,
-                   "hitboxoffsetx":0,"hitboxoffsety":0,"isHori":true},                                   
+                   "hitboxoffsetx":0,"hitboxoffsety":0,"isHori":true}, 
+
             ],
 
            ];
