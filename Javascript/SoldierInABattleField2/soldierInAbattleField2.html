@@ -127,9 +127,14 @@
             }    
         announce()
             {
-             return this.x+','+this.y;
+             return this.x.toFixed(2)+','+this.y.toFixed(2);
             }   
         }
+    function Get_A_Point(src,dist,angle){
+        let res= new CreateVector(dist,0);
+        res.pointToAngle(angle);
+        return src.copy().add(res);
+    }
     function PointInsideObject(objToCheck,pt)
         {
         if (pt.x >= objToCheck.position.x-objToCheck.width/2 && pt.x <= objToCheck.position.x+objToCheck.width/2)
@@ -703,6 +708,39 @@ document.onmousedown = function(event) {
 
         }
   //5. Hitbox ends
+  //14 Damage hitbox starts
+  class DamageHitBox extends HitBox
+        {
+         constructor(x,y,wid,hei,offsetx,offsety,damage,hitback,
+                     spriteGroups,hitboxName="unknown hitbox",parent=false)
+          {
+            
+            let tempPos=new CreateVector(x,y);
+            let tempOffset=new CreateVector(offsetx,offsety);            
+            tempPos.add(tempOffset.pointToAngle(parent.angle));
+            super(tempPos.x,tempPos.y,wid,hei,spriteGroups,hitboxName,parent);
+            this.hitback=hitback; 
+            this.birthTime=gameManager.runningClock;
+            this.lifeSpan=1000; 
+            this.dmg=damage;        
+          } 
+          update(){
+            this.checkLife();
+          }  
+          checkLife(){
+            if(gameManager.runningClock - this.birthTime > this.lifeSpan){
+                this.onScreen=false;
+                destroySelf(this);
+            }
+          }
+        causeDamage(go)
+            {
+              go.takeDamage(this.dmg,this.hitback);             
+              destroySelf(this);
+              SpawnClouds(this.position);            
+            }
+        }
+  //14 Damage hitbox ends
   //8. Camera stop sprites
     class CameraStopper extends IndicatorObjs
         {
@@ -816,12 +854,13 @@ document.onmousedown = function(event) {
              this.screenOverlay=screenOverlay;
              this.sprite_type=sprite_type;
              this.visibleTimer=0;
-             this.maxVisibleTimerValue=12000;
+             this.maxVisibleTimerValue=1500;
 
              this.stopDueToError=false;
             }
         setValues(val,maxVal,parentObj)
             {
+            
              if(parentObj) this.parentObj=parentObj;
              this.val = val;
              this.maxVal = maxVal;
@@ -831,9 +870,11 @@ document.onmousedown = function(event) {
         updateValue(val)
             {
              this.val=val;
+             this.activateShow();
             }
          display()
             {   
+
              let camx=0,camy=0;
              if(!this.screenOverlay)
                 {
@@ -841,6 +882,8 @@ document.onmousedown = function(event) {
                  camy=gameManager.camera.position.y;
                 }        
              if(!this.onScreen) return false;
+             
+
              ctx.save();
              ctx.translate(this.position.x-camx,this.position.y-camy);
              // ctx.rotate(d2r(this.angle));
@@ -862,6 +905,7 @@ document.onmousedown = function(event) {
             }
          activateShow()
             {
+             
              this.onScreen=true;
              this.visibleTimer=0;
             }
@@ -870,9 +914,11 @@ document.onmousedown = function(event) {
 
              if(this.stopDueToError) return false;
              if(this.screenOverlay) return false;
+             
 
              if(this.onScreen)
                     {   
+                    
                     this.visibleTimer+=deltaTime;
                     if(this.visibleTimer > this.maxVisibleTimerValue)
                         {
@@ -903,12 +949,17 @@ document.onmousedown = function(event) {
           this.runningClock=0;  
           this.testing=false;
           
+          
+          this.playerDiedClock=0;
+
           this.followMouse=false;
           this.visible_sprites=[];
           this.active_sprites=[];
           this.collission_sprites=[];
           this.entryexit_sprites=[];
           this.camera_stop_sprites=[];
+          this.enemy_sprites=[];
+          this.hit_box_sprites=[];
           this.scenesReady=[];
           this.scenesLoaded=[];
           this.tempCounter=0;
@@ -974,6 +1025,7 @@ document.onmousedown = function(event) {
             if(!this.gamePaused) this.checkScenes();
             this.showLevelUpBox();
 
+
             }
            showLevelUpBox()
             {
@@ -1007,6 +1059,31 @@ document.onmousedown = function(event) {
                 {
                  gameManager.positionAdjuster.update();
                 }
+
+             for(let hb of this.hit_box_sprites)
+                {
+                 if(gameManager.gamePaused)
+                    continue;
+                 if(hb.sprite_type=="player_damagebox")
+                    {
+                     for(let sprite of this.enemy_sprites)
+                        {                        
+                         if(b_collision(sprite.hit_box,hb))
+                            {                               
+                             hb.causeDamage(sprite);                                
+                            }
+                        }
+                    }
+                 else if(hb.sprite_type=="enemy_damagebox")
+                    {
+                      if(gameManager.playerDied) continue;                   
+                      if(b_collision(gameManager.player.hit_box,hb))
+                        {
+                        hb.causeDamage(gameManager.player);
+                        }
+                    }
+                }
+
              this.runUI();
             }
             unPauseGame()
@@ -1134,8 +1211,8 @@ document.onmousedown = function(event) {
             let arr=collidedObjType.sprite_type.split('_');
             if(arr.length<2) return false;
             if(arr[1]=='damagable')
-                {
-                collidedObjType.parent.takeDamage(dmg);                
+                {                  
+                collidedObjType.parent.takeDamage(dmg);                      
                 }
             }
 
@@ -1191,15 +1268,19 @@ document.onmousedown = function(event) {
              this.entryexit_sprites=[];
              if(!this.player)
                 {
-                 this.visible_sprites=[this.positionAdjuster];
-                 this.active_sprites=[this.positionAdjuster];
+                 // this.visible_sprites=[this.positionAdjuster];
+                 // this.active_sprites=[this.positionAdjuster];
                 }
              else
                 {
-                 this.visible_sprites=[this.positionAdjuster,this.player];
-                 this.active_sprites=[this.positionAdjuster,this.player];  
+                 this.visible_sprites=[this.positionAdjuster,this.player,
+                                       this.playerHealthBar,this.playerEnergyBar];
+                 this.active_sprites=[this.positionAdjuster,this.player,
+                                      this.playerHealthBar,this.playerEnergyBar];  
                  this.collission_sprites=[this.player.hit_box];
                  this.player.spriteGroups=[this.visible_sprites,this.active_sprites];
+                 this.playerHealthBar.spriteGroups=[this.visible_sprites,this.active_sprites];
+                 this.playerEnergyBar.spriteGroups=[this.visible_sprites,this.active_sprites];
                 }
             }
          checkScenes()
@@ -1295,7 +1376,7 @@ document.onmousedown = function(event) {
                                elem['height']*yscale,
                                elem['offsetx']*xscale,
                                elem['offsety']*yscale,
-                               [this.visible_sprites,this.active_sprites],
+                               [this.visible_sprites,this.active_sprites,this.enemy_sprites],
                                elem['sprite_id']
                                );
                 }
@@ -1922,6 +2003,7 @@ class Soldier
          this.position=new CreateVector(x,y);
          this.width=wid*xscale;
          this.height=hei*yscale;
+         
          this.feetOffset=new CreateVector(-2*xscale,0*yscale);
          this.animations={
                           'idle':SOLDIER_IDLE_OBJS,
@@ -1997,6 +2079,13 @@ class Soldier
          this.shootPrepareStartTime=0;
          this.maxSPST=400;
          this.mousePositionVecShoot=null;
+
+         this.flickerCount=0;
+         this.maxFlickerTime=100;
+         this.invincibleState=false;
+         this.invin_count=0;
+         this.max_invin_time=3000;
+         this.flickerOut=true;
         }
      setMaxHealth(newval)
         {
@@ -2102,6 +2191,11 @@ class Soldier
         }
      reachedTarget()
         {
+         /*
+         console.log('dest:'+this.dest.announce());
+         console.log('pos:'+this.position.announce());
+         console.log('sep:'+this.dest.copy().sub(this.position).mag());*/
+
          if(this.dest.copy().sub(this.position).mag()<this.proximDistance)
             {           
             this.stopEverything();
@@ -2264,9 +2358,10 @@ class Soldier
          this.setGetMoving();
          this.moveToDestination();
          this.velocity.add(this.acceleration);
+         gameManager.applyVelocityRestrictions(this);
          this.acceleration.set(0,0);
          gameManager.applyVelocity(this);
-         gameManager.applyVelocityRestrictions(this);
+         
          gameManager.update_and_display_hitbox(this);
          this.detectMouseClicks_Listener();
         }
@@ -2280,19 +2375,45 @@ class Soldier
          this.runAnimation();
          this.runFeetAnimation();
          this.move();
+         this.manageInvincibility();
          // this.testCollisionWithLoot();
+        }
+
+    flickerControl()
+        {
+           
+          if(!this.invincibleState) return true;
+          this.flickerCount+=deltaTime;
+          if(this.flickerCount > this.maxFlickerTime)
+            {
+             this.flickerCount=0;             
+             this.flickerOut=!this.flickerOut;
+            }
+          return this.flickerOut;
+        }
+
+    manageInvincibility()
+        {
+        if(!this.invincibleState) return false;
+        this.invin_count+= deltaTime;
+        if(this.invin_count > this.max_invin_time)
+            {
+             this.invin_count=0;
+             this.invincibleState=false;
+            } 
         }
     display()
         {     
           this.displayFeet();       
-         /*if(!this.onScreen || !this.flickerControl()) return false;*/
-         if(!this.onScreen ) return false;
+         if(!this.onScreen || !this.flickerControl()) return false;
+         
          ctx.save();
          ctx.translate(this.position.x-gameManager.camera.position.x, 
                        this.position.y-gameManager.camera.position.y);
          ctx.rotate(d2r(this.angle));
          // ctx.scale(this.sx,this.sy);
          try{
+
          ctx.drawImage(this.animations[this.animation][parseInt(this.animationFrame)],
                        -this.width/2,
                        -this.height/2,
@@ -2347,6 +2468,34 @@ class Soldier
          ctx.restore(); 
         }
 
+        
+        
+        takeDamage(dmg,dir=0)
+            {   
+                  
+            if(this.invincibleState && !gameManager.playerDied) return false;
+            // if(!gameManager.playerDied)
+            // document.querySelector('#LossBuzz').play(); 
+            this.invincibleState=true;      
+            this.acceleration.add(new CreateVector(dir,0));
+            this.health-=dmg;
+            console.log('player health:'+this.health);
+            gameManager.playerHealthBar.updateValue(this.health);           
+            if(this.health<=0)
+                {
+                // if(gameManager.playerDied) document.querySelector('#LossBuzz').play();  
+                this.health=0;
+                console.log('destroyed');
+                SpawnClouds(this.position);             
+                destroySelf(this.hit_box);
+                destroySelf(this);              
+                this.isActive=false;
+                gameManager.player=null;
+                gameManager.playerDied=true;                
+                gameManager.playerDiedClock= gameManager.runningClock;                              
+                }
+            }
+
     }
 //5. soldier ends
 //generic movable
@@ -2357,9 +2506,10 @@ class GenericMovable extends GeneralSprite
          super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
          this.hit_box=new HitBox(x,y,this.width*0.5,this.height*0.5,
                                  [gameManager.collission_sprites],
-                                 'generichitbox');
+                                 'generichitbox',this);
          this.animations={};
          this.animationFractions={};
+         this.animationSizeMults={};
          this.animation='idle';
          this.animationFrame=0;
          this.animInQueue=null;
@@ -2467,13 +2617,15 @@ class GenericMovable extends GeneralSprite
             ctx.translate(this.position.x-gameManager.camera.position.x, 
                           this.position.y-gameManager.camera.position.y);
             ctx.rotate(d2r(this.angle));
+            let wid=this.width*this.animationSizeMults[this.animation][0];
+            let hei=this.height*this.animationSizeMults[this.animation][1];
          
          try{
          ctx.drawImage(this.animations[this.animation][parseInt(this.animationFrame)],
-                       -this.width/2,
-                       -this.height/2,
-                       this.width,
-                       this.height
+                       -wid/2,
+                       -hei/2,
+                       wid,
+                       hei
                       );
         }catch(err){
             console.log(this.animations[this.animation][parseInt(this.animationFrame)]);
@@ -2509,19 +2661,194 @@ class Zombie extends GenericMovable
          super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
          this.sprite_id=sprite_id; //sprite_id uniquely identifies this sprite
          this.sprite_type='zombie';
-         this.hit_box.sprite_type='zombie_hitbox';
+         this.hit_box.sprite_type='zombiehitbox_damagable';
          this.animations={
                           "idle":ZOMBIE_IDLE_IMAGES,
                           "move":ZOMBIE_MOVE_IMAGES,
                           "attack":ZOMBIE_ATTACK_IMAGES
                          };
          this.animationFractions={'idle':0.8,'move':0.4,'attack':0.2};
-         this.animation='idle';        
-         this.sprite_type='zombie';  
+         this.animationSizeMults={'idle':[1,1],'move':[1,1],'attack':[1.4,1.4]};
+         this.animation='idle';           
          this.state='idle'; 
          this.enemyDetectDistance=200*xscale;
-         this.nearAttackDistance=100*xscale;
+         this.nearAttackDistance=120*xscale;
          this.farAttackDistance=250*xscale; 
+         this.lastFarAttackTime=0;
+         this.lastCloseAttackTime=0;
+         this.maxFarAttackTimeGap=2000;
+         this.maxCloseAttackTimeGap=2000;
+         this.onScreen=false; 
+         this.maxStrikeTime=2000;  
+
+         this.longAttacks=['farstrike'];
+         this.shortAttacks=['strike'];  
+         this.strikeBoxSpawned=false;
+        }
+     display(){
+        super.display();
+     }
+     update(){        
+        super.update();
+        this.stateMachine();
+        this.announceState();
+     }
+     takeDamage(){
+        console.log("zombie reports damage");
+     }
+     announceState(){
+        w2screen(this.state,
+                    this.position.x-gameManager.camera.position.x,
+                    this.position.y-gameManager.camera.position.y-60);
+     }
+     stateMachine(){
+        switch(this.state){
+            case 'idle':
+             this.Idle_Actions();
+             break;
+            case 'agro':
+             this.Agro_Actions();
+             break;
+            case 'strike':
+             this.Strike();
+             break;
+            case 'farstrike':
+             this.FarStrike();
+             break;
+            default:
+              console.log('undefined state');
+              break;
+        }
+     }
+     
+     Idle_Actions(){
+        this.changeAnimation('idle');
+        if(this.EnemyDetected()) 
+            {            
+            if(!this.onScreen)               
+                this.MakeDramaticAppearance();           
+            this.state='agro';
+            }
+        return false;
+     }
+     Agro_Actions(){
+         this.changeAnimation('idle');
+        if(!gameManager.player || !gameManager.player.isActive)
+            return false;
+        this.FaceEnemy();
+        this.CarryOutAttacks();
+     }
+     
+     Strike(){
+        if(gameManager.runningClock - this.lastCloseAttackTime > this.maxStrikeTime){            
+            this.state='agro';
+            this.lastCloseAttackTime=gameManager.runningClock;
+            this.strikeBoxSpawned=false;
+            return true;
+        }
+        if(!this.strikeBoxSpawned && this.animation=="attack" && parseInt(this.animationFrame)==2)
+            {
+            new DamageHitBox(this.position.x,this.position.y,
+                             40*xscale,40*yscale,
+                             60*xscale,0,
+                             5,0,
+                           [gameManager.visible_sprites,
+                            gameManager.active_sprites,
+                            gameManager.hit_box_sprites
+                           ],
+                             "enemy_damagebox",this
+                            );
+            this.strikeBoxSpawned=true;
+            }
+        this.changeAnimation('attack');
+     }
+
+     FarStrike(){
+        
+        if(gameManager.runningClock - this.lastFarAttackTime > this.maxStrikeTime){                     
+            this.state='agro';
+            this.lastFarAttackTime=gameManager.runningClock;
+            this.strikeBoxSpawned=false;
+            return true;
+        }
+        if(!this.strikeBoxSpawned && this.animation=="attack" && parseInt(this.animationFrame)==6)
+            {
+            new DamageHitBox(this.position.x,this.position.y,
+                             40*xscale,40*yscale,
+                             40*xscale,0,
+                             5,0,
+                           [gameManager.visible_sprites,
+                            gameManager.active_sprites,
+                            gameManager.hit_box_sprites
+                           ],
+                             "enemy_damagebox",this
+                            );
+            this.strikeBoxSpawned=true;
+            }
+        if(this.strikeBoxSpawned && parseInt(this.animationFrame)==8)
+            this.strikeBoxSpawned=false;
+        this.changeAnimation('attack');
+     }
+
+     CarryOutAttacks(){
+         // Draw_a_line(this.position,Get_A_Point(this.position,this.nearAttackDistance,this.angle));
+         if(gameManager.player.position.copy().sub(this.position).mag() < this.nearAttackDistance){
+            if(this.lastFarAttackTime!=0) this.lastFarAttackTime=0;                
+            if(gameManager.runningClock - this.lastCloseAttackTime > this.maxCloseAttackTimeGap){
+                this.lastCloseAttackTime= gameManager.runningClock; 
+            //attack here
+                this.state=this.shortAttacks[Math.floor(Math.random()*this.shortAttacks.length)];
+            }
+         }else{
+
+            if(this.lastCloseAttackTime!=0) this.lastCloseAttackTime=0;                
+            if(gameManager.runningClock - this.lastFarAttackTime > this.maxFarAttackTimeGap){
+                this.lastFarAttackTime= gameManager.runningClock; 
+            //attack here  
+                this.state=this.longAttacks[Math.floor(Math.random()*this.longAttacks.length)];         
+            }
+
+         }
+     }
+
+     FaceEnemy(){
+        let enemyDir=gameManager.player.position.copy().sub(this.position);
+        this.angle=AngleLerp(this.angle,enemyDir.heading(),9);
+     }
+     EnemyDetected(){
+        if(!gameManager.player || !gameManager.player.isActive) return false;
+        if(gameManager.player.position.copy().sub(this.position).mag() < this.enemyDetectDistance)
+        {
+            return true;
+        }
+     }
+
+     MakeDramaticAppearance(){
+        this.onScreen=true;
+        SpawnClouds(this.position);
+     }
+
+    } 
+
+//Generic Enemy starts
+class GenericEnemy extends GenericMovable
+    {
+    constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups,sprite_id)
+        {
+         super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
+         this.sprite_id=sprite_id; //sprite_id uniquely identifies this sprite
+         this.sprite_type='generic_enemy';
+         this.hit_box.sprite_type='generic_enemy_hitbox';
+         this.animations={
+                          "idle":ZOMBIE_IDLE_IMAGES,
+                          "move":ZOMBIE_MOVE_IMAGES,
+                          "attack":ZOMBIE_ATTACK_IMAGES
+                         };
+         this.animationFractions={'idle':0.8,'move':0.4,'attack':0.2};
+         this.animation='idle';         
+         this.state='idle'; 
+         this.enemyDetectDistance=200*xscale;
+         this.nearAttackDistance=120*xscale;         
          this.lastFarAttackTime=0;
          this.lastCloseAttackTime=0;
          this.maxFarAttackTimeGap=2000;
@@ -2574,6 +2901,7 @@ class Zombie extends GenericMovable
      }
 
      CarryOutAttacks(){
+         // Draw_a_line(this.position,Get_A_Point(this.position,this.nearAttackDistance,this.angle));
          if(gameManager.player.position.copy().sub(this.position).mag() < this.nearAttackDistance){
             if(this.lastFarAttackTime!=0) 
                 {   
@@ -2615,7 +2943,9 @@ class Zombie extends GenericMovable
         SpawnClouds(this.position);
      }
 
-    } 
+    }
+//Generic Enemy ends
+
 
 //image list for flower
 folder_name="../Insects/Sprites/flowers";
@@ -2646,7 +2976,7 @@ class Flower extends GeneralSprite
          ctx.drawImage(this.imagex,-this.width/2,-this.height/2,this.width,this.height);             
          ctx.restore();
         }
-      takeDamage(dmg)
+      takeDamage(dmg,hb=0)
         {
          console.log("damage taken"); 
          SpawnClouds(this.position);
@@ -2775,6 +3105,7 @@ function SpawnClouds(pos,n=60)
         }
        performSpecTaskOnCollision(collidedObjType)
         {
+           console.log(collidedObjType.sprite_type);
            gameManager.performSpecTaskOnCollision(collidedObjType,this.damageCaused);
            destroySelf(this.hit_box);
            destroySelf(this);

@@ -37,7 +37,8 @@ let scenes=[
                    {"sprite":"wall","x":838,"y":347,"width":50,"height":340,
                    "hitboxoffsetx":0,"hitboxoffsety":0,"isHori":false},
                    {"sprite":"zombie","x":326,"y":395,"width":140 ,"height":140,
-                    "offsetx":0,"offsety":0, "sprite_id":"zombie1"},                                  
+                    "offsetx":0,"offsety":0, "sprite_id":"zombie1"},  
+                  {"sprite":"flower","x":126,"y":595,"width":50,"height":50},                                
             ],
             [  
                   {"sprite":"scenechanger_scleft","x":-300,"y":300},   
