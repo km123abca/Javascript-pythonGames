@@ -2679,7 +2679,8 @@ class Zombie extends GenericMovable
          this.maxFarAttackTimeGap=2000;
          this.maxCloseAttackTimeGap=2000;
          this.onScreen=false; 
-         this.maxStrikeTime=2000;  
+         this.maxStrikeTime=2000; 
+         this.bulletOffset=new CreateVector(55*xscale,25*yscale); 
 
          this.longAttacks=['farstrike'];
          this.shortAttacks=['strike'];  
@@ -2743,7 +2744,7 @@ class Zombie extends GenericMovable
         if(gameManager.runningClock - this.lastCloseAttackTime > this.maxStrikeTime){            
             this.state='agro';
             this.lastCloseAttackTime=gameManager.runningClock;
-            this.strikeBoxSpawned=false;
+            this.strikeBoxSpawned=false;            
             return true;
         }
         if(!this.strikeBoxSpawned && this.animation=="attack" && parseInt(this.animationFrame)==2)
@@ -2763,30 +2764,47 @@ class Zombie extends GenericMovable
         this.changeAnimation('attack');
      }
 
+
+     ZombieShoot()
+        {  
+        let bulletOffset=this.bulletOffset.copy().rotateByAngle(this.angle);  
+        let tgtPoint=new CreateVector(10,0);       
+
+        new Fireball(this.position.x+bulletOffset.x,
+                       this.position.y+bulletOffset.y,
+                       40*xscale,40*yscale,
+                       this,
+                       tgtPoint,
+                       [gameManager.visible_sprites,gameManager.active_sprites]
+                       ); 
+
+        new DamageHitBox(this.position.x,this.position.y,
+                40*xscale,40*yscale,
+                60*xscale,0,
+                5,0,
+            [gameManager.visible_sprites,
+            gameManager.active_sprites,
+            gameManager.hit_box_sprites
+            ],
+                "enemy_damagebox",this
+            );
+        }   
+
      FarStrike(){
         
         if(gameManager.runningClock - this.lastFarAttackTime > this.maxStrikeTime){                     
             this.state='agro';
             this.lastFarAttackTime=gameManager.runningClock;
-            this.strikeBoxSpawned=false;
+            this.fireBallSpawned=false;
             return true;
         }
-        if(!this.strikeBoxSpawned && this.animation=="attack" && parseInt(this.animationFrame)==6)
+        if(!this.fireBallSpawned && this.animation=="attack" && parseInt(this.animationFrame)==6)
             {
-            new DamageHitBox(this.position.x,this.position.y,
-                             40*xscale,40*yscale,
-                             40*xscale,0,
-                             5,0,
-                           [gameManager.visible_sprites,
-                            gameManager.active_sprites,
-                            gameManager.hit_box_sprites
-                           ],
-                             "enemy_damagebox",this
-                            );
-            this.strikeBoxSpawned=true;
+            this.ZombieShoot();
+            this.fireBallSpawned=true;
             }
-        if(this.strikeBoxSpawned && parseInt(this.animationFrame)==8)
-            this.strikeBoxSpawned=false;
+        if(this.fireBallSpawned && parseInt(this.animationFrame)==8)
+            this.fireBallSpawned=false;
         this.changeAnimation('attack');
      }
 
@@ -3107,10 +3125,30 @@ function SpawnClouds(pos,n=60)
         {
            console.log(collidedObjType.sprite_type);
            gameManager.performSpecTaskOnCollision(collidedObjType,this.damageCaused);
+           let arr=collidedObjType.sprite_type.split('_');
+            if(arr.length<2) return false;
+            if(arr[1]=='damagable')
+                {                  
+                collidedObjType.parent.takeDamage(this.damageCaused);                      
+                }
            destroySelf(this.hit_box);
            destroySelf(this);
         }
+
+        
     }
+    //projectile ends
+    let fireball_image=LoadImagex(sprite_folder,'fireball.png');
+    class Fireball extends Projectile
+     {
+        constructor(x,y,wid,hei,parent,tgtPoint,spriteGroups){
+            super(x,y,wid,hei,parent,tgtPoint,spriteGroups);
+            this.imagex=fireball_image;
+            this.damageCaused=6;
+            this.accelerationInit=new CreateVector(1,0);
+            this.accelerationInit.rotateByAngle(this.parent.angle);
+        }
+     }
 
     let HORIZONTALWALL=LoadImagex(sprite_folder+'/Pipes','pipeHori.png');
     let VERTICALWALL=LoadImagex(sprite_folder+'/Pipes','pipe.png');

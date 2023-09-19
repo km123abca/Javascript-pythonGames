@@ -6,7 +6,7 @@ let scenes=[
                   {"sprite":"player","x":400,"y":300,"width":100,"height":100},  
                   {"sprite":"wall","x":-100,"y":300,"width":50,"height":1280,
                    "hitboxoffsetx":0,"hitboxoffsety":0,"isHori":false},  
-                  {"sprite":"wall","x":1275,"y":104,"width":50,"height":1382,
+                  {"sprite":"wall","x":1275,"y":-26,"width":50,"height":1382,
                    "hitboxoffsetx":0,"hitboxoffsety":0,"isHori":false},
                   {"sprite":"wall","x":663,"y":-341,"width":1608,"height":52,
                    "hitboxoffsetx":0,"hitboxoffsety":0,"isHori":true}, 
