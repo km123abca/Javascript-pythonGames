@@ -2033,7 +2033,7 @@ class Soldier
          this.maxVelocity=10*xscale;
          this.hit_box=new HitBox(x,y,this.width*0.5,this.height*0.5,
                                  [gameManager.collission_sprites],
-                                 'playerhitbox');
+                                 'playerhitbox_damagable',this);
          this.sceneStartTime=0;
          this.prevMouseClicks=0;
 
@@ -2770,24 +2770,15 @@ class Zombie extends GenericMovable
         let bulletOffset=this.bulletOffset.copy().rotateByAngle(this.angle);  
         let tgtPoint=new CreateVector(10,0);       
 
-        new Fireball(this.position.x+bulletOffset.x,
+        let fb=new Fireball(this.position.x+bulletOffset.x,
                        this.position.y+bulletOffset.y,
-                       40*xscale,40*yscale,
+                       40*xscale,20*yscale,
                        this,
                        tgtPoint,
                        [gameManager.visible_sprites,gameManager.active_sprites]
                        ); 
-
-        new DamageHitBox(this.position.x,this.position.y,
-                40*xscale,40*yscale,
-                60*xscale,0,
-                5,0,
-            [gameManager.visible_sprites,
-            gameManager.active_sprites,
-            gameManager.hit_box_sprites
-            ],
-                "enemy_damagebox",this
-            );
+        fb.rotAngle=this.angle;
+        
         }   
 
      FarStrike(){
@@ -3123,14 +3114,14 @@ function SpawnClouds(pos,n=60)
         }
        performSpecTaskOnCollision(collidedObjType)
         {
-           console.log(collidedObjType.sprite_type);
-           gameManager.performSpecTaskOnCollision(collidedObjType,this.damageCaused);
-           let arr=collidedObjType.sprite_type.split('_');
-            if(arr.length<2) return false;
-            if(arr[1]=='damagable')
-                {                  
-                collidedObjType.parent.takeDamage(this.damageCaused);                      
-                }
+           
+           // gameManager.performSpecTaskOnCollision(collidedObjType,this.damageCaused);
+           if(collidedObjType.parent==this.parent) return;
+           let arr=collidedObjType.sprite_type.split('_');          
+            if(arr.length>1 && arr[1]=='damagable')                               
+                collidedObjType.parent.takeDamage(this.damageCaused);                                 
+             
+           SpawnClouds(this.position);       
            destroySelf(this.hit_box);
            destroySelf(this);
         }
