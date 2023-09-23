@@ -414,18 +414,31 @@
              }
          
         }
+
+    let soundsFolder="../PlatformGame/sounds";
+    let musicStarted=false;
+    
+    var startMusic=()=>{
+						if(!musicStarted && okToStartMusic)
+							{
+							 musicStarted=true;
+							 musicList[presentMusicIndex % musicList.length].play();
+							}	
+						};
+
+	var resetMusicVar=()=>{
+		musicStarted=false;
+		startMusic();
+	}
     </script>
 
-<!--     <script>
-        let scenes=[
-                [                               
-                {"sprite":"player","x":400,"y":300,"width":100,"height":100},                              
-                ],
-            ];
-    </script> -->
+
 </head>
 <body style='background-color:black;'>
     <canvas style='border:3px solid black;' onmousemove="trackMouse(event)"></canvas>
+    <audio id="backgroundMusic" onended="resetMusicVar()">
+		<source src=`${soundsFolder}/techno_bg_music.mp3` type="audio/mpeg">
+	</audio>
     <!-- function group2: functions and variables that run the game -->
     <script>
     var canvas = document.querySelector('canvas');
@@ -717,7 +730,8 @@ document.onmousedown = function(event) {
             
             let tempPos=new CreateVector(x,y);
             let tempOffset=new CreateVector(offsetx,offsety);            
-            tempPos.add(tempOffset.pointToAngle(parent.angle));
+            // tempPos.add(tempOffset.pointToAngle(parent.angle));
+            tempPos.add(tempOffset);
             super(tempPos.x,tempPos.y,wid,hei,spriteGroups,hitboxName,parent);
             this.hitback=hitback; 
             this.birthTime=gameManager.runningClock;
@@ -2643,29 +2657,20 @@ class GenericMovable extends GeneralSprite
             }
     } 
 //generic movable ends
-//get zombie images
-folder_name=sprite_folder+"\\Zombie\\idle";
-let image_names=Array(17).fill(0).map((x,i)=>`skeleton-idle_${i}.png`);
-let ZOMBIE_IDLE_IMAGES=LoadImages(folder_name,image_names);
-folder_name=sprite_folder+"\\Zombie\\move";
-image_names=Array(13).fill(0).map((x,i)=>`skeleton-move_${i}.png`);
-let ZOMBIE_MOVE_IMAGES=LoadImages(folder_name,image_names);
-folder_name=sprite_folder+"\\Zombie\\attack";
-image_names=Array(13).fill(0).map((x,i)=>`skeleton-attack_${i}.png`);
-let ZOMBIE_ATTACK_IMAGES=LoadImages(folder_name,image_names);
-//14 zombie starts
-class Zombie extends GenericMovable
+//generic enemy starts
+class GenericEnemy extends GenericMovable
     {
-    constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups,sprite_id)
+    constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups,sprite_id,bossStatus)
         {
          super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
+         this.bossStatus=bossStatus;
          this.sprite_id=sprite_id; //sprite_id uniquely identifies this sprite
-         this.sprite_type='zombie';
-         this.hit_box.sprite_type='zombiehitbox_damagable';
+         this.sprite_type='genericEnemy';
+         this.hit_box.sprite_type='genericEnemyhitbox_damagable';
          this.animations={
-                          "idle":ZOMBIE_IDLE_IMAGES,
-                          "move":ZOMBIE_MOVE_IMAGES,
-                          "attack":ZOMBIE_ATTACK_IMAGES
+                          "idle":[],
+                          "move":[],
+                          "attack":[]
                          };
          this.animationFractions={'idle':0.8,'move':0.4,'attack':0.2};
          this.animationSizeMults={'idle':[1,1],'move':[1,1],'attack':[1.4,1.4]};
@@ -2678,7 +2683,8 @@ class Zombie extends GenericMovable
          this.lastCloseAttackTime=0;
          this.maxFarAttackTimeGap=2000;
          this.maxCloseAttackTimeGap=2000;
-         this.onScreen=false; 
+         if(this.bossStatus) this.onScreen=false; 
+         else this.onScreen=true;
          this.maxStrikeTime=2000; 
          this.bulletOffset=new CreateVector(55*xscale,25*yscale); 
 
@@ -2747,13 +2753,16 @@ class Zombie extends GenericMovable
             this.strikeBoxSpawned=false;            
             return true;
         }
+        let bulletOffset=this.bulletOffset.copy().rotateByAngle(this.angle); 
         if(!this.strikeBoxSpawned && this.animation=="attack" && parseInt(this.animationFrame)==2)
             {
-            new DamageHitBox(this.position.x,this.position.y,
+            new DamageHitBox(this.position.x,
+                             this.position.y,
                              40*xscale,40*yscale,
-                             60*xscale,0,
+                             bulletOffset.x,bulletOffset.y,                             
                              5,0,
-                           [gameManager.visible_sprites,
+                            [
+                            gameManager.visible_sprites,
                             gameManager.active_sprites,
                             gameManager.hit_box_sprites
                            ],
@@ -2778,6 +2787,208 @@ class Zombie extends GenericMovable
                        [gameManager.visible_sprites,gameManager.active_sprites]
                        ); 
         fb.rotAngle=this.angle;
+        
+        
+        }  
+
+     FarStrike(){
+        
+        if(gameManager.runningClock - this.lastFarAttackTime > this.maxStrikeTime){                     
+            this.state='agro';
+            this.lastFarAttackTime=gameManager.runningClock;
+            this.fireBallSpawned=false;
+            return true;
+        }
+        if(!this.fireBallSpawned && this.animation=="attack" && parseInt(this.animationFrame)==6)
+            {
+            this.ZombieShoot();
+            this.fireBallSpawned=true;
+            }
+        if(this.fireBallSpawned && parseInt(this.animationFrame)==8)
+            this.fireBallSpawned=false;
+        this.changeAnimation('attack');
+     }
+
+     CarryOutAttacks(){
+         // Draw_a_line(this.position,Get_A_Point(this.position,this.nearAttackDistance,this.angle));
+         if(gameManager.player.position.copy().sub(this.position).mag() < this.nearAttackDistance){
+            if(this.lastFarAttackTime!=0) this.lastFarAttackTime=0;                
+            if(gameManager.runningClock - this.lastCloseAttackTime > this.maxCloseAttackTimeGap){
+                this.lastCloseAttackTime= gameManager.runningClock; 
+            //attack here
+                this.state=this.shortAttacks[Math.floor(Math.random()*this.shortAttacks.length)];
+            }
+         }else{
+
+            if(this.lastCloseAttackTime!=0) this.lastCloseAttackTime=0;                
+            if(gameManager.runningClock - this.lastFarAttackTime > this.maxFarAttackTimeGap){
+                this.lastFarAttackTime= gameManager.runningClock; 
+            //attack here  
+                this.state=this.longAttacks[Math.floor(Math.random()*this.longAttacks.length)];         
+            }
+
+         }
+     }
+
+     FaceEnemy(){
+        let enemyDir=gameManager.player.position.copy().sub(this.position);
+        this.angle=AngleLerp(this.angle,enemyDir.heading(),9);
+     }
+     EnemyDetected(){
+        if(!gameManager.player || !gameManager.player.isActive) return false;
+        if(gameManager.player.position.copy().sub(this.position).mag() < this.enemyDetectDistance)
+        {
+            return true;
+        }
+     }
+
+     MakeDramaticAppearance(){
+        this.onScreen=true;
+        SpawnClouds(this.position);
+     }
+
+    } 
+//generic enemy ends
+
+//get zombie images
+folder_name=sprite_folder+"\\Zombie\\idle";
+let image_names=Array(17).fill(0).map((x,i)=>`skeleton-idle_${i}.png`);
+let ZOMBIE_IDLE_IMAGES=LoadImages(folder_name,image_names);
+folder_name=sprite_folder+"\\Zombie\\move";
+image_names=Array(13).fill(0).map((x,i)=>`skeleton-move_${i}.png`);
+let ZOMBIE_MOVE_IMAGES=LoadImages(folder_name,image_names);
+folder_name=sprite_folder+"\\Zombie\\attack";
+image_names=Array(13).fill(0).map((x,i)=>`skeleton-attack_${i}.png`);
+let ZOMBIE_ATTACK_IMAGES=LoadImages(folder_name,image_names);
+//14 zombie starts
+class Zombie extends GenericMovable
+    {
+    constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups,sprite_id)
+        {
+         super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
+         this.sprite_id=sprite_id; //sprite_id uniquely identifies this sprite
+         this.sprite_type='zombie';
+         this.hit_box.sprite_type='zombiehitbox_damagable';
+         this.animations={
+                          "idle":ZOMBIE_IDLE_IMAGES,
+                          "move":ZOMBIE_MOVE_IMAGES,
+                          "attack":ZOMBIE_ATTACK_IMAGES
+                         };
+         this.animationFractions={'idle':0.8,'move':0.4,'attack':0.2};
+         this.animationSizeMults={'idle':[1,1],'move':[1,1],'attack':[1.4,1.4]};
+         this.animation='idle';           
+         this.state='idle'; 
+         this.enemyDetectDistance=200*xscale;
+         this.nearAttackDistance=120*xscale;
+         this.farAttackDistance=250*xscale; 
+         this.lastFarAttackTime=0;
+         this.lastCloseAttackTime=0;
+         this.maxFarAttackTimeGap=2000;
+         this.maxCloseAttackTimeGap=2000;
+         this.onScreen=false; 
+         this.maxStrikeTime=2000; 
+         this.bulletOffset=new CreateVector(60*xscale,10*yscale); 
+
+         this.longAttacks=['farstrike'];
+         this.shortAttacks=['strike'];  
+         this.strikeBoxSpawned=false;
+        }
+     display(){
+        super.display();
+     }
+     update(){        
+        super.update();
+        this.stateMachine();
+        this.announceState();
+     }
+     takeDamage(){
+        console.log("zombie reports damage");
+     }
+     announceState(){
+        w2screen(this.state,
+                    this.position.x-gameManager.camera.position.x,
+                    this.position.y-gameManager.camera.position.y-60);
+     }
+     stateMachine(){
+        switch(this.state){
+            case 'idle':
+             this.Idle_Actions();
+             break;
+            case 'agro':
+             this.Agro_Actions();
+             break;
+            case 'strike':
+             this.Strike();
+             break;
+            case 'farstrike':
+             this.FarStrike();
+             break;
+            default:
+              console.log('undefined state');
+              break;
+        }
+     }
+     
+     Idle_Actions(){
+        this.changeAnimation('idle');
+        if(this.EnemyDetected()) 
+            {            
+            if(!this.onScreen)               
+                this.MakeDramaticAppearance();           
+            this.state='agro';
+            }
+        return false;
+     }
+     Agro_Actions(){
+         this.changeAnimation('idle');
+        if(!gameManager.player || !gameManager.player.isActive)
+            return false;
+        this.FaceEnemy();
+        this.CarryOutAttacks();
+     }
+     
+     Strike(){
+        if(gameManager.runningClock - this.lastCloseAttackTime > this.maxStrikeTime){            
+            this.state='agro';
+            this.lastCloseAttackTime=gameManager.runningClock;
+            this.strikeBoxSpawned=false;            
+            return true;
+        }
+        let bulletOffset=this.bulletOffset.copy().rotateByAngle(this.angle); 
+        if(!this.strikeBoxSpawned && this.animation=="attack" && parseInt(this.animationFrame)==2)
+            {
+            new DamageHitBox(this.position.x,
+                             this.position.y,
+                             40*xscale,40*yscale,
+                             bulletOffset.x,bulletOffset.y,                             
+                             5,0,
+                            [
+                            gameManager.visible_sprites,
+                            gameManager.active_sprites,
+                            gameManager.hit_box_sprites
+                           ],
+                             "enemy_damagebox",this
+                            );
+            this.strikeBoxSpawned=true;
+            }
+        this.changeAnimation('attack');
+     }
+
+
+     ZombieShoot()
+        {  
+        let bulletOffset=this.bulletOffset.copy().rotateByAngle(this.angle);  
+        let tgtPoint=new CreateVector(10,0);       
+
+        let fb=new Fireball(this.position.x+bulletOffset.x,
+                       this.position.y+bulletOffset.y,
+                       40*xscale,20*yscale,
+                       this,
+                       tgtPoint,
+                       [gameManager.visible_sprites,gameManager.active_sprites]
+                       ); 
+        fb.rotAngle=this.angle;
+        
         
         }   
 
@@ -2839,121 +3050,6 @@ class Zombie extends GenericMovable
 
     } 
 
-//Generic Enemy starts
-class GenericEnemy extends GenericMovable
-    {
-    constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups,sprite_id)
-        {
-         super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
-         this.sprite_id=sprite_id; //sprite_id uniquely identifies this sprite
-         this.sprite_type='generic_enemy';
-         this.hit_box.sprite_type='generic_enemy_hitbox';
-         this.animations={
-                          "idle":ZOMBIE_IDLE_IMAGES,
-                          "move":ZOMBIE_MOVE_IMAGES,
-                          "attack":ZOMBIE_ATTACK_IMAGES
-                         };
-         this.animationFractions={'idle':0.8,'move':0.4,'attack':0.2};
-         this.animation='idle';         
-         this.state='idle'; 
-         this.enemyDetectDistance=200*xscale;
-         this.nearAttackDistance=120*xscale;         
-         this.lastFarAttackTime=0;
-         this.lastCloseAttackTime=0;
-         this.maxFarAttackTimeGap=2000;
-         this.maxCloseAttackTimeGap=2000;
-         this.onScreen=false;      
-        }
-     display(){
-        super.display();
-     }
-     update(){        
-        super.update();
-        this.stateMachine();
-        this.announceState();
-     }
-     announceState(){
-        w2screen(this.state,
-                    this.position.x-gameManager.camera.position.x,
-                    this.position.y-gameManager.camera.position.y-60);
-     }
-     stateMachine(){
-        switch(this.state){
-            case 'idle':
-             this.Idle_Actions();
-             break;
-            case 'agro':
-             this.Agro_Actions();
-             break;
-            default:
-              console.log('undefined state');
-              break;
-        }
-     }
-     
-     Idle_Actions(){
-      
-        if(this.EnemyDetected()) 
-            {            
-            if(!this.onScreen)               
-                this.MakeDramaticAppearance();           
-            this.state='agro';
-            }
-        return false;
-     }
-     Agro_Actions(){
-
-        if(!gameManager.player || !gameManager.player.isActive)
-            return false;
-        this.FaceEnemy();
-        this.CarryOutAttacks();
-     }
-
-     CarryOutAttacks(){
-         // Draw_a_line(this.position,Get_A_Point(this.position,this.nearAttackDistance,this.angle));
-         if(gameManager.player.position.copy().sub(this.position).mag() < this.nearAttackDistance){
-            if(this.lastFarAttackTime!=0) 
-                {   
-                console.log('enemy near: far time reset');
-                this.lastFarAttackTime=0;
-                }
-            if(gameManager.runningClock - this.lastCloseAttackTime > this.maxCloseAttackTimeGap){
-                this.lastCloseAttackTime= gameManager.runningClock;
-                console.log('doing a random close attack now');
-            }
-         }else{
-            if(this.lastCloseAttackTime!=0)
-                { 
-                console.log('enemy far: near time reset');
-                this.lastCloseAttackTime=0;
-                }
-            if(gameManager.runningClock - this.lastFarAttackTime > this.maxFarAttackTimeGap){
-                this.lastFarAttackTime= gameManager.runningClock;
-                console.log('doing a random far attack now');
-            }
-
-         }
-     }
-
-     FaceEnemy(){
-        let enemyDir=gameManager.player.position.copy().sub(this.position);
-        this.angle=AngleLerp(this.angle,enemyDir.heading(),9);
-     }
-     EnemyDetected(){
-        if(!gameManager.player || !gameManager.player.isActive) return false;
-        if(gameManager.player.position.copy().sub(this.position).mag() < this.enemyDetectDistance)
-        {
-            return true;
-        }
-     }
-
-     MakeDramaticAppearance(){
-        this.onScreen=true;
-        SpawnClouds(this.position);
-     }
-
-    }
-//Generic Enemy ends
 
 
 //image list for flower
