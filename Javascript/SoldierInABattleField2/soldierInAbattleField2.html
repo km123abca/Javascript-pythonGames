@@ -417,8 +417,9 @@
 
     let soundsFolder="../PlatformGame/sounds";
     let musicStarted=false;
-    
+    let okToStartMusic=false;
     var startMusic=()=>{
+                        console.log("here here... music has started");
 						if(!musicStarted && okToStartMusic)
 							{
 							 musicStarted=true;
@@ -475,14 +476,8 @@
         return keysPressed.has(x)||keysPressed.has(x.toUpperCase());
     }
     let pressedKeyCode=-1;
-    let okToStartMusic=false;
-    var startMusic=()=>{
-                    // if(!musicStarted && okToStartMusic)
-                    //     {
-                    //      musicStarted=true;
-                    //      musicList[presentMusicIndex % musicList.length].play();
-                    //     }   
-                    };
+    
+   
     document.onkeydown=function(e)
                      {
                         // console.log(e.keyCode);
