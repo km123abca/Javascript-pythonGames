@@ -2,6 +2,52 @@
 <html>
 <head>
     <title> Soldier in a battle field</title>
+
+    <!-- sound divs and scripts-->
+    <!-- audio pre script -->
+    <script>    
+    let musicStarted=false;
+    let okToStartMusic=false;////okToStartMusic gets activated once user clicks on the mouse
+
+    var startMusic=()=>{
+                        console.log("here here... music has started");
+                        if(!musicStarted && okToStartMusic)
+                            {
+                             musicStarted=true;
+                             musicList[presentMusicIndex % musicList.length].play();
+                            }   
+                        };
+    var pauseMusic=()=>{
+                        musicStarted=false;
+                        for(let i in musicComponentList) musicComponentList[i].src="";
+                        for(let i in musicComponentList) 
+                            musicComponentList[i].src=`${soundsFolder}/${musicFilesList[i]}`;
+                        };
+
+        var resetMusicVar=()=>{
+        musicStarted=false;
+        startMusic();
+        }
+    </script>
+    <audio id="techno_bg_music" onended="resetMusicVar()">
+        <source  type="audio/mpeg">
+    </audio>
+    <audio id="greenpath_music" onended="resetMusicVar()">
+        <source src="./sounds/Hollow Knight OST - Greenpath.mp3" type="audio/mpeg">
+    </audio>
+    <!-- audio post script -->
+    <script>
+        let soundsFolder="../PlatformGame/sounds";
+        var techno_bg_music=document.querySelector('#techno_bg_music');
+        var greenpath_music=document.querySelector('#greenpath_music');
+        var musicComponentList=[techno_bg_music,greenpath_music];
+        var musicFilesList=['techno_bg_music.mp3','Hollow Knight OST - Greenpath.mp3'];
+        for(let i in musicComponentList)
+            musicComponentList[i].src=`${soundsFolder}/${musicFilesList[i]}`;
+        var musicList=[techno_bg_music,techno_bg_music];
+        var presentMusicIndex=0;
+    </script>
+    <!-- sound divs and scripts ends -->
     <script src="scenedata.js"></script>
     <!-- function group1: Basic functions -->
     <script>
@@ -415,31 +461,16 @@
          
         }
 
-    let soundsFolder="../PlatformGame/sounds";
-    let musicStarted=false;
-    let okToStartMusic=false;
-    var startMusic=()=>{
-                        console.log("here here... music has started");
-						if(!musicStarted && okToStartMusic)
-							{
-							 musicStarted=true;
-							 musicList[presentMusicIndex % musicList.length].play();
-							}	
-						};
 
-	var resetMusicVar=()=>{
-		musicStarted=false;
-		startMusic();
-	}
+
+	
     </script>
 
 
 </head>
 <body style='background-color:black;'>
     <canvas style='border:3px solid black;' onmousemove="trackMouse(event)"></canvas>
-    <audio id="backgroundMusic" onended="resetMusicVar()">
-		<source src=`${soundsFolder}/techno_bg_music.mp3` type="audio/mpeg">
-	</audio>
+    
     <!-- function group2: functions and variables that run the game -->
     <script>
     var canvas = document.querySelector('canvas');
@@ -482,11 +513,7 @@
                      {
                         // console.log(e.keyCode);
                         // CapturePressedKey(e.keyCode);                
-                        if(!okToStartMusic)
-                            {
-                             okToStartMusic=true;
-                             startMusic();
-                            }
+                        
                         if(e.keyCode==37) leftArrow=true;
                         if(e.keyCode==38) upArrow=true;
                         if(e.keyCode==39) rightArrow=true;
@@ -529,6 +556,13 @@
                     };
     document.onmousedown=function(e)
                     {
+                    //okToStartMusic gets activated once user clicks on the mouse
+                    if(!okToStartMusic)
+                        {
+                         okToStartMusic=true;
+                         startMusic();
+                        }
+
                     if(processMouseClick(e)==1)
                     mousePressed=true;  
                     else
@@ -1395,6 +1429,9 @@ document.onmousedown = function(event) {
             this.inTransition=false;
             this.sceneStartTime= this.runningClock;
             console.log('scene No'+n+' loaded');
+            presentMusicIndex=n;
+            pauseMusic();
+            startMusic();
             }
         placePlayerOnEntryExit(ent_ex)
             {
