@@ -9,8 +9,7 @@
     let musicStarted=false;
     let okToStartMusic=false;////okToStartMusic gets activated once user clicks on the mouse
 
-    var startMusic=()=>{
-                        console.log("here here... music has started");
+    var startMusic=()=>{                        
                         if(!musicStarted && okToStartMusic)
                             {
                              musicStarted=true;
@@ -19,9 +18,9 @@
                         };
     var pauseMusic=()=>{
                         musicStarted=false;
-                        for(let i in musicComponentList) musicComponentList[i].src="";
-                        for(let i in musicComponentList) 
-                            musicComponentList[i].src=`${soundsFolder}/${musicFilesList[i]}`;
+                        for(let i in mCL) mCL[i].src="";
+                        for(let i in mCL) 
+                            mCL[i].src=`${soundsFolder}/${musicFilesList[i]}`;
                         };
 
         var resetMusicVar=()=>{
@@ -29,23 +28,42 @@
         startMusic();
         }
     </script>
-    <audio id="techno_bg_music" onended="resetMusicVar()">
-        <source  type="audio/mpeg">
-    </audio>
-    <audio id="greenpath_music" onended="resetMusicVar()">
-        <source src="./sounds/Hollow Knight OST - Greenpath.mp3" type="audio/mpeg">
-    </audio>
+    <div id="musicContainer"></div>   
+    <div id="soundscontainer"></div>   
     <!-- audio post script -->
     <script>
         let soundsFolder="../PlatformGame/sounds";
-        var techno_bg_music=document.querySelector('#techno_bg_music');
-        var greenpath_music=document.querySelector('#greenpath_music');
-        var musicComponentList=[techno_bg_music,greenpath_music];
-        var musicFilesList=['techno_bg_music.mp3','Hollow Knight OST - Greenpath.mp3'];
-        for(let i in musicComponentList)
-            musicComponentList[i].src=`${soundsFolder}/${musicFilesList[i]}`;
-        var musicList=[techno_bg_music,techno_bg_music];
+        var musicContainer=document.querySelector('#musicContainer');
+        var musicFilesList=['techno_bg_music.mp3',
+                            'Hollow Knight OST - Greenpath.mp3',
+                            'Nils_Frahm_Says.mp3'];
+        var mCL=[];
+        for(let i in musicFilesList){
+           var audioElem=document.createElement("audio");
+           var audioSourceForAudioElem=document.createElement("source");
+           audioSourceForAudioElem.type="audio/mpeg";
+           audioSourceForAudioElem.src=`${soundsFolder}/${musicFilesList[i]}`;
+           audioElem.appendChild(audioSourceForAudioElem);
+           audioElem.onended=resetMusicVar;
+           musicContainer.appendChild(audioElem);
+           mCL.push(audioElem);
+        }       
+
+        var musicList=[mCL[0],mCL[1]];
         var presentMusicIndex=0;
+        //creating sound components start
+        var soundDivIds=['RockSmash','LossBuzz'];
+        var parentSoundDiv=document.getElementById("soundscontainer");
+        for(let i in soundDivIds){            
+        var audioElem=document.createElement("audio");
+        audioElem.id=soundDivIds[i];
+        var audioSourceForAudioElem=document.createElement("source");
+        audioSourceForAudioElem.type="audio/mpeg";
+        audioSourceForAudioElem.src=`${soundsFolder}/${soundDivIds[i]}.wav`;
+        audioElem.appendChild(audioSourceForAudioElem);
+        parentSoundDiv.appendChild(audioElem);
+        }
+        //creating sound components end
     </script>
     <!-- sound divs and scripts ends -->
     <script src="scenedata.js"></script>
@@ -2989,13 +3007,14 @@ class Zombie extends GenericMovable
         let bulletOffset=this.bulletOffset.copy().rotateByAngle(this.angle); 
         if(!this.strikeBoxSpawned && this.animation=="attack" && parseInt(this.animationFrame)==2)
             {
+
             new DamageHitBox(this.position.x,
                              this.position.y,
                              40*xscale,40*yscale,
                              bulletOffset.x,bulletOffset.y,                             
                              5,0,
                             [
-                            gameManager.visible_sprites,
+                            // gameManager.visible_sprites,
                             gameManager.active_sprites,
                             gameManager.hit_box_sprites
                            ],
@@ -3102,7 +3121,8 @@ class Flower extends GeneralSprite
          this.sprite_type='flower';  
          this.hit_box=new HitBox(x,y,this.width*0.5,this.height*0.5,
                                  [gameManager.collission_sprites],
-                                 'flowerhitbox_damagable',this);     
+                                 'flowerhitbox_damagable',this);  
+         this.experienceGrant=10;   
         }
       display()
         {            
@@ -3117,6 +3137,7 @@ class Flower extends GeneralSprite
         {
          console.log("damage taken"); 
          SpawnClouds(this.position);
+         gameManager.player.experience+=this.experienceGrant;
          destroySelf(this.hit_box);
          destroySelf(this);
         }
@@ -3246,9 +3267,9 @@ function SpawnClouds(pos,n=60)
            // gameManager.performSpecTaskOnCollision(collidedObjType,this.damageCaused);
            if(collidedObjType.parent==this.parent) return;
            let arr=collidedObjType.sprite_type.split('_');          
-            if(arr.length>1 && arr[1]=='damagable')                               
+            if(arr.length>1 && arr[1]=='damagable')
                 collidedObjType.parent.takeDamage(this.damageCaused);                                 
-             
+           document.querySelector('#RockSmash').play();
            SpawnClouds(this.position);       
            destroySelf(this.hit_box);
            destroySelf(this);

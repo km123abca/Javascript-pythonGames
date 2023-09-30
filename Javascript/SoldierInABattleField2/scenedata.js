@@ -17,7 +17,14 @@ let scenes=[
                   {"sprite":"camstopper_left","x":312,"y":-200},
                   {"sprite":"camstopper_right","x":1012,"y":800},            
                   {"sprite":"scenechanger_scright","x":1350,"y":854},  
-                  {"sprite":"flower","x":419,"y":241,"width":50,"height":50},                  
+                  {"sprite":"flower","x":419,"y":241,"width":50,"height":50},    
+                  {"sprite":"flower","x":669,"y":322,"width":50,"height":50},  
+                  {"sprite":"flower","x":669,"y":-189,"width":50,"height":50},    
+                  {"sprite":"flower","x":1019,"y":-189,"width":50,"height":50},  
+                  {"sprite":"flower","x":907,"y":308,"width":50,"height":50},   
+                  {"sprite":"flower","x":557,"y":308,"width":50,"height":50},
+                  {"sprite":"flower","x":-6,"y":200,"width":50,"height":50}, 
+
             ],
 
             [  
