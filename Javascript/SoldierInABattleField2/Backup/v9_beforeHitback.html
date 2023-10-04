@@ -2534,14 +2534,14 @@ class Soldier
 
         
         
-        takeDamage(dmg,hitback)
+        takeDamage(dmg,dir=0)
             {   
                   
             if(this.invincibleState && !gameManager.playerDied) return false;
             // if(!gameManager.playerDied)
             // document.querySelector('#LossBuzz').play(); 
             this.invincibleState=true;      
-            this.acceleration.add(hitback);
+            this.acceleration.add(new CreateVector(dir,0));
             this.health-=dmg;
             console.log('player health:'+this.health);
             gameManager.playerHealthBar.updateValue(this.health);           
@@ -2750,7 +2750,7 @@ class GenericEnemy extends GenericMovable
         this.stateMachine();
         this.announceState();
      }
-     takeDamage(dmg,hitback){
+     takeDamage(){
         console.log("zombie reports damage");
      }
      announceState(){
@@ -2810,8 +2810,7 @@ class GenericEnemy extends GenericMovable
                              this.position.y,
                              40*xscale,40*yscale,
                              bulletOffset.x,bulletOffset.y,                             
-                             5,
-                             this.velocity.copy().normalized(),
+                             5,0,
                             [
                             gameManager.visible_sprites,
                             gameManager.active_sprites,
@@ -2945,12 +2944,6 @@ class Zombie extends GenericMovable
          this.strikeBoxSpawned=false;
 
          this.health=100;
-         this.enemyHealthBar= new UIBar(50,20,100,15,
-                                        this.health,this.health,
-                                        '#222222','#FF0000',
-                                        [gameManager.visible_sprites,gameManager.active_sprites],
-                                        false,0,-50*yscale,
-                                        this,'enemyHealth');
         }
      display(){
         super.display();
@@ -2960,10 +2953,8 @@ class Zombie extends GenericMovable
         this.stateMachine();
         this.announceState();
      }
-     takeDamage(dmg,hitback){
-        // console.log("zombie reports damage:"+dmg);
-        this.health-=dmg;
-        this.enemyHealthBar.updateValue(this.health);
+     takeDamage(dmg){
+        console.log("zombie reports damage:"+dmg);
      }
      announceState(){
         w2screen(this.state,
@@ -3279,7 +3270,7 @@ function SpawnClouds(pos,n=60)
            if(collidedObjType.parent==this.parent) return;
            let arr=collidedObjType.sprite_type.split('_');          
             if(arr.length>1 && arr[1]=='damagable')
-                collidedObjType.parent.takeDamage(this.damageCaused,this.velocity.normalized());                              
+                collidedObjType.parent.takeDamage(this.damageCaused);   //,this.velocity.normalized()                              
            document.querySelector('#RockSmash').play();
            SpawnClouds(this.position);       
            destroySelf(this.hit_box);
