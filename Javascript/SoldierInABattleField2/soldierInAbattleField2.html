@@ -2150,6 +2150,14 @@ class Soldier
          this.invin_count=0;
          this.max_invin_time=3000;
          this.flickerOut=true;
+
+         this.frictionConstant=0.05;
+        }
+
+     applyFriction()
+        {
+            let fricForce=this.velocity.copy().normalized().mult(-this.frictionConstant);
+            this.acceleration.add(fricForce);
         }
      setMaxHealth(newval)
         {
@@ -2421,6 +2429,7 @@ class Soldier
         {
          this.setGetMoving();
          this.moveToDestination();
+         this.applyFriction();
          this.velocity.add(this.acceleration);
          gameManager.applyVelocityRestrictions(this);
          this.acceleration.set(0,0);
@@ -2580,7 +2589,13 @@ class GenericMovable extends GeneralSprite
          this.sprite_type='generic';
          this.acceleration=new CreateVector(0,0);
          this.velocity=new CreateVector(0,0);
-         this.maxVelocity=10*xscale;         
+         this.maxVelocity=10*xscale; 
+         this.frictionConstant=0.1;        
+        }
+    applyFriction()
+        {
+            let fricForce=this.velocity.copy().normalized().mult(-this.frictionConstant);
+            this.acceleration.add(fricForce);
         }
     runAnimation()
         {
@@ -2663,6 +2678,7 @@ class GenericMovable extends GeneralSprite
             }
         move()
             {
+             this.applyFriction();
              this.velocity.add(this.acceleration);
              this.acceleration.set(0,0);
              this.applyVelocity();
@@ -2964,6 +2980,7 @@ class Zombie extends GenericMovable
         // console.log("zombie reports damage:"+dmg);
         this.health-=dmg;
         this.enemyHealthBar.updateValue(this.health);
+        this.acceleration.add(hitback);
      }
      announceState(){
         w2screen(this.state,
