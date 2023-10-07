@@ -49,10 +49,10 @@
            mCL.push(audioElem);
         }       
 
-        var musicList=[mCL[0],mCL[1]];
+        var musicList=[mCL[0],mCL[2]];
         var presentMusicIndex=0;
         //creating sound components start
-        var soundDivIds=['RockSmash','LossBuzz'];
+        var soundDivIds=['RockSmash','LossBuzz','fogGate'];
         var parentSoundDiv=document.getElementById("soundscontainer");
         for(let i in soundDivIds){            
         var audioElem=document.createElement("audio");
@@ -1021,8 +1021,9 @@ document.onmousedown = function(event) {
           this.camera_stop_sprites=[];
           this.enemy_sprites=[];
           this.hit_box_sprites=[];
+          this.gate_sprites=[];
           this.scenesReady=[];
-          this.scenesLoaded=[];
+          this.scenesLoaded=[];          
           this.tempCounter=0;
           this.player=null;
           this.playerDied=false;
@@ -1047,6 +1048,8 @@ document.onmousedown = function(event) {
 
           // new IndicatorObjs(300,300,'#00FF00','indicator',[this.visible_sprites]);
           // new Soldier(300,300,200*xscale,200*yscale,[this.visible_sprites]);
+          this.listOfDestroyedSprites=[];
+
           this.positionAdjuster=new PositionAdjuster(null,[this.visible_sprites,this.active_sprites]);
           }
         
@@ -1430,7 +1433,7 @@ document.onmousedown = function(event) {
                                elem['height']*yscale,
                                [this.visible_sprites]
                                );
-                else if(elem['sprite']=='zombie')
+                else if(elem['sprite']=='zombie' && this.listOfDestroyedSprites.indexOf(elem['sprite_id'])==-1)
                     new Zombie(elem['x']*xscale,
                                elem['y']*yscale,
                                elem['width']*xscale,
@@ -1440,6 +1443,14 @@ document.onmousedown = function(event) {
                                [this.visible_sprites,this.active_sprites,this.enemy_sprites],
                                elem['sprite_id']
                                );
+                else if(elem['sprite']=='gate')
+                    new Gate(elem['x']*xscale,
+                               elem['y']*yscale,
+                               elem['width']*xscale,
+                               elem['height']*yscale,
+                               elem['dirx'],
+                               [this.visible_sprites,this.active_sprites,this.gate_sprites]
+                            );
                 }
             this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');
             this.camera.tgt=this.camera_stop_sprites[this.sceneForward?0:1];
@@ -1875,6 +1886,9 @@ class ArrowButton extends GenericButton
             {            
              this.position= new CreateVector(x,y);           
              this.hitboxOffset= new CreateVector(hitboxoffsetx,hitboxoffsety);
+             // this.hit_box=new HitBox(x,y,this.width*0.9,this.height*0.9,
+             //                     [gameManager.collission_sprites],
+             //                     'generichitbox',this);
              this.width = wid * xscale;
              this.height = hei * yscale;
              this.onScreen=true;
@@ -1884,6 +1898,7 @@ class ArrowButton extends GenericButton
              this.spriteGroups= spriteGroups; 
              for(let x of this.spriteGroups)
                 x.push(this);
+
             }
         display()
             {            
@@ -1899,6 +1914,49 @@ class ArrowButton extends GenericButton
             {
              return true;
             }
+         
+        }
+    
+    let GATE=LoadImagex(sprite_folder,'gate.png');
+    class Gate extends GeneralSprite
+        {
+        constructor(x,y,wid,hei,dirx,spriteGroups)
+            {
+            super(x,y,wid,hei,0,0,spriteGroups)
+            this.dirx=dirx=="down"?1:-1;
+            this.imagex= GATE;
+            this.sprite_type='enemygate';
+            this.hit_box=new HitBox(x,y,this.width*0.9,this.height*0.9,
+                                 [gameManager.collission_sprites],
+                                 'gatehitbox',this);
+            // this.hit_box.sprite_type='gatehitbox';
+            this.maxVelocity=1*xscale;
+            this.velocity=new CreateVector(0,this.dirx*this.maxVelocity);
+            this.acceleration=new CreateVector(0,0);
+            this.birthTime=gameManager.runningClock;
+            this.maxMoveTime=3350;
+            this.activated=false;
+            }
+        destroyGate(){
+            console.log('gate destroyed');
+            SpawnClouds(this.position);
+            destroySelf(this);
+            destroySelf(this.hit_box);
+        }
+        update(){
+            
+            if(!this.activated || gameManager.runningClock - this.birthTime > this.maxMoveTime) return;
+            gameManager.applyVelocity(this);
+            gameManager.update_and_display_hitbox(this,true);
+         }
+        activateGate(){
+            this.activated=true;
+            this.birthTime=gameManager.runningClock;
+        }
+        performSpecTaskOnCollision(){
+            return;
+        }
+
         }
 //4. position adjuster start
     //positionAdjuster start
@@ -2131,7 +2189,7 @@ class Soldier
          //ends
          this.maxEnergy=100;
          this.energy=this.maxEnergy;
-         this.listOfDestroyedSprites=[];
+         
          gameManager.playerHealthBar.setValues(this.health,this.maxHealth,this);
          gameManager.playerEnergyBar.setValues(this.energy,this.maxEnergy,this);
 
@@ -2153,7 +2211,9 @@ class Soldier
 
          this.frictionConstant=0.05;
         }
-
+     giveExp(exp){
+        this.experience+=exp;
+     }
      applyFriction()
         {
             let fricForce=this.velocity.copy().normalized().mult(-this.frictionConstant);
@@ -2552,13 +2612,13 @@ class Soldier
             this.invincibleState=true;      
             this.acceleration.add(hitback);
             this.health-=dmg;
-            console.log('player health:'+this.health);
+            // console.log('player health:'+this.health);
             gameManager.playerHealthBar.updateValue(this.health);           
             if(this.health<=0)
                 {
                 // if(gameManager.playerDied) document.querySelector('#LossBuzz').play();  
                 this.health=0;
-                console.log('destroyed');
+                // console.log('destroyed');
                 SpawnClouds(this.position);             
                 destroySelf(this.hit_box);
                 destroySelf(this);              
@@ -2934,6 +2994,7 @@ class Zombie extends GenericMovable
         {
          super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
          this.sprite_id=sprite_id; //sprite_id uniquely identifies this sprite
+
          this.sprite_type='zombie';
          this.hit_box.sprite_type='zombiehitbox_damagable';
          this.animations={
@@ -2959,7 +3020,7 @@ class Zombie extends GenericMovable
          this.longAttacks=['farstrike'];
          this.shortAttacks=['strike'];  
          this.strikeBoxSpawned=false;
-
+         this.expVal=50;
          this.health=100;
          this.enemyHealthBar= new UIBar(50,20,100,15,
                                         this.health,this.health,
@@ -2967,6 +3028,7 @@ class Zombie extends GenericMovable
                                         [gameManager.visible_sprites,gameManager.active_sprites],
                                         false,0,-50*yscale,
                                         this,'enemyHealth');
+         this.health=3;
         }
      display(){
         super.display();
@@ -2981,6 +3043,23 @@ class Zombie extends GenericMovable
         this.health-=dmg;
         this.enemyHealthBar.updateValue(this.health);
         this.acceleration.add(hitback);
+        if(this.health<=0){
+            SpawnClouds(this.position);
+            gameManager.player.giveExp(this.expVal);
+            SpawnClouds(this.position);
+            destroySelf(this);
+            destroySelf(this.hit_box);
+            destroySelf(this.enemyHealthBar);
+            gameManager.listOfDestroyedSprites.push(this.sprite_id);
+            // console.log(JSON.stringify(gameManager.listOfDestroyedSprites));
+            document.querySelector('#fogGate').play();
+            let gates=[];
+            for(let g of gameManager.gate_sprites) gates.push(g);
+            for(let g of gates){
+                g.destroyGate();
+            }
+            gates=[];
+        }
      }
      announceState(){
         w2screen(this.state,
@@ -3123,6 +3202,7 @@ class Zombie extends GenericMovable
      }
 
      MakeDramaticAppearance(){
+        for(let g of gameManager.gate_sprites) g.activateGate();        
         this.onScreen=true;
         SpawnClouds(this.position);
      }

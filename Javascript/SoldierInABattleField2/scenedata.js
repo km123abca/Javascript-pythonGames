@@ -45,7 +45,9 @@ let scenes=[
                    "hitboxoffsetx":0,"hitboxoffsety":0,"isHori":false},
                    {"sprite":"zombie","x":326,"y":395,"width":140 ,"height":140,
                     "offsetx":0,"offsety":0, "sprite_id":"zombie1"},  
-                  {"sprite":"flower","x":126,"y":595,"width":50,"height":50},                                
+                  {"sprite":"flower","x":126,"y":595,"width":50,"height":50}, 
+                  {"sprite":"gate","x":-126,"y":500,"width":50,"height":200,"dirx":"up"},  
+                  {"sprite":"gate","x":787,"y":340,"width":50,"height":200,"dirx":"down"},                     
             ],
             [  
                   {"sprite":"scenechanger_scleft","x":-300,"y":300},   
