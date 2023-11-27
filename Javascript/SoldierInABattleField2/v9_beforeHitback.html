@@ -36,8 +36,7 @@
         var musicContainer=document.querySelector('#musicContainer');
         var musicFilesList=['techno_bg_music.mp3',
                             'Hollow Knight OST - Greenpath.mp3',
-                            'Nils_Frahm_Says.mp3',
-                            'Capra.mp3'];
+                            'Nils_Frahm_Says.mp3'];
         var mCL=[];
         for(let i in musicFilesList){
            var audioElem=document.createElement("audio");
@@ -53,7 +52,7 @@
         var musicList=[mCL[0],mCL[1]];
         var presentMusicIndex=0;
         //creating sound components start
-        var soundDivIds=['RockSmash','LossBuzz','fogGate'];
+        var soundDivIds=['RockSmash','LossBuzz'];
         var parentSoundDiv=document.getElementById("soundscontainer");
         for(let i in soundDivIds){            
         var audioElem=document.createElement("audio");
@@ -498,8 +497,6 @@
     canvas.height = window.innerHeight-100;    
     let xscale=canvas.width/931;
     let yscale=canvas.height/561;
-    xscale=1;
-    yscale=1;
     var resize = function () 
         {
         canvas.width = window.innerWidth-35;
@@ -799,8 +796,7 @@ document.onmousedown = function(event) {
           }
         causeDamage(go)
             {
-              document.querySelector('#RockSmash').play();
-              go.takeDamage(this.dmg,this.hitback);
+              go.takeDamage(this.dmg,this.hitback);             
               destroySelf(this);
               SpawnClouds(this.position);            
             }
@@ -1025,9 +1021,8 @@ document.onmousedown = function(event) {
           this.camera_stop_sprites=[];
           this.enemy_sprites=[];
           this.hit_box_sprites=[];
-          this.gate_sprites=[];
           this.scenesReady=[];
-          this.scenesLoaded=[];          
+          this.scenesLoaded=[];
           this.tempCounter=0;
           this.player=null;
           this.playerDied=false;
@@ -1052,18 +1047,10 @@ document.onmousedown = function(event) {
 
           // new IndicatorObjs(300,300,'#00FF00','indicator',[this.visible_sprites]);
           // new Soldier(300,300,200*xscale,200*yscale,[this.visible_sprites]);
-          this.listOfDestroyedSprites=[];
-
           this.positionAdjuster=new PositionAdjuster(null,[this.visible_sprites,this.active_sprites]);
           }
         
-          checkPlayerExistence()
-            {            
-             if(this.playerDiedClock ==0) return false;
-             w2screen("Game Over",300*xscale,400*yscale,'#FF0000',80);
-             if(this.runningClock - this.playerDiedClock > 1500)
-                window.location.href="./soldierInAbattleField2.html";
-            }
+          
           detectMouseClicks()
             {
 
@@ -1107,7 +1094,7 @@ document.onmousedown = function(event) {
              this.levelUpBox.display();
             }
           runGame()
-            {             
+            {
              const [hori,vert]=this.camChecker();
              if(!this.followMouse)
                  {               
@@ -1120,7 +1107,6 @@ document.onmousedown = function(event) {
                     else
                      this.camera.runWithMouse();
                  }
-             if(!this.gamePaused)   this.checkPlayerExistence();
              for(let sprite of this.visible_sprites)
                 {                                              
                 sprite.display();
@@ -1133,7 +1119,6 @@ document.onmousedown = function(event) {
              else
                 {
                  gameManager.positionAdjuster.update();
-                 // gameManager.followMouse=true; //enable this if you want to inspect something while on pause
                 }
 
              for(let hb of this.hit_box_sprites)
@@ -1231,7 +1216,7 @@ document.onmousedown = function(event) {
              for(let k in gameManager.collission_sprites)
                 { 
                  let x=gameManager.collission_sprites[k];
-                 if(!x.onScreen ) continue;
+                 if(!x.onScreen) continue;
                  if(x==movingObj || x==movingObj.hit_box) continue; 
                                 
                  if(b_collision(movingObj.hit_box,x)) 
@@ -1445,7 +1430,7 @@ document.onmousedown = function(event) {
                                elem['height']*yscale,
                                [this.visible_sprites]
                                );
-                else if(elem['sprite']=='zombie' && this.listOfDestroyedSprites.indexOf(elem['sprite_id'])==-1)
+                else if(elem['sprite']=='zombie')
                     new Zombie(elem['x']*xscale,
                                elem['y']*yscale,
                                elem['width']*xscale,
@@ -1455,14 +1440,6 @@ document.onmousedown = function(event) {
                                [this.visible_sprites,this.active_sprites,this.enemy_sprites],
                                elem['sprite_id']
                                );
-                else if(elem['sprite']=='gate')
-                    new Gate(elem['x']*xscale,
-                               elem['y']*yscale,
-                               elem['width']*xscale,
-                               elem['height']*yscale,
-                               elem['dirx'],
-                               [this.visible_sprites,this.active_sprites,this.gate_sprites]
-                            );
                 }
             this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');
             this.camera.tgt=this.camera_stop_sprites[this.sceneForward?0:1];
@@ -1892,16 +1869,12 @@ class ArrowButton extends GenericButton
 
     let sprite_folder="../../Python/TopDownBossFight1/sprites";
     let WHITECLOUD=LoadImagex(sprite_folder,'cloud-1.png');
-    let DARKCLOUD=LoadImagex(sprite_folder,'cloud-1dark.png');
     class GeneralSprite
         {
         constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups)
             {            
              this.position= new CreateVector(x,y);           
              this.hitboxOffset= new CreateVector(hitboxoffsetx,hitboxoffsety);
-             // this.hit_box=new HitBox(x,y,this.width*0.9,this.height*0.9,
-             //                     [gameManager.collission_sprites],
-             //                     'generichitbox',this);
              this.width = wid * xscale;
              this.height = hei * yscale;
              this.onScreen=true;
@@ -1911,7 +1884,6 @@ class ArrowButton extends GenericButton
              this.spriteGroups= spriteGroups; 
              for(let x of this.spriteGroups)
                 x.push(this);
-
             }
         display()
             {            
@@ -1927,49 +1899,6 @@ class ArrowButton extends GenericButton
             {
              return true;
             }
-         
-        }
-    
-    let GATE=LoadImagex(sprite_folder,'gate.png');
-    class Gate extends GeneralSprite
-        {
-        constructor(x,y,wid,hei,dirx,spriteGroups)
-            {
-            super(x,y,wid,hei,0,0,spriteGroups)
-            this.dirx=dirx=="down"?1:-1;
-            this.imagex= GATE;
-            this.sprite_type='enemygate';
-            this.hit_box=new HitBox(x,y,this.width*0.9,this.height*0.9,
-                                 [gameManager.collission_sprites],
-                                 'gatehitbox',this);
-            // this.hit_box.sprite_type='gatehitbox';
-            this.maxVelocity=1*xscale;
-            this.velocity=new CreateVector(0,this.dirx*this.maxVelocity);
-            this.acceleration=new CreateVector(0,0);
-            this.birthTime=gameManager.runningClock;
-            this.maxMoveTime=3350;
-            this.activated=false;
-            }
-        destroyGate(){
-            console.log('gate destroyed');
-            SpawnClouds(this.position);
-            destroySelf(this);
-            destroySelf(this.hit_box);
-        }
-        update(){
-            
-            if(!this.activated || gameManager.runningClock - this.birthTime > this.maxMoveTime) return;
-            gameManager.applyVelocity(this);
-            gameManager.update_and_display_hitbox(this);//giving true as second argument shows the hitbox
-         }
-        activateGate(){
-            this.activated=true;
-            this.birthTime=gameManager.runningClock;
-        }
-        performSpecTaskOnCollision(){
-            return;
-        }
-
         }
 //4. position adjuster start
     //positionAdjuster start
@@ -2202,7 +2131,7 @@ class Soldier
          //ends
          this.maxEnergy=100;
          this.energy=this.maxEnergy;
-         
+         this.listOfDestroyedSprites=[];
          gameManager.playerHealthBar.setValues(this.health,this.maxHealth,this);
          gameManager.playerEnergyBar.setValues(this.energy,this.maxEnergy,this);
 
@@ -2221,16 +2150,6 @@ class Soldier
          this.invin_count=0;
          this.max_invin_time=3000;
          this.flickerOut=true;
-
-         this.frictionConstant=0.05;
-        }
-     giveExp(exp){
-        this.experience+=exp;
-     }
-     applyFriction()
-        {
-            let fricForce=this.velocity.copy().normalized().mult(-this.frictionConstant);
-            this.acceleration.add(fricForce);
         }
      setMaxHealth(newval)
         {
@@ -2502,7 +2421,6 @@ class Soldier
         {
          this.setGetMoving();
          this.moveToDestination();
-         this.applyFriction();
          this.velocity.add(this.acceleration);
          gameManager.applyVelocityRestrictions(this);
          this.acceleration.set(0,0);
@@ -2616,30 +2534,29 @@ class Soldier
 
         
         
-        takeDamage(dmg,hitback)
+        takeDamage(dmg,dir=0)
             {   
                   
             if(this.invincibleState && !gameManager.playerDied) return false;
             // if(!gameManager.playerDied)
             // document.querySelector('#LossBuzz').play(); 
             this.invincibleState=true;      
-            this.acceleration.add(hitback);
+            this.acceleration.add(new CreateVector(dir,0));
             this.health-=dmg;
-            // console.log('player health:'+this.health);
+            console.log('player health:'+this.health);
             gameManager.playerHealthBar.updateValue(this.health);           
             if(this.health<=0)
                 {
                 // if(gameManager.playerDied) document.querySelector('#LossBuzz').play();  
                 this.health=0;
-                // console.log('destroyed');
+                console.log('destroyed');
                 SpawnClouds(this.position);             
                 destroySelf(this.hit_box);
                 destroySelf(this);              
-                this.isActive=false;                
+                this.isActive=false;
                 gameManager.player=null;
                 gameManager.playerDied=true;                
-                gameManager.playerDiedClock= gameManager.runningClock;  
-                document.querySelector('#LossBuzz').play();                            
+                gameManager.playerDiedClock= gameManager.runningClock;                              
                 }
             }
 
@@ -2663,13 +2580,7 @@ class GenericMovable extends GeneralSprite
          this.sprite_type='generic';
          this.acceleration=new CreateVector(0,0);
          this.velocity=new CreateVector(0,0);
-         this.maxVelocity=10*xscale; 
-         this.frictionConstant=0.1;        
-        }
-    applyFriction()
-        {
-            let fricForce=this.velocity.copy().normalized().mult(-this.frictionConstant);
-            this.acceleration.add(fricForce);
+         this.maxVelocity=10*xscale;         
         }
     runAnimation()
         {
@@ -2694,8 +2605,7 @@ class GenericMovable extends GeneralSprite
             }
         }
     applyVelocity()
-            {    
-             if(!this.onScreen) return;                
+            {                    
              this.hit_box.position.x+=this.velocity.x;         
              for(let k in gameManager.collission_sprites)
                 { 
@@ -2741,9 +2651,6 @@ class GenericMovable extends GeneralSprite
                     }
                 }
             }
-         performSpecTaskOnCollision(){
-            return false;
-         }
          applyVelocityRestrictions()
             {
             if(this.velocity.mag() < this.maxVelocity) return;
@@ -2756,7 +2663,6 @@ class GenericMovable extends GeneralSprite
             }
         move()
             {
-             this.applyFriction();
              this.velocity.add(this.acceleration);
              this.acceleration.set(0,0);
              this.applyVelocity();
@@ -2844,7 +2750,7 @@ class GenericEnemy extends GenericMovable
         this.stateMachine();
         this.announceState();
      }
-     takeDamage(dmg,hitback){
+     takeDamage(){
         console.log("zombie reports damage");
      }
      announceState(){
@@ -2904,8 +2810,7 @@ class GenericEnemy extends GenericMovable
                              this.position.y,
                              40*xscale,40*yscale,
                              bulletOffset.x,bulletOffset.y,                             
-                             5,
-                             this.velocity.copy().normalized(),
+                             5,0,
                             [
                             gameManager.visible_sprites,
                             gameManager.active_sprites,
@@ -2944,7 +2849,6 @@ class GenericEnemy extends GenericMovable
             this.fireBallSpawned=false;
             return true;
         }
-        this.FaceEnemy();
         if(!this.fireBallSpawned && this.animation=="attack" && parseInt(this.animationFrame)==6)
             {
             this.ZombieShoot();
@@ -2977,7 +2881,6 @@ class GenericEnemy extends GenericMovable
      }
 
      FaceEnemy(){
-       
         let enemyDir=gameManager.player.position.copy().sub(this.position);
         this.angle=AngleLerp(this.angle,enemyDir.heading(),9);
      }
@@ -3014,7 +2917,6 @@ class Zombie extends GenericMovable
         {
          super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
          this.sprite_id=sprite_id; //sprite_id uniquely identifies this sprite
-
          this.sprite_type='zombie';
          this.hit_box.sprite_type='zombiehitbox_damagable';
          this.animations={
@@ -3026,13 +2928,6 @@ class Zombie extends GenericMovable
          this.animationSizeMults={'idle':[1,1],'move':[1,1],'attack':[1.4,1.4]};
          this.animation='idle';           
          this.state='idle'; 
-         //zombie will have a default move velocity, in certain circumstances it will have an enchanced velocity
-         this.maxVeloctiy_normal=10*xscale;
-         this.maxVeloctiy_dashing=30*xscale;
-         this.maxVeloctiy=this.maxVeloctiy_normal;
-         this.stopGrabDistance=80*xscale;
-
-
          this.enemyDetectDistance=200*xscale;
          this.nearAttackDistance=120*xscale;
          this.farAttackDistance=250*xscale; 
@@ -3041,25 +2936,14 @@ class Zombie extends GenericMovable
          this.maxFarAttackTimeGap=2000;
          this.maxCloseAttackTimeGap=2000;
          this.onScreen=false; 
-         this.maxStrikeTime=4000; 
+         this.maxStrikeTime=2000; 
          this.bulletOffset=new CreateVector(60*xscale,10*yscale); 
 
-         this.longAttacks=['farstrike','movein'];//farstrike
+         this.longAttacks=['farstrike'];
          this.shortAttacks=['strike'];  
          this.strikeBoxSpawned=false;
-         this.expVal=50;
+
          this.health=100;
-         this.enemyHealthBar= new UIBar(50,20,100,15,
-                                        this.health,this.health,
-                                        '#222222','#FF0000',
-                                        [gameManager.visible_sprites,gameManager.active_sprites],
-                                        false,0,-50*yscale,
-                                        this,'enemyHealth');
-         // this.health=3;
-         // this.hit_box.onScreen=false;
-         this.waitBeforeFarStrike=2000;
-         this.smokeCountBeforeFarStrike=3; 
-         this.enemyDirForMoveIn=new CreateVector(1,0);
         }
      display(){
         super.display();
@@ -3069,33 +2953,8 @@ class Zombie extends GenericMovable
         this.stateMachine();
         this.announceState();
      }
-     takeDamage(dmg,hitback){
-        // console.log("zombie reports damage:"+dmg);
-
-        this.health-=dmg;
-        this.enemyHealthBar.updateValue(this.health);
-        this.acceleration.add(hitback);
-        if(this.health<=0){
-            SpawnClouds(this.position);
-            gameManager.player.giveExp(this.expVal);
-            SpawnClouds(this.position);
-            destroySelf(this);
-            destroySelf(this.hit_box);
-            destroySelf(this.enemyHealthBar);
-            gameManager.listOfDestroyedSprites.push(this.sprite_id);
-            // console.log(JSON.stringify(gameManager.listOfDestroyedSprites));
-            document.querySelector('#fogGate').play();
-            let gates=[];
-            for(let g of gameManager.gate_sprites) gates.push(g);
-            for(let g of gates){
-                g.destroyGate();
-            }
-
-            gates=[];
-            musicList[presentMusicIndex]=mCL[1];
-            pauseMusic();
-            startMusic();
-        }
+     takeDamage(dmg){
+        console.log("zombie reports damage:"+dmg);
      }
      announceState(){
         w2screen(this.state,
@@ -3116,9 +2975,6 @@ class Zombie extends GenericMovable
             case 'farstrike':
              this.FarStrike();
              break;
-            case 'movein':
-             this.Move_In();
-             break;
             default:
               console.log('undefined state');
               break;
@@ -3134,31 +2990,6 @@ class Zombie extends GenericMovable
             this.state='agro';
             }
         return false;
-     }
-     Move_In(){
-       
-        if(gameManager.runningClock - this.lastFarAttackTime < this.waitBeforeFarStrike){
-            if(this.smokeCountBeforeFarStrike<2)
-            {
-                this.smokeCountBeforeFarStrike+=1;
-                SpawnClouds(this.position,40,"dark");
-            }
-            if(gameManager.runningClock - this.lastFarAttackTime < this.waitBeforeFarStrike/3)
-            this.FaceEnemy();
-            this.enemyDirForMoveIn=gameManager.player.position.copy().sub(this.position);            
-            return;
-        }
-        
-        this.maxVelocity=this.maxVeloctiy_dashing;
-        // let enemyDir=gameManager.player.position.copy().sub(this.position);
-        this.acceleration.add(this.enemyDirForMoveIn.normalized().mult(2));
-        if(gameManager.player.position.copy().sub(this.position).mag() < this.stopGrabDistance){
-            this.maxVelocity=this.maxVeloctiy_normal;
-            this.velocity.set(0,0);
-            this.acceleration.set(0,0);
-            this.state='agro';
-        }
-
      }
      Agro_Actions(){
          this.changeAnimation('idle');
@@ -3178,13 +3009,12 @@ class Zombie extends GenericMovable
         let bulletOffset=this.bulletOffset.copy().rotateByAngle(this.angle); 
         if(!this.strikeBoxSpawned && this.animation=="attack" && parseInt(this.animationFrame)==2)
             {
-            let hitback=new CreateVector(1,0);
-            hitback.pointToAngle(this.angle).mult(2);
+
             new DamageHitBox(this.position.x,
                              this.position.y,
                              40*xscale,40*yscale,
                              bulletOffset.x,bulletOffset.y,                             
-                             40,hitback,
+                             5,0,
                             [
                             // gameManager.visible_sprites,
                             gameManager.active_sprites,
@@ -3192,7 +3022,6 @@ class Zombie extends GenericMovable
                            ],
                              "enemy_damagebox",this
                             );
-            
             this.strikeBoxSpawned=true;
             }
         this.changeAnimation('attack');
@@ -3211,27 +3040,19 @@ class Zombie extends GenericMovable
                        tgtPoint,
                        [gameManager.visible_sprites,gameManager.active_sprites]
                        ); 
-        fb.rotAngle=this.angle;        
+        fb.rotAngle=this.angle;
+        
         
         }   
-       
+
      FarStrike(){
-        if(gameManager.runningClock - this.lastFarAttackTime < this.waitBeforeFarStrike){
-            if(this.smokeCountBeforeFarStrike<4)
-            {
-                this.smokeCountBeforeFarStrike+=1;
-                SpawnClouds(this.position);
-            }
-            return;
-        }
+        
         if(gameManager.runningClock - this.lastFarAttackTime > this.maxStrikeTime){                     
             this.state='agro';
             this.lastFarAttackTime=gameManager.runningClock;
             this.fireBallSpawned=false;
-            this.smokeCountBeforeFarStrike=0;
             return true;
         }
-        this.FaceEnemy();
         if(!this.fireBallSpawned && this.animation=="attack" && parseInt(this.animationFrame)==6)
             {
             this.ZombieShoot();
@@ -3264,7 +3085,6 @@ class Zombie extends GenericMovable
      }
 
      FaceEnemy(){
-        if(!gameManager.player.isActive) return false;
         let enemyDir=gameManager.player.position.copy().sub(this.position);
         this.angle=AngleLerp(this.angle,enemyDir.heading(),9);
      }
@@ -3277,13 +3097,8 @@ class Zombie extends GenericMovable
      }
 
      MakeDramaticAppearance(){
-        for(let g of gameManager.gate_sprites) g.activateGate();        
         this.onScreen=true;
-        this.hit_box.onScreen=true;
         SpawnClouds(this.position);
-        musicList[presentMusicIndex]=mCL[3];
-        pauseMusic();
-        startMusic();
      }
 
     } 
@@ -3334,16 +3149,13 @@ class Flower extends GeneralSprite
 //cloud burst
     class CloudBurst
         {
-         constructor(x,y,spriteGroups,cloudType="white")
+         constructor(x,y,spriteGroups)
             {
              this.position = new CreateVector(x,y);
              this.width= 15 * xscale;
              this.sprite_type='cloud';
              this.height= 15 * yscale;
-             if(cloudType=="white")
-                this.imagex= WHITECLOUD;
-             else
-                this.imagex= DARKCLOUD;
+             this.imagex= WHITECLOUD;
              this.onScreen=true;
              this.isActive=true;
              this.spriteGroups=spriteGroups;
@@ -3376,10 +3188,10 @@ class Flower extends GeneralSprite
              this.position.add(this.velocity);
             }
         }
-function SpawnClouds(pos,n=60,cloudtype="white")
+function SpawnClouds(pos,n=60)
     {
      for(let i=0;i<n;i++)
-        new CloudBurst(pos.x,pos.y,[gameManager.visible_sprites,gameManager.active_sprites],cloudtype);
+        new CloudBurst(pos.x,pos.y,[gameManager.visible_sprites,gameManager.active_sprites]);
     }
 //cloud burst ends
 //projectile image load
@@ -3406,7 +3218,7 @@ function SpawnClouds(pos,n=60,cloudtype="white")
 
           this.hit_box=new HitBox(x,y,this.width*0.5,this.height,
                                  [gameManager.collission_sprites],
-                                 'projectilehitbox',this);
+                                 'projectilehitbox');
           this.birthTime= gameManager.runningClock;
           this.sprite_type='projectile';
           for(let x of this.spriteGroups) x.push(this);
@@ -3455,10 +3267,10 @@ function SpawnClouds(pos,n=60,cloudtype="white")
         {
            
            // gameManager.performSpecTaskOnCollision(collidedObjType,this.damageCaused);
-           if(collidedObjType.parent==this.parent || !collidedObjType.parent.onScreen ) return;
+           if(collidedObjType.parent==this.parent) return;
            let arr=collidedObjType.sprite_type.split('_');          
             if(arr.length>1 && arr[1]=='damagable')
-                collidedObjType.parent.takeDamage(this.damageCaused,this.velocity.normalized());                              
+                collidedObjType.parent.takeDamage(this.damageCaused);   //,this.velocity.normalized()                              
            document.querySelector('#RockSmash').play();
            SpawnClouds(this.position);       
            destroySelf(this.hit_box);
@@ -3492,7 +3304,7 @@ function SpawnClouds(pos,n=60,cloudtype="white")
               this.hit_box_height=isHori?this.height*0.85:this.height;
               this.hit_box=new HitBox(x,y,this.hit_box_width,this.hit_box_height,
                                  [gameManager.collission_sprites],
-                                 'pipehitbox',this);
+                                 'pipehitbox');
               if(isHori)
                 this.imagex=HORIZONTALWALL;
               else
