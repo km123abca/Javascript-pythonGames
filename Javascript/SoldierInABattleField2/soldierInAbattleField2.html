@@ -498,8 +498,8 @@
     canvas.height = window.innerHeight-100;    
     let xscale=canvas.width/931;
     let yscale=canvas.height/561;
-    xscale=1;
-    yscale=1;
+    // xscale=1;
+    // yscale=1;
     var resize = function () 
         {
         canvas.width = window.innerWidth-35;
@@ -3027,7 +3027,7 @@ class Zombie extends GenericMovable
          this.animation='idle';           
          this.state='idle'; 
          //zombie will have a default move velocity, in certain circumstances it will have an enchanced velocity
-         this.maxVeloctiy_normal=10*xscale;
+         this.maxVeloctiy_normal=6*xscale;
          this.maxVeloctiy_dashing=30*xscale;
          this.maxVeloctiy=this.maxVeloctiy_normal;
          this.stopGrabDistance=80*xscale;
@@ -3042,9 +3042,10 @@ class Zombie extends GenericMovable
          this.maxCloseAttackTimeGap=2000;
          this.onScreen=false; 
          this.maxStrikeTime=4000; 
+         this.maxTimeEngagedInMoveIn=4000;
          this.bulletOffset=new CreateVector(60*xscale,10*yscale); 
 
-         this.longAttacks=['farstrike','movein'];//farstrike
+         this.longAttacks=['runin','runin','runin','farstrike','movein'];//farstrike
          this.shortAttacks=['strike'];  
          this.strikeBoxSpawned=false;
          this.expVal=50;
@@ -3119,6 +3120,9 @@ class Zombie extends GenericMovable
             case 'movein':
              this.Move_In();
              break;
+            case 'runin':
+             this.Run_In();
+             break;
             default:
               console.log('undefined state');
               break;
@@ -3152,13 +3156,33 @@ class Zombie extends GenericMovable
         this.maxVelocity=this.maxVeloctiy_dashing;
         // let enemyDir=gameManager.player.position.copy().sub(this.position);
         this.acceleration.add(this.enemyDirForMoveIn.normalized().mult(2));
-        if(gameManager.player.position.copy().sub(this.position).mag() < this.stopGrabDistance){
+
+        if((gameManager.player.position.copy().sub(this.position).mag() < this.stopGrabDistance)||
+            (gameManager.runningClock - this.lastFarAttackTime > this.maxTimeEngagedInMoveIn )
+            ){
             this.maxVelocity=this.maxVeloctiy_normal;
             this.velocity.set(0,0);
             this.acceleration.set(0,0);
             this.state='agro';
         }
 
+     }
+     Run_In(){      
+        this.FaceEnemy();
+        this.enemyDirForMoveIn=gameManager.player.position.copy().sub(this.position);        
+        // this.maxVelocity=this.maxVeloctiy_dashing;        
+        this.acceleration.add(this.enemyDirForMoveIn.normalized().mult(2));
+
+        if((gameManager.player.position.copy().sub(this.position).mag() < this.stopGrabDistance)||
+            (gameManager.runningClock - this.lastFarAttackTime > this.maxTimeEngagedInMoveIn )
+            ){
+            // this.maxVelocity=this.maxVeloctiy_normal;
+            this.velocity.set(0,0);
+            this.acceleration.set(0,0);
+            this.changeAnimation('idle');
+            this.state='agro';
+        }
+        this.changeAnimation('move');
      }
      Agro_Actions(){
          this.changeAnimation('idle');
@@ -3186,7 +3210,7 @@ class Zombie extends GenericMovable
                              bulletOffset.x,bulletOffset.y,                             
                              40,hitback,
                             [
-                            // gameManager.visible_sprites,
+                            gameManager.visible_sprites,
                             gameManager.active_sprites,
                             gameManager.hit_box_sprites
                            ],
