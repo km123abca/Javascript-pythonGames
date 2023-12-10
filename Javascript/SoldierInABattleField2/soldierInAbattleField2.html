@@ -1231,13 +1231,14 @@ document.onmousedown = function(event) {
              for(let k in gameManager.collission_sprites)
                 { 
                  let x=gameManager.collission_sprites[k];
-                 if(!x.onScreen ) continue;
+
+                 if( !x.parent.onScreen || !x.onScreen  ) continue;
                  if(x==movingObj || x==movingObj.hit_box) continue; 
-                                
+                            
                  if(b_collision(movingObj.hit_box,x)) 
                     {  
                     
-                    movingObj.performSpecTaskOnCollision(x);                           
+                    movingObj.performSpecTaskOnCollision(x);                                           
                     // console.log('collision with '+x.sprite_type);         
                      if(movingObj.velocity.x > 0)
                         {                    
@@ -1253,14 +1254,13 @@ document.onmousedown = function(event) {
              movingObj.hit_box.position.y+=movingObj.velocity.y;           
              for(let x of gameManager.collission_sprites)
                 {
-                 if(!x.onScreen) continue;
+                 if( !x.parent.onScreen || !x.onScreen  ) continue;
                  if(x==movingObj || x==movingObj.hit_box) continue;                
                  if(b_collision(movingObj.hit_box,x)) 
                     {
                     
-                        movingObj.performSpecTaskOnCollision(x);  
-                         
-                    // console.log('collision with '+x.sprite_type);
+                        movingObj.performSpecTaskOnCollision(x);                        
+                    
                     if(movingObj.velocity.y > 0)
                         {
                         movingObj.hit_box.position.y=x.position.y-x.height/2-movingObj.hit_box.height/2-2;                        
@@ -1893,6 +1893,7 @@ class ArrowButton extends GenericButton
     let sprite_folder="../../Python/TopDownBossFight1/sprites";
     let WHITECLOUD=LoadImagex(sprite_folder,'cloud-1.png');
     let DARKCLOUD=LoadImagex(sprite_folder,'cloud-1dark.png');
+    let GREENRIM=LoadImagex(sprite_folder,'GreenRim.png');
     class GeneralSprite
         {
         constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups)
@@ -1929,6 +1930,69 @@ class ArrowButton extends GenericButton
             }
          
         }
+
+    class KillerCircle extends GeneralSprite
+        {
+          constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups,parent)
+            {
+             super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
+             this.parent=parent;
+             this.sprite_type="killerCircle";
+             this.maxWidth=this.width*4;
+             this.maxHeight=this.height*4;
+             this.minWidth=this.width*2;
+             this.minHeight=this.height*2;
+             this.rateOfExpansion=4;
+             this.reversing=false;
+             this.imagex=GREENRIM;    
+             this.colorx='#FFFF00';  
+            }
+           update()
+            {
+                this.checkDamage();
+                this.width+=this.rateOfExpansion;
+                this.height+=this.rateOfExpansion;
+                if(this.width > this.maxWidth && !this.reversing)
+                    {
+                    this.reversing=true;
+                    this.rateOfExpansion*=-1;
+                    }
+                if(this.width< this.minWidth && this.reversing)
+                    {                     
+                     this.parent.InformAboutCircleEnd();
+                     destroySelf(this);
+                    }
+            }
+            checkDamage()
+            {                
+                if(!this.reversing) return;
+                if(this.width-10<this.minWidth)
+                    this.colorx='#00FF00';
+                let playerSep=gameManager.player.position.copy().sub(this.position);
+                if(Math.floor(playerSep.mag())==Math.floor(this.width/2))
+                {
+                SpawnClouds(gameManager.player.position,120,'dark');
+                   gameManager.player.takeDamage(10,playerSep.normalized().mult(-3));
+                   this.parent.InformAboutCircleEnd();
+                   destroySelf(this); 
+                }
+            }
+            display()
+             {
+             ctx.save();
+             ctx.translate(this.position.x-gameManager.camera.position.x,
+                           this.position.y-gameManager.camera.position.y);
+             // ctx.fillStyle=this.presentColor;//#ccccb3
+             ctx.strokeStyle=this.colorx;
+             ctx.lineWidth=20;
+             ctx.beginPath();            
+             ctx.ellipse(0,0,this.width/2,this.height/2,0,0,2*Math.PI);
+             ctx.stroke();
+             // ctx.fill();             
+             ctx.restore();
+             }
+        }
+
     
     let GATE=LoadImagex(sprite_folder,'gate.png');
     class Gate extends GeneralSprite
@@ -2625,13 +2689,10 @@ class Soldier
             this.invincibleState=true;      
             this.acceleration.add(hitback);
             this.health-=dmg;
-            // console.log('player health:'+this.health);
+            this.health=(this.health<0?0:this.health);           
             gameManager.playerHealthBar.updateValue(this.health);           
             if(this.health<=0)
-                {
-                // if(gameManager.playerDied) document.querySelector('#LossBuzz').play();  
-                this.health=0;
-                // console.log('destroyed');
+                {               
                 SpawnClouds(this.position);             
                 destroySelf(this.hit_box);
                 destroySelf(this);              
@@ -3013,6 +3074,7 @@ class Zombie extends GenericMovable
     constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups,sprite_id)
         {
          super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
+         this.testing=false;
          this.sprite_id=sprite_id; //sprite_id uniquely identifies this sprite
 
          this.sprite_type='zombie';
@@ -3046,12 +3108,13 @@ class Zombie extends GenericMovable
          this.maxStrikeTime=2000; 
          this.maxTimeEngagedInMoveIn=4000;
          this.bulletOffset=new CreateVector(60*xscale,10*yscale); 
-
+         this.longAttacksFull=['spawn_circle','runin','runin','farstrike','movein'];
          // this.longAttacks=['runin','runin','runin','farstrike','movein'];//farstrike
-         this.longAttacks=['runin'];
+         this.longAttacks=['spawn_circle','farstrike','farstrike'];
          this.shortAttacks=['strike'];  
          this.strikeBoxSpawned=false;
          this.expVal=50;
+         this.maxHealth=100;
          this.health=100;
          this.enemyHealthBar= new UIBar(50,20,100,15,
                                         this.health,this.health,
@@ -3065,6 +3128,9 @@ class Zombie extends GenericMovable
          this.maxFarStrikeTime=4000;
          this.smokeCountBeforeFarStrike=3; 
          this.enemyDirForMoveIn=new CreateVector(1,0);
+         this.fullAttacksLoaded=false;
+
+         this.killerCircleSpawned=false;
         }
      display(){
         super.display();
@@ -3072,12 +3138,18 @@ class Zombie extends GenericMovable
      update(){        
         super.update();
         this.stateMachine();
-        this.announceState();
+        this.announceState();        
      }
+     
      takeDamage(dmg,hitback){
         // console.log("zombie reports damage:"+dmg);
 
         this.health-=dmg;
+        this.health=(this.health<0)?0:this.health;
+        if(this.health< this.maxHealth/2 && !this.fullAttacksLoaded){
+            this.fullAttacksLoaded=true;
+            this.longAttacks=this.longAttacksFull;
+        }
         this.enemyHealthBar.updateValue(this.health);
         this.acceleration.add(hitback);
         if(this.health<=0){
@@ -3127,6 +3199,10 @@ class Zombie extends GenericMovable
             case 'runin':
              this.Run_In();
              break;
+            case 'spawn_circle':
+             this.Spawn_Circle();
+             break;
+
             default:
               console.log('undefined state');
               break;
@@ -3134,6 +3210,7 @@ class Zombie extends GenericMovable
      }
      
      Idle_Actions(){
+        if(this.testing) return;
         this.changeAnimation('idle');
         if(this.EnemyDetected()) 
             {            
@@ -3143,6 +3220,26 @@ class Zombie extends GenericMovable
             }
         return false;
      }
+
+     
+     Spawn_Circle(){
+        if(!this.killerCircleSpawned)
+        {
+          this.killerCircleSpawned=true;
+          new KillerCircle(this.position.x,this.position.y,
+                           200*xscale,200*yscale,
+                           0,0,
+                           [gameManager.visible_sprites,gameManager.active_sprites],this
+                          );
+         this.changeAnimation('attack');
+        }
+     }
+    InformAboutCircleEnd()
+        {
+            this.killerCircleSpawned=false;
+            this.changeAnimation('idle');
+            this.state='agro';
+        }
      Move_In(){
        
         if(gameManager.runningClock - this.lastFarAttackTime < this.waitBeforeFarStrike){
@@ -3151,9 +3248,10 @@ class Zombie extends GenericMovable
                 this.smokeCountBeforeFarStrike+=1;
                 SpawnClouds(this.position,40,"dark");
             }
-            if(gameManager.runningClock - this.lastFarAttackTime < this.waitBeforeFarStrike/3)
+            if(gameManager.runningClock - this.lastFarAttackTime < this.waitBeforeFarStrike/3){
             this.FaceEnemy();
-            this.enemyDirForMoveIn=gameManager.player.position.copy().sub(this.position);            
+            this.enemyDirForMoveIn=gameManager.player.position.copy().sub(this.position);    
+            }        
             return;
         }
         
@@ -3173,8 +3271,7 @@ class Zombie extends GenericMovable
 
      }
      Run_In(){      
-        this.FaceEnemy();
-        console.log(this.maxVelocity);
+        this.FaceEnemy();        
         this.enemyDirForMoveIn=gameManager.player.position.copy().sub(this.position);        
         // this.maxVelocity=this.maxVeloctiy_dashing;        
         this.acceleration.add(this.enemyDirForMoveIn.normalized().mult(2));
@@ -3214,9 +3311,9 @@ class Zombie extends GenericMovable
                              this.position.y,
                              40*xscale,40*yscale,
                              bulletOffset.x,bulletOffset.y,                             
-                             40,hitback,
+                             10,hitback,
                             [
-                            gameManager.visible_sprites,
+                            // gameManager.visible_sprites,
                             gameManager.active_sprites,
                             gameManager.hit_box_sprites
                            ],
