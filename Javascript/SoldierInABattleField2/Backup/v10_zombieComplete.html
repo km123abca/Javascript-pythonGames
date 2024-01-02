@@ -1455,16 +1455,6 @@ document.onmousedown = function(event) {
                                [this.visible_sprites,this.active_sprites,this.enemy_sprites],
                                elem['sprite_id']
                                );
-                else if(elem['sprite']=='beetle' && this.listOfDestroyedSprites.indexOf(elem['sprite_id'])==-1)
-                    new Beetle(elem['x']*xscale,
-                               elem['y']*yscale,
-                               elem['width']*xscale,
-                               elem['height']*yscale,
-                               elem['offsetx']*xscale,
-                               elem['offsety']*yscale,
-                               [this.visible_sprites,this.active_sprites,this.enemy_sprites],
-                               elem['sprite_id']
-                               );
                 else if(elem['sprite']=='gate')
                     new Gate(elem['x']*xscale,
                                elem['y']*yscale,
@@ -2737,8 +2727,7 @@ class GenericMovable extends GeneralSprite
          this.acceleration=new CreateVector(0,0);
          this.velocity=new CreateVector(0,0);
          this.maxVelocity=10*xscale; 
-         this.frictionConstant=0.1;   
-         this.rotationOffset=0;     
+         this.frictionConstant=0.1;        
         }
     applyFriction()
         {
@@ -2848,7 +2837,7 @@ class GenericMovable extends GeneralSprite
             ctx.save();
             ctx.translate(this.position.x-gameManager.camera.position.x, 
                           this.position.y-gameManager.camera.position.y);
-            ctx.rotate(d2r(this.angle+this.rotationOffset));
+            ctx.rotate(d2r(this.angle));
             let wid=this.width*this.animationSizeMults[this.animation][0];
             let hei=this.height*this.animationSizeMults[this.animation][1];
          
@@ -2860,7 +2849,6 @@ class GenericMovable extends GeneralSprite
                        hei
                       );
         }catch(err){
-            console.log(this.animation);
             console.log(this.animations[this.animation][parseInt(this.animationFrame)]);
         }
 
@@ -2891,8 +2879,6 @@ class GenericEnemy extends GenericMovable
                           "move":[],
                           "attack":[]
                          };
-         this.frameToShoot=2;
-         this.frameToStrike=2;
          this.animationFractions={'idle':0.8,'move':0.4,'attack':0.2};
          this.animationSizeMults={'idle':[1,1],'move':[1,1],'attack':[1.4,1.4]};
          this.animation='idle';           
@@ -2906,23 +2892,12 @@ class GenericEnemy extends GenericMovable
          this.maxCloseAttackTimeGap=2000;
          if(this.bossStatus) this.onScreen=false; 
          else this.onScreen=true;
-         this.maxStrikeTime=2000;//This is a variable specific to zombies and such  
+         this.maxStrikeTime=2000; 
          this.bulletOffset=new CreateVector(55*xscale,25*yscale); 
 
          this.longAttacks=['farstrike'];
          this.shortAttacks=['strike'];  
          this.strikeBoxSpawned=false;
-         this.expVal=50;
-         this.maxHealth=100;
-         this.health=100;
-         this.fireBallSpawned=false;
-         this.enemyHealthBar= new UIBar(50,20,100,15,
-                                        this.health,this.health,
-                                        '#222222','#FF0000',
-                                        [gameManager.visible_sprites,gameManager.active_sprites],
-                                        false,0,-50*yscale,
-                                        this,'enemyHealth');
-         this.frameToShoot=2;
         }
      display(){
         super.display();
@@ -2933,35 +2908,7 @@ class GenericEnemy extends GenericMovable
         this.announceState();
      }
      takeDamage(dmg,hitback){
-        this.health-=dmg;
-        this.health=(this.health<0)?0:this.health;
-        this.enemyHealthBar.updateValue(this.health);
-        this.acceleration.add(hitback);
-        if(this.health<=0){
-            SpawnClouds(this.position);
-            gameManager.player.giveExp(this.expVal);
-            SpawnClouds(this.position);
-            destroySelf(this);
-            destroySelf(this.hit_box);
-            destroySelf(this.enemyHealthBar);
-            document.querySelector('#fogGate').play(); 
-            if(this.bossStatus)
-                {
-                gameManager.listOfDestroyedSprites.push(this.sprite_id);                 
-                /*
-                let gates=[];
-                for(let g of gameManager.gate_sprites) gates.push(g);
-                for(let g of gates){
-                    g.destroyGate();
-                }
-
-                gates=[];
-                musicList[presentMusicIndex]=mCL[1];
-                pauseMusic();
-                startMusic();
-                */
-                }
-        }
+        console.log("zombie reports damage");
      }
      announceState(){
         w2screen(this.state,
@@ -3014,8 +2961,7 @@ class GenericEnemy extends GenericMovable
             return true;
         }
         let bulletOffset=this.bulletOffset.copy().rotateByAngle(this.angle); 
-        if(!this.strikeBoxSpawned && this.animation=="attack" && 
-            parseInt(this.animationFrame)==this.frameToStrike)
+        if(!this.strikeBoxSpawned && this.animation=="attack" && parseInt(this.animationFrame)==2)
             {
             new DamageHitBox(this.position.x,
                              this.position.y,
@@ -3036,11 +2982,11 @@ class GenericEnemy extends GenericMovable
      }
 
 
-     GenericShoot()
+     ZombieShoot()
         {  
         let bulletOffset=this.bulletOffset.copy().rotateByAngle(this.angle);  
-        // let tgtPoint=new CreateVector(10,0);       
-        let tgtPoint=gameManager.player.position.copy();
+        let tgtPoint=new CreateVector(10,0);       
+
         let fb=new Fireball(this.position.x+bulletOffset.x,
                        this.position.y+bulletOffset.y,
                        40*xscale,20*yscale,
@@ -3062,9 +3008,9 @@ class GenericEnemy extends GenericMovable
             return true;
         }
         this.FaceEnemy();
-        if(!this.fireBallSpawned && this.animation=="attack" && parseInt(this.animationFrame)==this.frameToShoot)
+        if(!this.fireBallSpawned && this.animation=="attack" && parseInt(this.animationFrame)==6)
             {
-            this.GenericShoot();
+            this.ZombieShoot();
             this.fireBallSpawned=true;
             }
         if(this.fireBallSpawned && parseInt(this.animationFrame)==8)
@@ -3113,46 +3059,6 @@ class GenericEnemy extends GenericMovable
 
     } 
 //generic enemy ends
-
-//setting up images for beetle
-folder_name=sprite_folder+"\\beetles";
-let beetle_images_idle=['idle1.png'];
-let beetle_images_move=['move1.png','move2.png'];
-let BEETLE_IDLE_IMAGES=LoadImages(folder_name,beetle_images_idle);
-let BEETLE_MOVE_IMAGES=LoadImages(folder_name,beetle_images_move);
-//beetle starts
-class Beetle extends GenericEnemy
-    {
-        constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups,sprite_id)
-            {
-             super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups,sprite_id,false);
-             this.sprite_type="beetle";
-             this.hit_box.sprite_type='beetlehitbox_damagable';
-             this.animations.idle=BEETLE_IDLE_IMAGES;
-             this.animations.move=BEETLE_MOVE_IMAGES;
-             this.animations.attack=BEETLE_MOVE_IMAGES;
-             this.animationFractions={'idle':0.8,'move':0.4,'attack':0.2};
-             this.animationSizeMults={'idle':[1,1],'move':[1,1],'attack':[1,1]};
-             this.animation='idle';           
-             this.state='idle'; 
-             this.bulletOffset.x=90*xscale;
-             this.bulletOffset.y=10*yscale;
-             this.rotationOffset=90;
-             this.frameToStrike=1;
-             this.frameToShoot=1;
-             this.bulletPosition=new GeneralSprite(this.position.x+this.bulletOffset.x,
-                               this.position.y+this.bulletOffset.y,
-                               30,30,0,0,
-                            [gameManager.visible_sprites]
-                          );
-            }
-            update(){
-                super.update();
-                this.bulletPosition.position=this.position.copy().add(this.bulletOffset.copy().rotateByAngle(this.angle));
-            }
-
-    }
-//beetle ends
 
 //get zombie images
 folder_name=sprite_folder+"\\Zombie\\idle";
@@ -3634,7 +3540,7 @@ function SpawnClouds(pos,n=60,cloudtype="white")
           this.rotAngle=0;
           this.velocity=new CreateVector(0,0);
           this.maxVelocity=5*xscale;
-          this.acceleration=new CreateVector(0,0);
+          this.acceleration=new CreateVector(1,0);
           // this.accelerationInit=this.acceleration.copy().pointToAngle(this.parent.angle).normalize();
           this.accelerationInit=tgtPoint.sub(this.position).normalize();
 
