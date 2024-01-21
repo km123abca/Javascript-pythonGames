@@ -53,7 +53,7 @@
         var musicList=[mCL[0],mCL[1]];
         var presentMusicIndex=0;
         //creating sound components start
-        var soundDivIds=['RockSmash','LossBuzz','fogGate'];
+        var soundDivIds=['RockSmash','LossBuzz','fogGate','retroJump'];
         var parentSoundDiv=document.getElementById("soundscontainer");
         for(let i in soundDivIds){            
         var audioElem=document.createElement("audio");
@@ -752,6 +752,10 @@ document.onmousedown = function(event) {
              if(!this.position.equals(pos))
                 this.position.setVec(pos);      
             }
+         updateAngle(ang)
+            {
+                if(this.angle!=ang) this.angle=ang;
+            }
          display()
             {            
              if(!this.onScreen) return false;
@@ -1238,8 +1242,14 @@ document.onmousedown = function(event) {
                  if(b_collision(movingObj.hit_box,x)) 
                     {  
                     
-                    movingObj.performSpecTaskOnCollision(x);                                           
-                    // console.log('collision with '+x.sprite_type);         
+                    movingObj.performSpecTaskOnCollision(x); 
+                    /*
+                    //when we found out that beetle's hitbox was interfering with the bullet
+                    if(!(x.sprite_type=='playerhitbox_damagable' || 
+                        x.sprite_type=='pipehitbox')
+                        )                                
+                    console.log('collision with '+x.sprite_type);  
+                    */       
                      if(movingObj.velocity.x > 0)
                         {                    
                         movingObj.hit_box.position.x=x.position.x - x.width/2-movingObj.hit_box.width/2-2;                        
@@ -2304,7 +2314,7 @@ class Soldier
      }
      applyFriction()
         {
-            let fricForce=this.velocity.copy().normalized().mult(-this.frictionConstant);
+            let fricForce=this.velocity.copy().mult(-this.frictionConstant);
             this.acceleration.add(fricForce);
         }
      setMaxHealth(newval)
@@ -2516,6 +2526,7 @@ class Soldier
         }
     shoot()
         {  
+        document.querySelector('#retroJump').play(); 
         let bulletOffset=this.bulletOffset.copy().rotateByAngle(this.angle);              
         new Projectile(this.position.x+bulletOffset.x,
                        this.position.y+bulletOffset.y,
@@ -2724,8 +2735,10 @@ class GenericMovable extends GeneralSprite
     constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups)
         {
          super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
-         this.hit_box=new HitBox(x,y,this.width*0.5,this.height*0.5,
-                                 [gameManager.collission_sprites],
+         this.hit_box=new HitBox(x,
+                                 y,
+                                 this.width*0.5,this.height*0.5,
+                                 [gameManager.collission_sprites,gameManager.visible_sprites],
                                  'generichitbox',this);
          this.animations={};
          this.animationFractions={};
@@ -2737,12 +2750,12 @@ class GenericMovable extends GeneralSprite
          this.acceleration=new CreateVector(0,0);
          this.velocity=new CreateVector(0,0);
          this.maxVelocity=10*xscale; 
-         this.frictionConstant=0.1;   
+         this.frictionConstant=0.8;   
          this.rotationOffset=0;     
         }
     applyFriction()
-        {
-            let fricForce=this.velocity.copy().normalized().mult(-this.frictionConstant);
+        {           
+            let fricForce=this.velocity.copy().mult(-this.frictionConstant);           
             this.acceleration.add(fricForce);
         }
     runAnimation()
@@ -2769,7 +2782,8 @@ class GenericMovable extends GeneralSprite
         }
     applyVelocity()
             {    
-             if(!this.onScreen) return;                
+             if(!this.onScreen) return;  
+             this.hit_box.updateAngle(this.angle);              
              this.hit_box.position.x+=this.velocity.x;         
              for(let k in gameManager.collission_sprites)
                 { 
@@ -2826,13 +2840,14 @@ class GenericMovable extends GeneralSprite
         update_and_display_hitbox(show=false)
             {  
             if(show) this.hit_box.display();         
-            this.position.setVec(this.hit_box.position.copy().add(this.hitboxOffset));
+            this.position.setVec(this.hit_box.position.copy().add(this.hitboxOffset.copy().rotateByAngle(this.angle)));
+
             }
         move()
-            {
+            {             
              this.applyFriction();
              this.velocity.add(this.acceleration);
-             this.acceleration.set(0,0);
+             this.acceleration.set(0,0);             
              this.applyVelocity();
              this.applyVelocityRestrictions();
              this.update_and_display_hitbox();
@@ -3038,16 +3053,24 @@ class GenericEnemy extends GenericMovable
 
      GenericShoot()
         {  
-        let bulletOffset=this.bulletOffset.copy().rotateByAngle(this.angle);  
+        
+        let bulletOffset=this.bulletOffset.copy().rotateByAngle(this.angle); 
+        // console.log('bullet spawn angle:'+this.angle); 
+        // console.log(`spawn pos:${bulletOffset.x},${bulletOffset.y}`);
         // let tgtPoint=new CreateVector(10,0);       
         let tgtPoint=gameManager.player.position.copy();
+        let a=this.position.x+bulletOffset.x;
+        let b=this.position.y+bulletOffset.y;
+        // console.log(`shootPosition:${a.toFixed(2)},${b.toFixed(2)}`);
+        
         let fb=new Fireball(this.position.x+bulletOffset.x,
-                       this.position.y+bulletOffset.y,
-                       40*xscale,20*yscale,
-                       this,
-                       tgtPoint,
-                       [gameManager.visible_sprites,gameManager.active_sprites]
-                       ); 
+                            this.position.y+bulletOffset.y,
+                            40*xscale,20*yscale,
+                            this,
+                            tgtPoint,
+                           [gameManager.visible_sprites,gameManager.active_sprites]
+                            ); 
+        // fb.position=this.position.copy().add(this.bulletOffset.copy().rotateByAngle(this.angle));
         fb.rotAngle=this.angle;
         
         
@@ -3067,8 +3090,9 @@ class GenericEnemy extends GenericMovable
             this.GenericShoot();
             this.fireBallSpawned=true;
             }
-        if(this.fireBallSpawned && parseInt(this.animationFrame)==8)
-            this.fireBallSpawned=false;
+        if(this.fireBallSpawned && parseInt(this.animationFrame)==8){
+            this.fireBallSpawned=false;            
+        }
         this.changeAnimation('attack');
      }
 
@@ -3114,6 +3138,18 @@ class GenericEnemy extends GenericMovable
     } 
 //generic enemy ends
 
+//get zombie images
+folder_name=sprite_folder+"\\Zombie\\idle";
+let image_names=Array(17).fill(0).map((x,i)=>`skeleton-idle_${i}.png`);
+let ZOMBIE_IDLE_IMAGES=LoadImages(folder_name,image_names);
+folder_name=sprite_folder+"\\Zombie\\move";
+image_names=Array(13).fill(0).map((x,i)=>`skeleton-move_${i}.png`);
+let ZOMBIE_MOVE_IMAGES=LoadImages(folder_name,image_names);
+folder_name=sprite_folder+"\\Zombie\\attack";
+image_names=Array(13).fill(0).map((x,i)=>`skeleton-attack_${i}.png`);
+let ZOMBIE_ATTACK_IMAGES=LoadImages(folder_name,image_names);
+//14 zombie starts
+
 //setting up images for beetle
 folder_name=sprite_folder+"\\beetles";
 let beetle_images_idle=['idle1.png'];
@@ -3149,22 +3185,14 @@ class Beetle extends GenericEnemy
             update(){
                 super.update();
                 this.bulletPosition.position=this.position.copy().add(this.bulletOffset.copy().rotateByAngle(this.angle));
+                // console.log(`spawn position: ${this.bulletPosition.position.x.toFixed(2)},
+                //     ${this.bulletPosition.position.y.toFixed(2)}`);
             }
 
     }
 //beetle ends
 
-//get zombie images
-folder_name=sprite_folder+"\\Zombie\\idle";
-let image_names=Array(17).fill(0).map((x,i)=>`skeleton-idle_${i}.png`);
-let ZOMBIE_IDLE_IMAGES=LoadImages(folder_name,image_names);
-folder_name=sprite_folder+"\\Zombie\\move";
-image_names=Array(13).fill(0).map((x,i)=>`skeleton-move_${i}.png`);
-let ZOMBIE_MOVE_IMAGES=LoadImages(folder_name,image_names);
-folder_name=sprite_folder+"\\Zombie\\attack";
-image_names=Array(13).fill(0).map((x,i)=>`skeleton-attack_${i}.png`);
-let ZOMBIE_ATTACK_IMAGES=LoadImages(folder_name,image_names);
-//14 zombie starts
+
 class Zombie extends GenericMovable
     {
     constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups,sprite_id)
@@ -3622,6 +3650,7 @@ function SpawnClouds(pos,n=60,cloudtype="white")
     {
       constructor(x,y,wid,hei,parent,tgtPoint,spriteGroups)
         {
+          
           this.position= new CreateVector(x,y);
           this.width=wid;
           this.height=hei;
@@ -3692,7 +3721,7 @@ function SpawnClouds(pos,n=60,cloudtype="white")
            if(collidedObjType.parent==this.parent || !collidedObjType.parent.onScreen ) return;
            let arr=collidedObjType.sprite_type.split('_');          
             if(arr.length>1 && arr[1]=='damagable')
-                collidedObjType.parent.takeDamage(this.damageCaused,this.velocity.normalized());                              
+                collidedObjType.parent.takeDamage(this.damageCaused,this.velocity.normalized().mult(1));                              
            document.querySelector('#RockSmash').play();
            SpawnClouds(this.position);       
            destroySelf(this.hit_box);

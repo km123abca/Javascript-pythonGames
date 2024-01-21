@@ -410,7 +410,6 @@ let THORNIMAGE = LoadImagex('sprites/misc','thorn.png');
 let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 let FLOWERIMAGE= LoadImagex('sprites/misc','Flower.png');
 let GATEIMAGE= LoadImagex('sprites/misc','gate.png');
-let VERTICALSHRUB=LoadImagex('sprites/Shrub','VerticalShrub.png');
 
 let SAWWHEEL1= LoadImagex('sprites/workshop','sawwheel1.png');
 let SAWWHEEL2= LoadImagex('sprites/workshop','sawwheel2.png');
@@ -457,9 +456,6 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	<audio id="RockSmash" >
 		<source src="./sounds/RockSmash.wav" type="audio/mpeg">
 	</audio>
-    <audio id="retroJump" >
-        <source src="./sounds/retroJump.wav" type="audio/mpeg">
-    </audio>
 	<audio id="LossBuzz" >
 		<source src="./sounds/LossBuzz.wav" type="audio/mpeg">
 	</audio>
@@ -775,12 +771,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		       (this.sprite_type=='camstopper_right' && objx.position.x > this.position.x)
 		      )
 		    	resultArray[0]=false;//return [false,true];
-		    // if((this.sprite_type=='camstopper_left' && objx.position.y < this.position.y) ||
-		    //    (this.sprite_type=='camstopper_right' && objx.position.y > this.position.y)
-		    //   )
-		    // 	resultArray[1]=false;
-            if(this.sprite_type=='camstopper_right' && objx.position.y > this.position.y)
-                resultArray[1]=false;
+		    if((this.sprite_type=='camstopper_left' && objx.position.y < this.position.y) ||
+		       (this.sprite_type=='camstopper_right' && objx.position.y > this.position.y)
+		      )
+		    	resultArray[1]=false;//return [true,false];
 		    return resultArray;//return [true,true];
 		  }
 		 update()
@@ -993,13 +987,12 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 	class Wall 
 		{
-		constructor(x,y,wid,hei,isHorizontal,copies,spriteGroups,destructTime=0)
+		constructor(x,y,wid,hei,isHorizontal,copies,spriteGroups)
 			{
-			 this.destructTime=destructTime;             
+			 
 			 this.position=new CreateVector(x,y);
 			 this.width=wid;
 			 this.height=hei;
-             this.birthTime=gameManager.runningClock;
 			 this.onScreen=true;
 			 this.sprite_type="combinedwall";
 			 this.isHorizontal=isHorizontal;
@@ -1015,12 +1008,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 	grp.push(this);
 			 this.angle=this.isHorizontal?0:90;
 			 this.copies=copies;
-             this.obeyGravity=false;
-             this.widFrac=destructTime==0?1:0.9;
-			 if(this.isHorizontal)             
+			 if(this.isHorizontal)
 			 this.hit_box=new HitBox(this.position.x+this.copies*this.width/2-this.width/2,
 			 						 this.position.y,
-			 						 this.width*this.copies*this.widFrac,
+			 						 this.width*this.copies,
 			 						 this.height*0.5,
 			                         [ 
 			                          // gameManager.visible_sprites,
@@ -1036,116 +1027,12 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			                          // gameManager.visible_sprites,
 			                          gameManager.collission_sprites
 			                         ],
-				                     'vert_wallhitbox');
-            this.dustSpawned=false;	
-            this.gravityScale=1*yscale;
-            this.velocity=new CreateVector(0,0);
-            this.acceleration=new CreateVector(0,0);
-            this.maxVelocity=new CreateVector(5*xscale,20*yscale);
+				                     'vert_wallhitbox');	
 			}
 		update()
 		 	{
-             this.selfDestruct();
-             if(this.obeyGravity)
-                {
-                this.applyGravity();   
-                this.velocity.add(this.acceleration);
-                this.acceleration.set(0,0);
-                this.applyVelocity();
-                this.applyVelocityRestrictions();
-                this.update_and_display_hitbox();
-                // console.log(`${this.position.x.toFixed(2)},${this.position.y.toFixed(2)}`);
-                }          		 	
+		 	 return true;
 		 	}
-        applyGravity()
-            {
-             this.acceleration.y+=this.gravityScale;
-            }
-        selfDestruct(){
-            if(this.destructTime==0)
-                return;
-            if(gameManager.runningClock - this.birthTime > 0.9*this.destructTime)
-            {
-                if(!this.dustSpawned){
-                    this.dustSpawned=true;
-                    SpawnClouds(this.position);
-                }
-            }
-            if(gameManager.runningClock - this.birthTime > this.destructTime && !this.obeyGravity){
-                if(okToStartMusic)
-                document.querySelector('#RockSmash').play();
-                this.obeyGravity=true;
-            }
-            if(gameManager.runningClock - this.birthTime-2000 > this.destructTime){
-                console.log('wall gone');
-                destroySelf(this.hit_box);
-                destroySelf(this);
-            }
-        }
-//velocity application
-         applyVelocity()
-            {                    
-             this.hit_box.position.x+=this.velocity.x;          
-             for(let k in gameManager.collission_sprites)
-                { 
-                 let x=gameManager.collission_sprites[k];
-                 if(!x.onScreen) continue;
-                 if(x==this || x==this.hit_box) continue;               
-                 if(b_collision(this.hit_box,x)) 
-                    {    
-                            
-                     this.collidedObj=x.sprite_type;     
-                     if(this.velocity.x > 0)
-                        {                    
-                        this.hit_box.position.x=x.position.x - x.width/2-this.hit_box.width/2-2;    
-
-                        }
-                     else 
-                        {
-                        this.hit_box.position.x=x.position.x + x.width/2 + this.hit_box.width/2+2;                      
-                        }
-                    }
-                }
-
-             this.hit_box.position.y+=this.velocity.y;
-             for(let x of gameManager.collission_sprites)
-                {
-
-                 if(!x.onScreen) continue;
-                 if(x==this || x==this.hit_box) continue;
-
-                 if(b_collision(this.hit_box,x)) 
-                    {
-                         
-                    this.collidedObj=x.sprite_type;                 
-                    if(this.velocity.y > 0)
-                        {
-                        this.hit_box.position.y=x.position.y-x.height/2-this.hit_box.height/2-2;    
-                        this.acceleration.add(new CreateVector(0,2*-this.velocity.y));                  
-                        }
-                    else
-                        {
-                        this.hit_box.position.y=x.position.y+x.height/2+this.hit_box.height/2+2;        
-                        this.acceleration.add(new CreateVector(0,2*this.velocity.y));               
-                        }
-                    }
-                }
-            }
-         update_and_display_hitbox()
-            {           
-            this.position.setVec(this.hit_box.position);
-            }
-         applyVelocityRestrictions()
-            {
-             let xdir=this.velocity.x/Math.abs(this.velocity.x);
-             let ydir=this.velocity.y/Math.abs(this.velocity.y);
-             if(Math.abs(this.velocity.y) > this.maxVelocity.y)
-                this.velocity.y=ydir*this.maxVelocity.y;
-             if(Math.abs(this.velocity.x) > this.maxVelocity.x)
-                this.velocity.x=xdir*this.maxVelocity.x;
-            }
-//velocity application ends
-
 		display()
 			{
 			 if(!this.onScreen) return false;
@@ -1357,7 +1244,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
              
              super(x,y,width,height,0,0,spriteGroups);             
              this.sprite_type='WallGripper';
-             this.imagex= VERTICALSHRUB;
+             this.imagex= GATEIMAGE;
             } 
         } 
 
@@ -2035,8 +1922,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	{
 		 	//this.acceleration.add(new CreateVector(dir,0));
 		 	if(this.invincibleState) return false;	
-		 	this.invincibleState=true;
-            document.querySelector('#retroJump').play();	
+		 	this.invincibleState=true;	
 	 		this.health-=dmg;
 	 		this.lanceHealthBar.updateValue(this.health);
 	 		this.lanceHealthBar.onScreen=true;
@@ -2197,7 +2083,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	this.angle=AngleLerp(this.angle,0,30);
 		 	  let enemyGap=this.position.x - this.tgt.position.x;
 		 	  this.velocity.x=Lerp(this.velocity.x,0,2*xscale);
-		      if(gameManager.playerDied || !this.tgt || Math.abs(enemyGap) > this.playerOutDistance)
+		      if(!this.tgt || Math.abs(enemyGap) > this.playerOutDistance)
 				{				 			 
 				 this.state='idle';				
 				}	
@@ -2480,7 +2366,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	}
 		 riseup()
 		 	{
-
+             
 		 	 if(this.tgt.position.y - this.position.y < 200*yscale)
 		 	 	 this.acceleration.add(this.rushForce.copy().mult(-1));
 		 	 else
@@ -2818,7 +2704,6 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	//this.acceleration.add(new CreateVector(dir,0));
 		 	if(this.invincibleState) return false;	
 		 	this.invincibleState=true;	
-            document.querySelector('#retroJump').play();
 	 		this.health-=dmg;
 	 		this.fkHealthBar.updateValue(this.health);
 	 		this.fkHealthBar.onScreen=true;
@@ -3879,7 +3764,6 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 takeDamage(dmg,dir=0)
 		 	{
 		 	//this.acceleration.add(new CreateVector(dir,0));
-            document.querySelector('#retroJump').play();
 		 	if(this.invincibleState) return false;	
 		 	this.invincibleState=true;	
 	 		this.health-=dmg;
@@ -4091,7 +3975,6 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	if(this.invincibleState) return false;	
 		 	this.invincibleState=true;	
 	 		this.health-=dmg;
-            document.querySelector('#retroJump').play();
 	 		this.huskHealthBar.updateValue(this.health);
 	 		this.huskHealthBar.onScreen=true;
 	 		if(this.health<=0)
@@ -4737,8 +4620,6 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     	 	}
          spawnTrees()
             {
-              SpawnClouds(this.br1pos.x+this.position.x,this.br1pos.y+this.position.y);
-              SpawnClouds(this.br2pos.x+this.position.x,this.br2pos.y+this.position.y);
               this.tree1= new BarrierTree(this.br1pos.x+this.position.x,
                                this.br1pos.y+this.position.y,
                                630*xscale,955*yscale,
@@ -4790,7 +4671,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                     return true;
                     }
                }
-             return true;  
+             return false;  
             }
     	 display()
     	 	{
@@ -5066,7 +4947,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	
 	 		if(this.animation=="slash" && parseInt(this.animationFrame)==6 && !this.hitBoxSpawned)
 	 			{
-	 			
+	 			document.querySelector('#RockSmash').play();
 	 			this.hitBoxSpawned=true;
 	 			new DamageHitBox(this.position.x,
 	 							 this.position.y,
@@ -6298,8 +6179,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 	new CameraStopper(elem['x']*xscale,
 		 	 	 		   	   elem['y']*yscale,
 		 	 	 		   	   elem['sprite'],
-		 	 	 		   	   [//this.visible_sprites,
-                                this.camera_stop_sprites,this.active_sprites]
+		 	 	 		   	   [this.visible_sprites,this.camera_stop_sprites,this.active_sprites]
 		 	 	 		   	   );
 		 	 	 else if(elem['sprite'].split('_')[0]=='entryexit')
 		 	 	 	new EntryExitPoint(elem['x']*xscale,
@@ -6413,20 +6293,14 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
  	   				   		  [gameManager.visible_sprites]
     	 	   				  	 	);
     	 	   	 else if(elem['sprite']=='wall')
-                 {
-                    let dTime=0;
-                    if("dTime" in elem)
-                        dTime=elem['dTime'];
     	 	   	 	new Wall(elem['x']*xscale,
  	   				          elem['y']*yscale,
  	   				          elem['width']*xscale,
  	   				          elem['height']*yscale,
  	   				          elem['isHorizontal'], 
  	   				          elem['copies'],	   				          
- 	   				   		  [gameManager.visible_sprites,gameManager.active_sprites],
-                              dTime
-    	 	   				  	 	);	 	
-                  } 	 	
+ 	   				   		  [gameManager.visible_sprites]
+    	 	   				  	 	);	 	 	 	
 		 	 	}
 		 	 this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');		 	 
 		 	 this.camera.tgt=this.camera_stop_sprites[this.sceneForward?0:1];
