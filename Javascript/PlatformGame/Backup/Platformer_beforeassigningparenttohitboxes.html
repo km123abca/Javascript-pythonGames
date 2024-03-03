@@ -1025,7 +1025,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			                         [ 
 			                          // gameManager.visible_sprites,
 			                          gameManager.collission_sprites
-			                         ],this,
+			                         ],
 				                     'hori_wallhitbox');
 			else
 			this.hit_box=new HitBox(this.position.x,
@@ -1035,7 +1035,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			                         [ 
 			                          // gameManager.visible_sprites,
 			                          gameManager.collission_sprites
-			                         ],this,
+			                         ],
 				                     'vert_wallhitbox');
             this.dustSpawned=false;	
             this.gravityScale=1*yscale;
@@ -1175,9 +1175,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 	class HitBox
 		{
-		 constructor(x,y,wid,hei,spriteGroups,parent,hitboxName="unknown hitbox")
+		 constructor(x,y,wid,hei,spriteGroups,hitboxName="unknown hitbox")
 		 	{
-             this.parent=parent;
 		 	 this.position= new CreateVector(x,y);
 		 	 this.width = wid;
 			 this.height= hei;
@@ -1222,7 +1221,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		{
 		constructor(x,y,wid,hei,spriteGroups,hitboxName="unknown hitbox",parentx,xoffset,yoffset,dmg=10,dmghitback=0,life=50)
 			{
-			super(x,y,wid,hei,spriteGroups,parentx,hitboxName);
+			super(x,y,wid,hei,spriteGroups,hitboxName);
 			this.spriteGroups=spriteGroups;
 			this.startTime= gameManager.runningClock;
 			this.parentx=parentx;
@@ -1350,24 +1349,21 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 return true;
 		 	}
 		}
-        
+        /*
    class Bullet extends GeneralSprite
         {
            constructor(x,y,wid,hei,parent,spriteGroups)
             {
                 super(x,y,wid,hei,0,0,spriteGroups); 
-
                 this.hit_box=new HitBox(this.position.x,this.position.y,this.width*0.5,this.height*0.5,
                                      [ //gameManager.collission_sprites,
-                                      // gameManager.visible_sprites
+                                      gameManager.visible_sprites
                                      ],
                                      'bullethitbox');
                 this.imagex=THORNYBALL;
                 this.rotAngle=0; 
                 this.parent=parent;
-                this.speed=20*xscale;
-                this.velocity=new CreateVector(this.speed*this.parent.sx*xscale,0);
-                this.maxVelocity=new CreateVector(20*xscale,20*yscale);
+                this.velocity=new CreateVector(this.speed*this.parent*xscale,0);
                 this.acceleration=new CreateVector(0,0); 
 
             } 
@@ -1404,33 +1400,33 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                 { 
                  let x=gameManager.collission_sprites[k];
                  if(!x.onScreen) continue;
-                 if(x==this.hit_box || x==this.parent.hit_box) continue;               
+                 if(x==this.hit_box) continue;               
                  if(b_collision(this.hit_box,x)) 
                     {            
-                     if(x.sprite_type=='huskhitbox') 
-                        x.parent.takeDamage(5);
-                    destroySelf(this.hit_box);
-                    destroySelf(this);  
-                    SpawnClouds(this.position,5); 
-                                 
+                     if(x.)   
+                     
                     }
                 }
 
              this.hit_box.position.y+=this.velocity.y;
-             for(let k in gameManager.collission_sprites)
+             for(let x of gameManager.collission_sprites)
                 {
 
-                 let x=gameManager.collission_sprites[k];
                  if(!x.onScreen) continue;
-                 if(x==this.hit_box || x==this.parent.hit_box) continue;              
+                 if(x==this) continue;               
                  if(b_collision(this.hit_box,x)) 
-                    {            
-                     if(x.sprite_type=='huskhitbox') 
-                        x.parent.takeDamage(5);
-                    destroySelf(this.hit_box);
-                    destroySelf(this);  
-                    SpawnClouds(this.position,5); 
-                                   
+                    {
+                    this.collidedObj=x.sprite_type;                 
+                    if(this.velocity.y > 0)
+                        {
+                        this.hit_box.position.y=x.position.y-x.height/2-this.hit_box.height/2-2;    
+                        this.acceleration.add(new CreateVector(0,2*-this.velocity.y));                  
+                        }
+                    else
+                        {
+                        this.hit_box.position.y=x.position.y+x.height/2+this.hit_box.height/2+2;        
+                        this.acceleration.add(new CreateVector(0,2*this.velocity.y));               
+                        }
                     }
                 }
             }
@@ -1451,7 +1447,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 
         }
-        
+        */
    class WallGripper extends GeneralSprite
         {
 
@@ -1479,7 +1475,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                                       this.height*0.9,
                                         [ gameManager.collission_sprites,
                                           // gameManager.visible_sprites
-                                        ],this,
+                                        ],
                                      'loothitbox');
 			}	
 		giveExp(objx)
@@ -1502,7 +1498,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
   		 	 this.hit_box=new HitBox(this.position.x,this.position.y,this.width*0.9,this.height*0.5,
                          [ gameManager.kill_plants,
                           // gameManager.visible_sprites
-                         ],this,
+                         ],
                          'thornhitbox');
   		 	 this.imagex= THORNIMAGE;
 		  	}
@@ -1527,7 +1523,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	                         [ 
 	                         gameManager.kill_plants,
 	                          // gameManager.visible_sprites
-	                         ],this,
+	                         ],
 	                         'thornhitbox');
 	  		 	 this.sprite_type='sawwheel';
 	  		 	 this.imagex= SAWWHEEL1;
@@ -1642,7 +1638,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
  		 	 this.hit_box=new HitBox(this.position.x,this.position.y,this.width*0.5,this.height*0.5,
 		 	                         [ //gameManager.collission_sprites,
 		 	                          // gameManager.visible_sprites
-		 	                         ],this,
+		 	                         ],
 		 	                         'tballhitbox');
             this.birthTime=gameManager.runningClock;
             this.lifeTime=lifeTime;
@@ -1823,7 +1819,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.spriteGroups=spriteGroups;
 			 for(let grp of spriteGroups)
 			 	grp.push(this);
-			 this.hit_box=new HitBox(x,y,30*xscale,30*yscale,[],this,'spearhitbox');
+			 this.hit_box=new HitBox(x,y,30*xscale,30*yscale,[],'spearhitbox');
 			 // this.hit_box.angle=this.angle;
 			 this.hit_box_offset=new CreateVector(50*xscale,0);
 			 this.snapping=false;
@@ -2088,8 +2084,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 	                                                        gameManager.collission_sprites
 			 	                                                        // gameManager.visible_sprites
 			 	                                                        // gameManager.active_sprites
-			 	                                                        ],this,
-                                                                        'lancehitbox');
+			 	                                                        ],'lancehitbox');
 			 this.image_offset=new CreateVector(0,0*xscale);
 
 			 this.invincibleState=false;
@@ -2861,7 +2856,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			    this.hit_box=new HitBox(x,y,this.width*0.4,this.height*0.8,[
                                                         gameManager.collission_sprites
                                                         // gameManager.active_sprites
-                                                        ],this,'falseknighthitbox');
+                                                        ],'falseknighthitbox');
 			 this.image_offset=new CreateVector(-30*xscale,-15*yscale);
 			 this.image_offset_fixed=this.image_offset.copy();
 			 this.fkHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,'#222222','#FF0000',[gameManager.visible_sprites],false,'fkhealth');
@@ -3552,7 +3547,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.hit_box=new HitBox(x,y,this.width*0.4,this.height*0.8,[
                                                         gameManager.collission_sprites,
                                                         // gameManager.visible_sprites
-                                                        ],this,'huskminerhitbox');
+                                                        ],'huskminerhitbox');
 			 this.image_offset=new CreateVector(-1*xscale,-15*yscale);
 			 this.image_offset_fixed=this.image_offset.copy();
  			 this.minerHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,
@@ -4218,7 +4213,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.hit_box=new HitBox(x,y,this.width*0.5,this.height*0.5,[
 			 	                                                        gameManager.collission_sprites
 			 	                                                        // gameManager.active_sprites
-			 	                                                        ],this,'huskhitbox');
+			 	                                                        ],'huskhitbox');
 			 this.image_offset=new CreateVector(0,-45*xscale);
 			 this.huskHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,'#222222','#FF0000',[gameManager.visible_sprites],false,'huskhealth');
 			 this.huskHealthBar.onScreen=false;
@@ -4925,14 +4920,13 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.sprite_type='barrierTree';
 			 this.hit_box=new HitBox(x,y,this.width*0.3,this.height*0.9,[gameManager.collission_sprites,
 			 														     // gameManager.visible_sprites                                                
-			 	                                                        ],this,'treehitbox');
+			 	                                                        ],'treehitbox');
 		 	}
 		 burn()
 		 	{
 		 		destroySelf(this.hit_box);
 		 		destroySelf(this);
-
-                for(let i=0;i<1;i++)
+                for(let i=0;i<5;i++)
                     SpawnClouds(this.position);
 		 	}
 		 display()
@@ -5139,7 +5133,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.hit_box=new HitBox(x,y,this.width*0.5,
 		 	 	                         this.height,
 		 	 	                         [gameManager.collission_sprites		 	 	                          
-		 	 	                         ],this,
+		 	 	                         ],
 		 	 	                         'playerhitbox');
 		 	 this.invincibleState=false;
 		 	 this.invin_count=0;
@@ -5325,18 +5319,12 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 							 this.position.y,
 	 							 this.width*0.4,
 	 							 this.height*0.8,
-	 							 [//gameManager.visible_sprites,
+	 							 [gameManager.visible_sprites,
 	 							 	gameManager.hitbox_sprites,
 	 							 	gameManager.active_sprites],
 	 							 'player_hitbox',
 	 							 this,
 	 							 40,0,this.weaponDamage,this.sx*1.5);
-                new Bullet(this.position.x+this.sx*20*xscale,
-                           this.position.y,
-                           60*xscale,
-                           60*yscale,
-                           this,[gameManager.visible_sprites,gameManager.active_sprites]
-                          );
 	 			/*
 	 			new ThornyBall(this.position.x,
 							   this.position.y,

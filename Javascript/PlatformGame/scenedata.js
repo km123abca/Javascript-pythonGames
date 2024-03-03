@@ -1,3 +1,12 @@
+const huskDialogue=[
+                    ["Hello there","What you doing here?"],
+                    ["This place can be dangerous","Even I am quite a menace"],
+                    ["You need to head far right of this place", "That will take you to the realm of the false knight"],
+                    ["Defeat him and you will get something special"],
+                    ["Now Go on little one"],
+                    ["...."],
+                    ["...."]
+                   ];
 let scenes=[
 			[
 				{"sprite":"platform","x":150,"y":-210,"width":50,"height":1280},
@@ -9,7 +18,7 @@ let scenes=[
 				{"sprite":"platform","x":-150,"y":600,"width":1987,"height":50},
 				{"sprite":"platform","x":1459,"y":479,"width":1200,"height":50},
 				{"sprite":"platform","x":3228,"y":696,"width":2313,"height":50},				
-				{"sprite":"player","x":100,"y":200,"width":100,"height":100},
+				{"sprite":"player","x":100,"y":200,"width":150,"height":200},
 				{"sprite":"camstopper_left","x":-565,"y":-491},//394
 				{"sprite":"camstopper_right","x":3591,"y":582},
 				{"sprite":"entryexit_entry","x":-344,"y":464},
@@ -19,8 +28,9 @@ let scenes=[
 				{"sprite":"MarkedSpot_fkjumpup","x":2112,"y":614},				
 				// {"sprite":"huskMiner","x":73,"y":431,"width":170,"height":220,"spriteId":"boss_huskminer1"}
 				// {"sprite":"lance","x":300,"y":200,"width":250,"height":200,spriteId:"lance1"},
-				{"sprite":"husk","x":1616,"y":300,"width":150,"height":200,"spriteId":"husk1"},
-				{"sprite":"flower","x":-69,"y":554,"width":50,"height":50,"xoffset":0,"yoffset":0,"exp":10,"spriteId":"f1"},
+				{"sprite":"husk","x":1616,"y":300,"width":150,"height":200,"spriteId":"husk1",
+				"dialogue":huskDialogue},
+				{"sprite":"flower","x":-69,"y":150,"width":50,"height":50,"xoffset":0,"yoffset":0,"exp":10,"spriteId":"f1"},
 				{"sprite":"flower","x":93,"y":554,"width":50,"height":50,"xoffset":0,"yoffset":0,"exp":10,"spriteId":"f2"},
 				{"sprite":"flower","x":268,"y":554,"width":50,"height":50,"xoffset":0,"yoffset":0,"exp":10,"spriteId":"f3"},	
 				{"sprite":"flower","x":1081,"y":430,"width":50,"height":50,"xoffset":0,"yoffset":0,"exp":10,"spriteId":"f4"},				
