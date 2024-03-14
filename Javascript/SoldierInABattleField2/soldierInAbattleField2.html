@@ -2738,7 +2738,7 @@ class GenericMovable extends GeneralSprite
          this.hit_box=new HitBox(x,
                                  y,
                                  this.width*0.5,this.height*0.5,
-                                 [gameManager.collission_sprites,gameManager.visible_sprites],
+                                 [gameManager.collission_sprites],
                                  'generichitbox',this);
          this.animations={};
          this.animationFractions={};
@@ -3213,7 +3213,7 @@ class Zombie extends GenericMovable
          this.animation='idle';           
          this.state='idle'; 
          //zombie will have a default move velocity, in certain circumstances it will have an enchanced velocity
-         this.maxVelocity_normal=1*xscale;
+         this.maxVelocity_normal=5*xscale;
 
          this.maxVelocity_dashing=30*xscale;
          this.maxVelocity=this.maxVelocity_normal;
@@ -3233,8 +3233,8 @@ class Zombie extends GenericMovable
          this.maxTimeEngagedInMoveIn=4000;
          this.bulletOffset=new CreateVector(60*xscale,10*yscale); 
          this.longAttacksFull=['spawn_circle','runin','runin','farstrike','movein'];
-         // this.longAttacks=['runin','runin','runin','farstrike','movein'];//farstrike
-         this.longAttacks=['farstrike','spawn_circle'];
+         this.longAttacks=['movein','movein','movein','farstrike','movein'];//farstrike
+         // this.longAttacks=['farstrike','spawn_circle'];
          this.shortAttacks=['strike'];  
          this.strikeBoxSpawned=false;
          this.expVal=50;
@@ -3391,13 +3391,13 @@ class Zombie extends GenericMovable
         }
         
         this.maxVelocity=this.maxVelocity_dashing;
+        
         // let enemyDir=gameManager.player.position.copy().sub(this.position);
         this.acceleration.add(this.enemyDirForMoveIn.normalized().mult(2));
-
         if((gameManager.player.position.copy().sub(this.position).mag() < this.stopGrabDistance)||
             (gameManager.runningClock - this.lastFarAttackTime > this.maxTimeEngagedInMoveIn )
             ){
-            this.maxVelocity=this.maxVelocity_normal;
+            this.maxVelocity=this.maxVelocity_normal;            
             this.velocity.set(0,0);
             this.acceleration.set(0,0);
             this.state='agro';

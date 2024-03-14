@@ -191,7 +191,8 @@ let scenes=[
 				
 			],
 			[			    
-			    {"sprite":"lance","x":460,"y":1300,"width":250,"height":200,spriteId:"miniboss_lance1"},			    
+			    {"sprite":"lance","x":460,"y":1300,"width":250,"height":200,spriteId:"miniboss_lance1"},
+			    {"sprite":"MarkedSpot_enemystoptop","x":-628,"y":1030},			    
 			    {"sprite":"platform","x":-1110,"y":600,"width":775,"height":50},
 			    {"sprite":"wall","x":1960,"y":400,"width":250,"height":150,"isHorizontal":false,"copies":14},	
 			    {"sprite":"wall","x":-750,"y":853,"width":250,"height":150,"isHorizontal":false,"copies":4},
@@ -206,6 +207,7 @@ let scenes=[
 				{"sprite":"camstopper_left","x":-600,"y":394},
 				{"sprite":"camstopper_right","x":1620,"y":2590},
 				{"sprite":"entryexit_entry","x":-900,"y":464},
+				// {"sprite":"entryexit_entry","x":-650,"y"1178},
 				{"sprite":"entryexit_exit","x":2087,"y":2590},
 				{"sprite":"scenechanger_scleft","x":-1250,"y":464},
 				{"sprite":"scenechanger_scright","x":2452,"y":2616},
