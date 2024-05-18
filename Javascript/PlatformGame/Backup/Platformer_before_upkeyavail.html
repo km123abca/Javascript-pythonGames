@@ -682,6 +682,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		{
 		constructor(x,y,sprite_type,spriteGroups)
 			{
+
 			  super(x,y,'#0000FF',sprite_type,spriteGroups);
 			  // this.sprite_type=sprite_type;
 			}
@@ -1025,7 +1026,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			                         [ 
 			                          // gameManager.visible_sprites,
 			                          gameManager.collission_sprites
-			                         ],
+			                         ],this,
 				                     'hori_wallhitbox');
 			else
 			this.hit_box=new HitBox(this.position.x,
@@ -1035,7 +1036,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			                         [ 
 			                          // gameManager.visible_sprites,
 			                          gameManager.collission_sprites
-			                         ],
+			                         ],this,
 				                     'vert_wallhitbox');
             this.dustSpawned=false;	
             this.gravityScale=1*yscale;
@@ -1175,8 +1176,9 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 	class HitBox
 		{
-		 constructor(x,y,wid,hei,spriteGroups,hitboxName="unknown hitbox")
+		 constructor(x,y,wid,hei,spriteGroups,parent,hitboxName="unknown hitbox")
 		 	{
+             this.parent=parent;
 		 	 this.position= new CreateVector(x,y);
 		 	 this.width = wid;
 			 this.height= hei;
@@ -1221,7 +1223,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		{
 		constructor(x,y,wid,hei,spriteGroups,hitboxName="unknown hitbox",parentx,xoffset,yoffset,dmg=10,dmghitback=0,life=50)
 			{
-			super(x,y,wid,hei,spriteGroups,hitboxName);
+			super(x,y,wid,hei,spriteGroups,parentx,hitboxName);
 			this.spriteGroups=spriteGroups;
 			this.startTime= gameManager.runningClock;
 			this.parentx=parentx;
@@ -1349,24 +1351,32 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 return true;
 		 	}
 		}
-        /*
+        
    class Bullet extends GeneralSprite
         {
            constructor(x,y,wid,hei,parent,spriteGroups)
             {
                 super(x,y,wid,hei,0,0,spriteGroups); 
+
                 this.hit_box=new HitBox(this.position.x,this.position.y,this.width*0.5,this.height*0.5,
                                      [ //gameManager.collission_sprites,
-                                      gameManager.visible_sprites
+                                      // gameManager.visible_sprites
                                      ],
                                      'bullethitbox');
                 this.imagex=THORNYBALL;
                 this.rotAngle=0; 
+                this.rotSpeed=0.25;
                 this.parent=parent;
-                this.velocity=new CreateVector(this.speed*this.parent*xscale,0);
+                this.speed=20*xscale;
+                // this.velocity=new CreateVector(this.speed*this.parent.sx*xscale,0);
+                this.velocity=new CreateVector(0,0);
+                this.maxVelocity=new CreateVector(40*xscale,20*yscale);
                 this.acceleration=new CreateVector(0,0); 
 
             } 
+         applyForce(){
+            this.acceleration.x=this.parent.sx*xscale*6;
+         }
          display()
             {            
              if(!this.onScreen) return false;
@@ -1380,7 +1390,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
             }
          update()
             {
-             
+             this.applyForce();
              this.velocity.add(this.acceleration);
              this.acceleration.set(0,0);
              this.applyVelocity();
@@ -1400,33 +1410,35 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                 { 
                  let x=gameManager.collission_sprites[k];
                  if(!x.onScreen) continue;
-                 if(x==this.hit_box) continue;               
+                 if(x==this.hit_box || x==this.parent.hit_box) continue;               
                  if(b_collision(this.hit_box,x)) 
                     {            
-                     if(x.)   
-                     
+                     if(x.sprite_type=='huskhitbox') 
+                        x.parent.takeDamage(5);
+                    destroySelf(this.hit_box);
+                    destroySelf(this);  
+                    SpawnClouds(this.position,5); 
+                                 
                     }
                 }
 
              this.hit_box.position.y+=this.velocity.y;
-             for(let x of gameManager.collission_sprites)
+             for(let k in gameManager.collission_sprites)
                 {
 
+                 let x=gameManager.collission_sprites[k];
                  if(!x.onScreen) continue;
-                 if(x==this) continue;               
+                 if(x==this.hit_box || x==this.parent.hit_box) continue;              
                  if(b_collision(this.hit_box,x)) 
-                    {
-                    this.collidedObj=x.sprite_type;                 
-                    if(this.velocity.y > 0)
-                        {
-                        this.hit_box.position.y=x.position.y-x.height/2-this.hit_box.height/2-2;    
-                        this.acceleration.add(new CreateVector(0,2*-this.velocity.y));                  
-                        }
-                    else
-                        {
-                        this.hit_box.position.y=x.position.y+x.height/2+this.hit_box.height/2+2;        
-                        this.acceleration.add(new CreateVector(0,2*this.velocity.y));               
-                        }
+                    {            
+                     if(x.sprite_type=='huskhitbox' || x.sprite_type=='lancehitbox') 
+                        x.parent.takeDamage(5);
+                     else
+                     document.querySelector('#retroJump').play();
+                    destroySelf(this.hit_box);
+                    destroySelf(this);  
+                    SpawnClouds(this.position,5); 
+                                   
                     }
                 }
             }
@@ -1447,7 +1459,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 
         }
-        */
+        
    class WallGripper extends GeneralSprite
         {
 
@@ -1475,7 +1487,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                                       this.height*0.9,
                                         [ gameManager.collission_sprites,
                                           // gameManager.visible_sprites
-                                        ],
+                                        ],this,
                                      'loothitbox');
 			}	
 		giveExp(objx)
@@ -1498,7 +1510,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
   		 	 this.hit_box=new HitBox(this.position.x,this.position.y,this.width*0.9,this.height*0.5,
                          [ gameManager.kill_plants,
                           // gameManager.visible_sprites
-                         ],
+                         ],this,
                          'thornhitbox');
   		 	 this.imagex= THORNIMAGE;
 		  	}
@@ -1523,7 +1535,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	                         [ 
 	                         gameManager.kill_plants,
 	                          // gameManager.visible_sprites
-	                         ],
+	                         ],this,
 	                         'thornhitbox');
 	  		 	 this.sprite_type='sawwheel';
 	  		 	 this.imagex= SAWWHEEL1;
@@ -1638,7 +1650,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
  		 	 this.hit_box=new HitBox(this.position.x,this.position.y,this.width*0.5,this.height*0.5,
 		 	                         [ //gameManager.collission_sprites,
 		 	                          // gameManager.visible_sprites
-		 	                         ],
+		 	                         ],this,
 		 	                         'tballhitbox');
             this.birthTime=gameManager.runningClock;
             this.lifeTime=lifeTime;
@@ -1819,7 +1831,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.spriteGroups=spriteGroups;
 			 for(let grp of spriteGroups)
 			 	grp.push(this);
-			 this.hit_box=new HitBox(x,y,30*xscale,30*yscale,[],'spearhitbox');
+			 this.hit_box=new HitBox(x,y,30*xscale,30*yscale,[],this,'spearhitbox');
 			 // this.hit_box.angle=this.angle;
 			 this.hit_box_offset=new CreateVector(50*xscale,0);
 			 this.snapping=false;
@@ -1988,6 +2000,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 constructor(x,y,wid,hei,spriteGroups,spriteId='lance0')
 		    {
 		     this.position=new CreateVector(x,y);
+             this.initPosition=new CreateVector(x,y);
 		     this.width = wid * xscale;
 		     this.height = hei * yscale;
 		     this.spriteId=spriteId;
@@ -2084,12 +2097,13 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 	                                                        gameManager.collission_sprites
 			 	                                                        // gameManager.visible_sprites
 			 	                                                        // gameManager.active_sprites
-			 	                                                        ],'lancehitbox');
+			 	                                                        ],this,
+                                                                        'lancehitbox');
 			 this.image_offset=new CreateVector(0,0*xscale);
 
 			 this.invincibleState=false;
 		 	 this.invin_count=0;
-		 	 this.max_invin_time=2000;
+		 	 this.max_invin_time=500;
 		 	 this.flickerCount=0;
 			 this.maxFlickerTime=100;
 			 // this.longRangeAttacks=['throw','rush'];
@@ -2105,7 +2119,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 			 this.phase1Rush=false;
 			 this.rushVarsSet=false;
-			 this.rushForce=new CreateVector(0,2*yscale);
+			 this.rushForce=new CreateVector(0,5*yscale);
+             this.riseup_start_time=0;
 			 this.probeDir=new CreateVector(0,1);
 			 this.rushProbeDist=100*yscale;
 			 this.movementHalted=false;
@@ -2127,6 +2142,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	this.ballTimer=0;
 		 	this.ballGapMax=1000;
 		 	this.expVal=50;
+            this.spotToCheckT=null;
+
+            
+            this.waitLimbo=0;
 			 //lance constructor ends
 		    }
 		manageInvincibility()
@@ -2156,8 +2175,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 			destroySelf(this);
 	 			destroySelf(this.hit_box);
 	 			destroySelf(this.lanceHealthBar);
+                fogGateSound.play();
 	 			gameManager.listOfDestroyedSprites.push(this.spriteId);
 	 			this.isActive=false;
+                DestroyAllBarriersInScene();
 	 			}	
 		 	}
 
@@ -2241,10 +2262,48 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 case 'quickThrow':
 		 	 	 	this.quickThrow();
 		 	 	 	break;
+                 case 'waitLimbo':
+                    this.WaitLimbo();
+                    break;
 		 	 	 default:
 		 	 	 	break;
 		 	 	}
 		 	}
+        CheckIfPlayerWentOutOfScope()
+            {  
+              if(!this.spotToCheckT){
+                for(let x of gameManager.markedSpots)
+                {                
+                if(x.sprite_type=="enemystoptop")
+                    this.spotToCheckT=x;
+                }
+              }
+
+              if(!this.spotToCheckT || !gameManager.player.isActive){
+                // console.log('no spot');
+                return;
+              }    
+              console.log('checking');          
+              if(this.spotToCheckT.position.y > gameManager.player.position.y)
+                {                  
+                  this.state='waitLimbo';
+                  this.switchAnimation('idle');
+                  this.limboStart=gameManager.runningClock;
+                }  
+
+            }
+        WaitLimbo(){
+            if(gameManager.player.position.y >= this.spotToCheckT.position.y){
+                this.state="agro";
+            }
+            if(gameManager.runningClock- this.limboStart> 2000){                
+                SpawnClouds(this.position);
+                this.position.setVec(this.initPosition);
+                // this.position.x=0;
+                // this.position.y=0;
+                this.state='idle';
+            }
+        }
 		PlayerDetected(dist=this.raycastLength)
 			{
 			  if(!this.tgt) return false;
@@ -2289,18 +2348,29 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	this.angle=AngleLerp(this.angle,0,30);
 		 	 if(this.enemysx==0)
 		 	 	{
-		 	 	 this.enemysx=Math.sign(this.position.x - this.tgt.position.x);			 	 	 	 	 	 
-		 	 	}		 	 
+		 	 	 this.enemysx=Math.sign(this.position.x - this.tgt.position.x);			 	 	 	 	
+                 this.maxVelocity.x=20*xscale;    	 
+		 	 	}	
+
 		 	 this.acceleration.add(this.horiForce.copy().mult(this.sx*-1));
-		 	 if(Math.abs(this.position.x - this.tgt.position.x) < this.playerGap*0.5 || this.enemysx != this.sx)
+		 	 if(Math.abs(this.position.x - this.tgt.position.x) < this.playerGap*0.5 || 
+                this.enemysx != this.sx)
 		 	 	{
 		 	 	this.state='agro';
+                this.lastAttackTime=0;
 		 	 	this.enemysx=0;
+                this.maxVelocity.x=this.normalvx;
 		 	 	}
 		 	}
 		 
 		 agroActions()
 		 	{
+              if(!gameManager.player || !gameManager.player.isActive)
+              {
+                this.state='idle';
+                return;
+              }
+              this.CheckIfPlayerWentOutOfScope();
 		 	  this.sx=Math.sign(this.position.x-this.tgt.position.x);
 		 	  if(Math.abs(this.angle) > 1)
 		 	 	this.angle=AngleLerp(this.angle,0,30);
@@ -2587,15 +2657,20 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	  	}
 		 	 	}
 		 	}
+         
 		 riseup()
 		 	{
+             if(!this.riseup_start_time)
+                this.riseup_start_time=gameManager.runningClock;
 
-		 	 if(this.tgt.position.y - this.position.y < 200*yscale)
+             let cant_keep_rising= gameManager.runningClock- this.riseup_start_time > 3000;
+		 	 if(this.tgt.position.y - this.position.y < 200*yscale && !cant_keep_rising)
 		 	 	 this.acceleration.add(this.rushForce.copy().mult(-1));
 		 	 else
 		 	 	{
 		 	 	 this.velocity.y=0;
 		 	 	 this.state='agro';
+                 this.riseup_start_time=0;
 		 	 	}
 		 	}
 		 
@@ -2856,7 +2931,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			    this.hit_box=new HitBox(x,y,this.width*0.4,this.height*0.8,[
                                                         gameManager.collission_sprites
                                                         // gameManager.active_sprites
-                                                        ],'falseknighthitbox');
+                                                        ],this,'falseknighthitbox');
 			 this.image_offset=new CreateVector(-30*xscale,-15*yscale);
 			 this.image_offset_fixed=this.image_offset.copy();
 			 this.fkHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,'#222222','#FF0000',[gameManager.visible_sprites],false,'fkhealth');
@@ -2870,7 +2945,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 			 this.invincibleState=false;
 		 	 this.invin_count=0;
-		 	 this.max_invin_time=1000;
+		 	 this.max_invin_time=500;
 		 	 this.flickerCount=0;
 			 this.maxFlickerTime=100;
 
@@ -3547,7 +3622,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.hit_box=new HitBox(x,y,this.width*0.4,this.height*0.8,[
                                                         gameManager.collission_sprites,
                                                         // gameManager.visible_sprites
-                                                        ],'huskminerhitbox');
+                                                        ],this,'huskminerhitbox');
 			 this.image_offset=new CreateVector(-1*xscale,-15*yscale);
 			 this.image_offset_fixed=this.image_offset.copy();
  			 this.minerHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,
@@ -3564,7 +3639,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 			 this.invincibleState=false;
 		 	 this.invin_count=0;
-		 	 this.max_invin_time=2000;
+		 	 this.max_invin_time=500;
 		 	 this.flickerCount=0;
 			 this.maxFlickerTime=100;
 			 
@@ -4050,8 +4125,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                 this.coolDownTimer+=deltaTime;
                 // console.log(this.coolDownTimer);
                 if(this.coolDownTimer > 1000){
-                    this.coolDownTimer=0;  
-                    console.log('key is free');           
+                    this.coolDownTimer=0;                            
                 }
             }
             listenForKeys()
@@ -4063,8 +4137,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                         return;
                     }
 
-                    this.di+=1;
-                    console.log('di:'+this.di);
+                    this.di+=1;                    
                     if(this.di >= this.dialogue.length)
                         this.di=0;
                 }
@@ -4213,7 +4286,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.hit_box=new HitBox(x,y,this.width*0.5,this.height*0.5,[
 			 	                                                        gameManager.collission_sprites
 			 	                                                        // gameManager.active_sprites
-			 	                                                        ],'huskhitbox');
+			 	                                                        ],this,'huskhitbox');
 			 this.image_offset=new CreateVector(0,-45*xscale);
 			 this.huskHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,'#222222','#FF0000',[gameManager.visible_sprites],false,'huskhealth');
 			 this.huskHealthBar.onScreen=false;
@@ -4226,7 +4299,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 			 this.invincibleState=false;
 		 	 this.invin_count=0;
-		 	 this.max_invin_time=2000;
+		 	 this.max_invin_time=500;
 		 	 this.flickerCount=0;
 			 this.maxFlickerTime=100;
 
@@ -4904,6 +4977,16 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 return false;
 		 	}
 		}
+    function DestroyAllBarriersInScene(){
+        let arr=[];
+        for(let x of gameManager.visible_sprites)        
+            if(x.sprite_type=="barrierTree")
+                arr.push(x);
+        for(let elem of arr){
+            elem.burn();
+        }
+        
+    }
 	class BarrierTree
 		{
 		 constructor(x,y,wid,hei,spriteGroups)
@@ -4920,13 +5003,14 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.sprite_type='barrierTree';
 			 this.hit_box=new HitBox(x,y,this.width*0.3,this.height*0.9,[gameManager.collission_sprites,
 			 														     // gameManager.visible_sprites                                                
-			 	                                                        ],'treehitbox');
+			 	                                                        ],this,'treehitbox');
 		 	}
 		 burn()
 		 	{
 		 		destroySelf(this.hit_box);
 		 		destroySelf(this);
-                for(let i=0;i<5;i++)
+
+                for(let i=0;i<1;i++)
                     SpawnClouds(this.position);
 		 	}
 		 display()
@@ -5057,6 +5141,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.width=wid*xscale;
 			 this.height=hei*yscale;
 			 this.numJumps=0;
+             this.casting=false;
              /*
 			 let idle_images=Array(10).fill(0).map((x,i)=>'E_E_Sword__Idle_00'+i+'.png');
 			 let run_images= Array(10).fill(0).map((x,i)=>'E_E_Sword__Run_00'+i+'.png');
@@ -5121,19 +5206,21 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.maxHealth=100;
 		 	 this.hitBoxSpawned=false;
 		 	 this.weaponDamage=10;
-		 	 this.energy = 50;
-		 	 this.maxEnergy=100;
+		 	 this.energy = 100;
+		 	 this.maxEnergy=100;             
 		 	 this.energyRefillRate=0.25
 		 	 this.energyDepleteRate=10;
+             this.hitCredit=100;
+             this.maxHitCredit=100;
 		 	 this.energyCosts={"slash":5,"jump":0};
 
 		 	 gameManager.playerHealthBar.setValues(this.health,this.maxHealth);
-		 	 gameManager.playerEnergyBar.setValues(this.energy,this.maxEnergy);
+		 	 gameManager.playerEnergyBar.setValues(this.hitCredit,this.maxHitCredit);
 
 		 	 this.hit_box=new HitBox(x,y,this.width*0.5,
 		 	 	                         this.height,
 		 	 	                         [gameManager.collission_sprites		 	 	                          
-		 	 	                         ],
+		 	 	                         ],this,
 		 	 	                         'playerhitbox');
 		 	 this.invincibleState=false;
 		 	 this.invin_count=0;
@@ -5159,7 +5246,9 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.dashStarted=false;	
 		 	 this.reverseDashing=false;	 
 
-		 	 this.inEnemyRadar=false;	 
+		 	 this.inEnemyRadar=false;
+             this.gravitySwitchedOff=false;
+             this.gravityPauseTime=0;	 
 			}
 		
         CheckIfIsInContactWithWall()
@@ -5177,6 +5266,20 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                 this.maxVelocity.y=this.maxVertVel_player;               
                 return false;
             }
+
+        fillHitCredits(){
+            if(this.hitCredit >= this.maxHitCredit) 
+                return;
+            this.hitCredit+=30;
+            if(this.hitCredit > this.maxHitCredit) this.hitCredit=this.maxHitCredit;
+            gameManager.playerEnergyBar.updateValue(this.hitCredit);
+        }
+        hasEnoughCredits(){
+            if(this.hitCredit < 20) return false;
+            this.hitCredit-=15;
+            if(this.hitCredit<0) this.hitCredit=0;
+            return true;
+        }
 		handleHealing()
 			{
 			 if(gameManager.runningClock - this.lastHealTime < this.healCoolDown)
@@ -5210,7 +5313,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			this.experience = experience;
 			this.health = health;
 			gameManager.playerHealthBar.setValues(this.health,this.maxHealth);
-		 	gameManager.playerEnergyBar.setValues(this.energy,this.maxEnergy);	
+		 	// gameManager.playerEnergyBar.setValues(this.energy,this.maxEnergy);	
+            gameManager.playerEnergyBar.setValues(this.hitCredit,this.maxHitCredit);
 			}
 
 		 updateParams(maxHealth,maxEnergy,weaponDamage)
@@ -5219,7 +5323,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.maxEnergy=maxEnergy;
 		 	 this.weaponDamage=weaponDamage;
 		 	 gameManager.playerHealthBar.setValues(this.health,this.maxHealth);
-		 	 gameManager.playerEnergyBar.setValues(this.energy,this.maxEnergy);
+		 	 // gameManager.playerEnergyBar.setValues(this.energy,this.maxEnergy);
 		 	}
 		 update_and_display_hitbox()
 		 	{
@@ -5291,7 +5395,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			{
 			 if(this.energy >= this.maxEnergy) return false;
 			 this.energy+=this.energyRefillRate;
-			 gameManager.playerEnergyBar.updateValue(this.energy);
+			 // gameManager.playerEnergyBar.updateValue(this.energy);
 			}
 		 	
 		 runAnimation()
@@ -5315,17 +5419,35 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 			{
 	 			
 	 			this.hitBoxSpawned=true;
+                if(!this.casting)
 	 			new DamageHitBox(this.position.x,
 	 							 this.position.y,
 	 							 this.width*0.4,
 	 							 this.height*0.8,
-	 							 [gameManager.visible_sprites,
+	 							 [//gameManager.visible_sprites,
 	 							 	gameManager.hitbox_sprites,
 	 							 	gameManager.active_sprites],
 	 							 'player_hitbox',
 	 							 this,
 	 							 40,0,this.weaponDamage,this.sx*1.5);
-	 			/*
+                else{
+                this.casting=false;
+                if(this.hitCredit > 20)
+                    {
+                    this.hitCredit-=5;
+                    gameManager.playerEnergyBar.updateValue(this.hitCredit);
+                    new Bullet(this.position.x+this.sx*20*xscale,
+                               this.position.y,
+                               160*xscale,
+                               160*yscale,
+                               this,[gameManager.visible_sprites,gameManager.active_sprites]
+                              );
+                    this.switchOffGravity();
+
+                    }
+                    
+                }
+                /*
 	 			new ThornyBall(this.position.x,
 							   this.position.y,
 							   30*xscale,
@@ -5419,10 +5541,24 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	}
 		 applyGravity()
 		 	{
-		 	 if(this.dashing)
+             this.checkGravity();
+		 	 if(this.dashing || this.gravitySwitchedOff)
 		 	 	return false;
 		 	 this.acceleration.y+=this.gravityScale;
 		 	}
+        
+         switchOffGravity()
+            {
+             this.gravitySwitchedOff=true;
+             this.velocity.y=0;
+             this.gravityPauseTime=gameManager.runningClock;
+            }
+         checkGravity()
+            {
+                if(!this.gravitySwitchedOff) return;
+                if(gameManager.runningClock - this.gravityPauseTime > 200)
+                    this.gravitySwitchedOff=false;
+            }
 		 changeAnimation(anim)
 		 	{
 		 	if(this.animation=="slash") return false;
@@ -5475,16 +5611,17 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	{
 		 	 if(this.dashStartTime==0)
 			 	 {
-			 	  this.dashStarted=true;
+			 	  this.dashStarted=true;                  
 			 	  this.dashStartTime= gameManager.runningClock;
 			 	  this.maxVelocity.x= this.dashSpeed;
 			 	  this.velocity.y=0;
-			 	  SpawnClouds(this.position);
+			 	  // SpawnClouds(this.position);
 			 	  document.querySelector('#HitPaddleBloop').play();
 			 	 }
+             SpawnClouds(this.position,4);
 		 	 this.acceleration.add(this.horiForce.copy().mult(this.sx*3));
 		 	 if(gameManager.runningClock - this.dashStartTime > this.maxDashTime)
-		 	 	 {
+		 	 	 {                  
 		 	 	  this.dashing=false;
 		 	 	  this.dashStartTime=0;
 		 	 	  this.maxVelocity.x= this.maxHoriVel_player;
@@ -5549,10 +5686,28 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 			 this.changeAnimation("slash");	
 	 			 
 	 			}
-	 		else if(!GetKeyPressedx("z")&& !this.slashTrigger)
+	 		else if(!GetKeyPressedx(gameManager.strikeKey)&& !this.slashTrigger)
 	 			{
 	 			 this.slashTrigger=true;
 	 			}
+
+            if(GetKeyPressedx(gameManager.castKey) && this.slashTrigger)
+                {
+                 // if(this.energy < this.energyCosts["slash"])
+                 //    return false;
+                 this.energy-=this.energyCosts["slash"]; 
+                 this.slashTrigger=false;
+                 this.casting=true;
+                 this.animInQueue="idle";
+                 this.changeAnimation("slash"); 
+                 
+                }
+            else if(!GetKeyPressedx(gameManager.castKey)&& !this.slashTrigger)
+                {
+                 this.slashTrigger=true;
+                 
+                }
+
 	 			
 		 	}
 
@@ -5685,7 +5840,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	}
 		 display()
 		 	{		 	 
-		 	 if(!this.onScreen || !this.flickerControl()) return false;
+		 	 if(!this.onScreen || this.dashing || !this.flickerControl()) return false;
 
 		 	 ctx.save();
 		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
@@ -6178,7 +6333,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.gamePaused=false;
 		 	 this.inTransition=false;
 		 	 this.sceneForward=true;
-		 	 this.followMouse= false;
+		 	 this.followMouse=false;
 		 	 this.sceneStartTime= 0;
 		 	 this.positionAdjuster=new PositionAdjuster(null,[this.visible_sprites,this.active_sprites]);
 
@@ -6193,7 +6348,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.jumpKey=" ";
 			 this.strikeKey="z";
 			 this.healKey="q";
-			 this.allKeys=[this.jumpKey,this.dashKey,this.strikeKey,this.healKey];
+             this.castKey="v";
+			 this.allKeys=[this.jumpKey,this.dashKey,this.strikeKey,this.healKey,this.castKey];
 		 	}
 		 isNewKey(keyx){
 		 	for(let i in this.allKeys)		 		
@@ -6421,7 +6577,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 	 for(let sprite of this.enemy_sprites)
 		 	 	 	 	{		 	 	 	 	 
 		 	 	 	 	 if(b_collision(sprite.hit_box,hb))
-		 	 	 	 	 	{		 	 	 	 	 		
+		 	 	 	 	 	{	
+                             gameManager.player.fillHitCredits();	 	 	 	 	 		
 		 	 	 	 	 	 hb.causeDamage(sprite);		 	 	 	 	 	 	
 		 	 	 	 	 	}
 		 	 	 	 	}
@@ -6461,8 +6618,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
  	 	 	this.player=new Player(100*xscale,
 		   	   					   200*yscale,
-							   	   100*xscale,
-							   	   100*yscale,
+							   	   150*xscale,
+							   	   200*yscale,
 							   	   [this.visible_sprites,this.active_sprites,this.killables]
 		   	   					  );
  	 	 	console.log('player loaded from memory');
@@ -6578,7 +6735,9 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                                elem['dialogue']?elem['dialogue']:[],
 		 	 	 		   	   elem['spriteId']
 		 	 	 		   	   );
-		 	 	 else if(elem['sprite']=='lance' &&  this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)		 	 	 	
+		 	 	 else if(elem['sprite']=='lance')		 
+                    {	 	 
+                      if(this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)	
 		 	 	 	  new Lance(elem['x']*xscale,
 		 	 	 		   	   elem['y']*yscale,
 		 	 	 		   	   elem['width']*xscale,
@@ -6586,6 +6745,9 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 		   	   [this.visible_sprites,this.enemy_sprites,this.active_sprites],
 		 	 	 		   	   elem['spriteId']
 		 	 	 		   	   );
+                      else
+                        DestroyAllBarriersInScene();
+                    }
 		 	 	 else if(elem['sprite']=='falseknight' &&  this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)		 	 	 	
 		 	 	 	  new FalseKnight(elem['x']*xscale,
 		 	 	 		   	   elem['y']*yscale,

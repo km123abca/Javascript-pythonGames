@@ -535,7 +535,22 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	//keypresses start
     let upArrow=false,leftArrow=false,rightArrow=false,downArrow=false;
     let keysPressed=new Set();
+    let specKeys=new Set([38]);
+    
+    GetSpecialKeyNames=(keyCode)=>{
+        if(keyCode==38) return 'upArrow';
+        return -1;
+    }
     CapturePressedKey=(keyCode,pressed=true)=>{
+
+        if (specKeys.has(keyCode)){
+            if(pressed)
+            keysPressed.add(GetSpecialKeyNames(keyCode));
+            else
+            keysPressed.delete(GetSpecialKeyNames(keyCode));
+            return;
+        }
+
     	if(!((keyCode>64 && keyCode<91)||(keyCode > 96 && keyCode < 123)||(keyCode==32))) return false;
     	let charx=String.fromCharCode(keyCode);
     	let charx2=String.fromCharCode(keyCode+32);    	
@@ -562,8 +577,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	                 		 okToStartMusic=true;
 	                 		 startMusic();
 	                 		}
+                        CapturePressedKey(e.keyCode);
+                        pressedKeyCode=38;
 	                 	if(e.keyCode==37) leftArrow=true;
-	                 	if(e.keyCode==38) upArrow=true;
+	                 	if(e.keyCode==38) upArrow=true;                        
 	                 	if(e.keyCode==39) rightArrow=true;
 	                 	if(e.keyCode==40) downArrow=true;
 	                 }
@@ -5611,16 +5628,17 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	{
 		 	 if(this.dashStartTime==0)
 			 	 {
-			 	  this.dashStarted=true;
+			 	  this.dashStarted=true;                  
 			 	  this.dashStartTime= gameManager.runningClock;
 			 	  this.maxVelocity.x= this.dashSpeed;
 			 	  this.velocity.y=0;
-			 	  SpawnClouds(this.position);
+			 	  // SpawnClouds(this.position);
 			 	  document.querySelector('#HitPaddleBloop').play();
 			 	 }
+             SpawnClouds(this.position,4);
 		 	 this.acceleration.add(this.horiForce.copy().mult(this.sx*3));
 		 	 if(gameManager.runningClock - this.dashStartTime > this.maxDashTime)
-		 	 	 {
+		 	 	 {                  
 		 	 	  this.dashing=false;
 		 	 	  this.dashStartTime=0;
 		 	 	  this.maxVelocity.x= this.maxHoriVel_player;
@@ -5839,7 +5857,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	}
 		 display()
 		 	{		 	 
-		 	 if(!this.onScreen || !this.flickerControl()) return false;
+		 	 if(!this.onScreen || this.dashing || !this.flickerControl()) return false;
 
 		 	 ctx.save();
 		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
@@ -6131,13 +6149,14 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	}
 		 checkForKeyPress()
 		 	{
-		 	 if(downArrow && this.coolDownTimer==0)
+             let freeToMove= !this.showSecondScreen || (this.showSecondScreen && this.keyFocussed==-1 )
+		 	 if(downArrow && this.coolDownTimer==0 && freeToMove)
 		 	 	{
 		 	 	 this.focussed+=1;
 		 	 	 if(this.focussed > this.maxEntries) this.focussed=1;
 		 	 	 this.coolDownTimer=1;
 		 	 	}
-		 	 else if(upArrow && this.coolDownTimer==0)
+		 	 else if(upArrow && this.coolDownTimer==0 && freeToMove)
 		 	 	{
 		 	 	 this.focussed-=1;
 		 	 	 if(this.focussed < 1) this.focussed=this.maxEntries;
@@ -6218,13 +6237,15 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 			  this.pressedKeyCode=pressedKeyCode;	 			  
 	 			  if((pressedKeyCode>64 && pressedKeyCode <91)||
 	 			  	(pressedKeyCode>97 && pressedKeyCode < 122)||
-	 			    (pressedKeyCode==32))
+	 			    (pressedKeyCode==32)||specKeys.has(pressedKeyCode))
 	 			  	{
 	 			  	 let chosenKey="";
 	 			  	 if(pressedKeyCode>64 && pressedKeyCode <91) 
 	 			  	  chosenKey=String.fromCharCode(pressedKeyCode+32);
-	 			  	 else
+	 			  	 else if(!specKeys.has(pressedKeyCode))
 	 			  	  chosenKey=String.fromCharCode(pressedKeyCode); 
+                     else
+                      chosenKey=GetSpecialKeyNames(pressedKeyCode);
 	 			  	 switch (this.keyFocussed)
 	 			  	 	{
 	 			  	 	 case 1:	 			  	 	   
