@@ -578,7 +578,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	                 		 startMusic();
 	                 		}
                         CapturePressedKey(e.keyCode);
-                        pressedKeyCode=38;
+                        pressedKeyCode=e.keyCode;
 	                 	if(e.keyCode==37) leftArrow=true;
 	                 	if(e.keyCode==38) upArrow=true;                        
 	                 	if(e.keyCode==39) rightArrow=true;
@@ -5199,13 +5199,14 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.horiForce=new CreateVector(0.8*xscale,0);
              this.wallForceWhileJumping=new CreateVector(2*xscale,0);
 			 this.gravityScale=1*yscale;
+             this.isOnContactWithGround=true;
 			 this.sx=1;
 			 this.sy=1;
              //vars introduced on 07-05-2023 cntrl-F date to see details
 			 this.jumpingForce_onfirst_jump=3.5*this.gravityScale;
 			 this.jumpingForce_onsecond_jump=1.8*this.gravityScale;
-			 this.maxJumpTime_onfirst_jump=250;
-			 this.maxJumpTime_onsecond_jump=250;
+			 this.maxJumpTime_onfirst_jump=175;
+			 this.maxJumpTime_onsecond_jump=175;
 			 //vars introduced on 07-05-2023 cntrl-F date to see details ends
 			 this.jumpingForce=3.5*this.gravityScale;
 			 this.spaceTrigger=true;
@@ -5505,6 +5506,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	{
 		 	 	 if(this.spaceTrigger  && !this.jumping && this.numJumps<2)
 		 	 	 	{ 
+                    // this.velocity.set(this.velocity.x,0);
+                    this.velocity.y=Math.min(this.velocity.y,0);
                     if(Math.abs(this.IsInContactWithWallVar)==1)	 
                         {
                         this.reverseDashing=true;
@@ -5516,12 +5519,13 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                     	{
                     	this.maxJumpTime=this.maxJumpTime_onfirst_jump;
                     	this.jumpingForce=this.jumpingForce_onfirst_jump;
+
                     	}
                     else
                     	{
 						this.maxJumpTime=this.maxJumpTime_onsecond_jump;
                     	this.jumpingForce=this.jumpingForce_onsecond_jump;
-                        this.velocity.set(this.velocity.x,0);
+                        
                     	}
                     //snippet added on 07-05-2023 to implement different jumping parameters ends
 		 	 	 	this.spaceTrigger=false;
@@ -5552,12 +5556,18 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 else if(!this.spaceTrigger && this.numJumps<2 ) 
 		 	 	this.spaceTrigger=true;
 		 	 if(!GetKeyPressedx(gameManager.jumpKey) && this.jumping) this.jumping=false;
+             // this.isOnContactWithGround=this.checkIfOnGround();
+             
 		 	 if(!GetKeyPressedx(gameManager.jumpKey) && this.numJumps>0 && 
                 (this.checkIfOnGround()|| Math.abs(this.IsInContactWithWallVar) ) ) 
 		 	 	this.numJumps=0;
 		 	}
 		 applyGravity()
 		 	{
+             // if(this.isOnContactWithGround){
+             //    this.velocity.y=Math.max(this.velocity.y,0);
+             //    return;
+             // }
              this.checkGravity();
 		 	 if(this.dashing || this.gravitySwitchedOff)
 		 	 	return false;
@@ -6088,7 +6098,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 else
 			 	 {
 			 	  this.showSecondScreen= true;
-			 	  this.maxEntries=4;
+			 	  this.maxEntries=5;
 			 	 }
 		 	}
 		 update()
@@ -6149,7 +6159,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	}
 		 checkForKeyPress()
 		 	{
-             let freeToMove= !this.showSecondScreen || (this.showSecondScreen && this.keyFocussed==-1 )
+             let freeToMove=true;
+             freeToMove= !this.showSecondScreen || (this.showSecondScreen && this.keyFocussed==-1 );
 		 	 if(downArrow && this.coolDownTimer==0 && freeToMove)
 		 	 	{
 		 	 	 this.focussed+=1;
@@ -6207,12 +6218,13 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	this.enterTrigger=true;
 		 	 let startx=this.position.x -this.width*0.4;
 		 	 let starty=this.position.y - this.height*0.4;
-		 	 let shifts=[[100,0],[-100,80],[0,80],[0,80],[0,80],[500,0]];
+		 	 let shifts=[[100,0],[-100,80],[0,80],[0,80],[0,80],[0,80]];
 		 	 let dialogues=["Use Arrow keys to navigate",
 		 	 			    "Jump :  "+gameManager.jumpKey,
 		 	 			    "Dash :  "+gameManager.dashKey,
 		 	 			    "Strike:  "+gameManager.strikeKey,
-		 	 			    "Heal:  "+gameManager.healKey		 	 			    
+		 	 			    "Heal:  "+gameManager.healKey,
+                            "Cast:  "+gameManager.castKey		 	 			    
 		 	 			   ];
 		 	 for(let i in dialogues)
 		 	 	{	
@@ -6231,12 +6243,15 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 assignNewKeys()
 		 	{
 		 	if(pressedKeyCode==-1) this.pressedKeyCode=-2;
-	 		if(this.keyFocussed==-1) return false;	 		
+            if(pressedKeyCode==-1) return false;
+	 		if(this.keyFocussed==-1) return false;
+             
 	 		if(pressedKeyCode!=this.pressedKeyCode)
-	 			{	 				
+	 			{	 	
+                  		
 	 			  this.pressedKeyCode=pressedKeyCode;	 			  
 	 			  if((pressedKeyCode>64 && pressedKeyCode <91)||
-	 			  	(pressedKeyCode>97 && pressedKeyCode < 122)||
+	 			  	(pressedKeyCode>96 && pressedKeyCode < 123)||
 	 			    (pressedKeyCode==32)||specKeys.has(pressedKeyCode))
 	 			  	{
 	 			  	 let chosenKey="";
@@ -6292,6 +6307,17 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 			  	 	   	else 
 	 			  	 	   		alert("duplicate key");
 	 			  	 	   break;
+                        case 5:
+                           if(gameManager.isNewKey(chosenKey))
+                             {
+                                gameManager.allKeys[4]=chosenKey;
+                                gameManager.castKey=chosenKey;
+                                console.log(`new cast key:${chosenKey}`);
+                                gameManager.storeKeyDataToLocalStorage();
+                             }
+                            else 
+                                alert("duplicate key");
+                           break;
 	 			  	 	}
 	 			  	}
 	 			  
@@ -6368,12 +6394,15 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.jumpKey=" ";
 			 this.strikeKey="z";
 			 this.healKey="q";
-             this.castKey="v";
+             this.castKey="x";
 			 this.allKeys=[this.jumpKey,this.dashKey,this.strikeKey,this.healKey,this.castKey];
 		 	}
 		 isNewKey(keyx){
-		 	for(let i in this.allKeys)		 		
+            console.log('checking:'+keyx);
+		 	for(let i in this.allKeys)	{	
+                 console.log('found '+this.allKeys[i]); 		
 		 		 if(this.allKeys[i]==keyx) return false;
+                }
 		 	return true;		 		
 		 }
 		 togglePauseScreen(){
@@ -6396,11 +6425,13 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	this.dashKey=keyData.dashKey;
 		 	this.strikeKey=keyData.strikeKey;
 		 	this.healKey=keyData.healKey;
-		 	this.allKeys=[this.jumpKey,this.dashKey,this.strikeKey,this.healKey];
+            if (keyData.castKey)
+            this.castKey=keyData.castKey;
+		 	this.allKeys=[this.jumpKey,this.dashKey,this.strikeKey,this.healKey,this.castKey];
 		 }
 		 storeKeyDataToLocalStorage(){
 		 	let keyData={"jumpKey":this.jumpKey,"dashKey":this.dashKey,
-		 	             "strikeKey":this.strikeKey,"healKey":this.healKey
+		 	             "strikeKey":this.strikeKey,"healKey":this.healKey,"castKey":this.castKey
 		                };
 		    localStorage.setItem("gameKeyData",JSON.stringify(keyData));
 		 }
