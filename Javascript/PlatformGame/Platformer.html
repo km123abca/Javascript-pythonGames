@@ -1389,6 +1389,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                 this.velocity=new CreateVector(0,0);
                 this.maxVelocity=new CreateVector(40*xscale,20*yscale);
                 this.acceleration=new CreateVector(0,0); 
+                this.lifeTime=3000;
+                this.birthTime=gameManager.runningClock;
 
             } 
          applyForce(){
@@ -1413,12 +1415,21 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
              this.applyVelocity();
              this.applyVelocityRestrictions();             
              this.rotateself();
-             this.update_and_display_hitbox();             
+             this.update_and_display_hitbox();  
+             this.checkLife();           
             }
         rotateself()
             {
              this.rotAngle+=this.rotSpeed;
              if(this.rotAngle > 360) this.rotAngle=0;
+            }
+         checkLife()
+            {
+                if(gameManager.runningClock - this.birthTime > this.lifeTime)
+                {
+                    destroySelf(this.hit_box);
+                    destroySelf(this); 
+                }
             }
          applyVelocity()
             {                    
@@ -5205,8 +5216,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
              //vars introduced on 07-05-2023 cntrl-F date to see details
 			 this.jumpingForce_onfirst_jump=3.5*this.gravityScale;
 			 this.jumpingForce_onsecond_jump=1.8*this.gravityScale;
-			 this.maxJumpTime_onfirst_jump=175;
-			 this.maxJumpTime_onsecond_jump=175;
+			 this.maxJumpTime_onfirst_jump=50;
+			 this.maxJumpTime_onsecond_jump=50;
 			 //vars introduced on 07-05-2023 cntrl-F date to see details ends
 			 this.jumpingForce=3.5*this.gravityScale;
 			 this.spaceTrigger=true;
@@ -5507,7 +5518,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 if(this.spaceTrigger  && !this.jumping && this.numJumps<2)
 		 	 	 	{ 
                     // this.velocity.set(this.velocity.x,0);
-                    this.velocity.y=Math.min(this.velocity.y,0);
+                    // this.velocity.y=Math.min(this.velocity.y,0);
+                    this.velocity.y=-this.maxVelocity.y;
                     if(Math.abs(this.IsInContactWithWallVar)==1)	 
                         {
                         this.reverseDashing=true;
