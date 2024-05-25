@@ -570,7 +570,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     let pressedKeyCode=-1;
 	document.onkeydown=function(e)
 	                 {
-	                 	// console.log(e.keyCode);
+	                 	// console.log(`pressed ${e.keyCode}`);
 	                 	// CapturePressedKey(e.keyCode);             	
 	                 	if(!okToStartMusic)
 	                 		{
@@ -621,7 +621,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 					};
 	document.onkeyup=function (e)
 					{	
-					// console.log(e.keyCode);
+					// console.log(`released ${e.keyCode}`);
 					pressedKeyCode=-1;
 					CapturePressedKey(e.keyCode,false);
 					if(e.keyCode==32) spacePress=false;					
@@ -2311,7 +2311,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                 // console.log('no spot');
                 return;
               }    
-              console.log('checking');          
+                       
               if(this.spotToCheckT.position.y > gameManager.player.position.y)
                 {                  
                   this.state='waitLimbo';
@@ -2326,7 +2326,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
             }
             if(gameManager.runningClock- this.limboStart> 2000){                
                 SpawnClouds(this.position);
-                this.position.setVec(this.initPosition);
+                this.hit_box.position.setVec(this.initPosition);
                 // this.position.x=0;
                 // this.position.y=0;
                 this.state='idle';
@@ -6069,7 +6069,33 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	  this.lboxFlickerMaxTime=200;
 		 	  this.pressedKeyCode=-2;
 		 	  this.mouseTrigger=true;
+              this.disappearingMessageStartTime=0;
+              this.disappearingMessage="";              
+              this.maxDisap=2000;
+              this.disFlickerGap=this.maxDisap/20;
+              this.disFlickTimer=0;
+              this.disFlickBool=true;
 		 	}
+         disFlickerControl(){
+            this.disFlickTimer+=deltaTime;
+            if(this.disFlickTimer > this.disFlickerGap){
+                this.disFlickTimer=0;
+                this.disFlickBool=!this.disFlickBool;
+            }
+            return this.disFlickBool;
+         }
+         displayTempMessage(){
+            if(this.disappearingMessageStartTime==0) return;
+            if(gameManager.runningClock - this.disappearingMessageStartTime>this.maxDisap){
+                this.disappearingMessageStartTime=0;
+            }    
+            if(this.disFlickerControl())        
+            w2screen(this.disappearingMessage,canvas.width/2,canvas.height/2,'#00FFFF');
+         }
+         showDisappearingMessage(msg){
+            this.disappearingMessageStartTime=gameManager.runningClock;
+            this.disappearingMessage=msg;
+         }
 
 		 clickedOutside()
 		 	{
@@ -6118,6 +6144,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 
 		 	 if(!gameManager.gamePaused || !gameManager.player) 
 		 	 	{
+                this.focussed=1;
 		 	 	if(this.showSecondScreen) this.switchScreen();
 		 	 	return false;	
 		 	 	}	 	
@@ -6172,7 +6199,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 checkForKeyPress()
 		 	{
              let freeToMove=true;
-             freeToMove= !this.showSecondScreen || (this.showSecondScreen && this.keyFocussed==-1 );
+             // freeToMove= !this.showSecondScreen || (this.showSecondScreen && this.keyFocussed==-1 );
+             freeToMove=this.keyFocussed==-1;
 		 	 if(downArrow && this.coolDownTimer==0 && freeToMove)
 		 	 	{
 		 	 	 this.focussed+=1;
@@ -6188,11 +6216,13 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 else if(rightArrow && this.coolDownTimer==0)
 		 	 	{
 		 	 	  this.coolDownTimer=1;
+                  if(!this.showSecondScreen)
 		 	 	  this.changeParam();
 		 	 	}
 		 	 else if(leftArrow && this.coolDownTimer==0)
 		 	 	{
 		 	 	  this.coolDownTimer=1;
+                  if(!this.showSecondScreen)
 		 	 	  this.changeParam(-1);
 		 	 	}
 
@@ -6200,6 +6230,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 display()
 		 	{
 		 	 if(!gameManager.gamePaused) return false;
+             
 		 	 ctx.save();
 		 	 ctx.translate(this.position.x,this.position.y);
 		 	 ctx.fillStyle="#604020";
@@ -6212,6 +6243,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 if(this.showSecondScreen) this.showKeyReAssignDetails();
 		 	 else this.showStats();
 		 	 this.displayAndUpdateButtons();
+             this.displayTempMessage();
 		 	}
 
 		 showKeyReAssignDetails()
@@ -6284,7 +6316,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 			  	 	   	 	gameManager.storeKeyDataToLocalStorage();
 	 			  	 	   	 }
 	 			  	 	   	else 
-	 			  	 	   		alert("duplicate key");
+	 			  	 	   		this.showDisappearingMessage("duplicate key");
 	 			  	 	   break;
 	 			  	 	 case 2:
 	 			  	 	   if(gameManager.isNewKey(chosenKey))
@@ -6295,7 +6327,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 			  	 	   	 	gameManager.storeKeyDataToLocalStorage();
 	 			  	 	   	 }
 	 			  	 	   	else 
-	 			  	 	   		alert("duplicate key");
+	 			  	 	   		this.showDisappearingMessage("duplicate key");
 	 			  	 	   break;
 	 			  	 	 case 3:
 	 			  	 	   if(gameManager.isNewKey(chosenKey))
@@ -6306,7 +6338,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 			  	 	   	 	gameManager.storeKeyDataToLocalStorage();
 	 			  	 	   	 }
 	 			  	 	   	else 
-	 			  	 	   		alert("duplicate key");
+	 			  	 	   		this.showDisappearingMessage("duplicate key");
 	 			  	 	   break;
 	 			  	 	 case 4:
 	 			  	 	   if(gameManager.isNewKey(chosenKey))
@@ -6317,7 +6349,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 			  	 	   	 	gameManager.storeKeyDataToLocalStorage();
 	 			  	 	   	 }
 	 			  	 	   	else 
-	 			  	 	   		alert("duplicate key");
+	 			  	 	   		this.showDisappearingMessage("duplicate key");
 	 			  	 	   break;
                         case 5:
                            if(gameManager.isNewKey(chosenKey))
@@ -6328,7 +6360,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                                 gameManager.storeKeyDataToLocalStorage();
                              }
                             else 
-                                alert("duplicate key");
+                                this.showDisappearingMessage("duplicate key");
                            break;
 	 			  	 	}
 	 			  	}
@@ -6410,9 +6442,9 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.allKeys=[this.jumpKey,this.dashKey,this.strikeKey,this.healKey,this.castKey];
 		 	}
 		 isNewKey(keyx){
-            console.log('checking:'+keyx);
+            // console.log('checking:'+keyx);
 		 	for(let i in this.allKeys)	{	
-                 console.log('found '+this.allKeys[i]); 		
+                 // console.log('found '+this.allKeys[i]); 		
 		 		 if(this.allKeys[i]==keyx) return false;
                 }
 		 	return true;		 		
