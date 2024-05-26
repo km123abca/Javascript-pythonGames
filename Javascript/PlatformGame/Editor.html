@@ -841,11 +841,14 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 	{
 			 	 grp.push(this);
 			 	}
+			 this.mouseTrigger=false;
+			 this.outputTrigger=false;
 			}
 		changeObject(obj)
 			{
 			 this.obj=obj;
 			}
+
 		display()
 			{	
 			if(!this.obj) return false;		 				
@@ -862,6 +865,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		update()
 			{
 			 this.attractFocus();
+			 this.catchOnMousePress();
+			 this.mindOutput();
 			 if(!this.obj) return false;
 			 this.adjustObjPosition();
 			 this.adjustObjShape();			 	
@@ -875,6 +880,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 w2screen(`x:${(this.obj.position.x/xscale).toFixed(0)},y:${(this.obj.position.y/yscale).toFixed(0)}`,300,150);
 			 w2screen(`width:${(this.obj.width/xscale).toFixed(0)},height:${(this.obj.height/yscale).toFixed(0)}`,300,200);
 			}	
+
 		attractFocus()
 			{
 			if(gPress)
@@ -891,6 +897,35 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 				  	}
 				}
 			}
+		catchOnMousePress(){
+			if(!gameManager.followMouse) return;
+			if(mousePressed && !this.mouseTrigger){
+				this.mouseTrigger=true;
+				if(this.obj){
+					this.obj=null;
+					return;
+				}
+				for (let go_index in gameManager.visible_sprites){
+					if(gameManager.visible_sprites[go_index]==this) continue;					
+					let go=gameManager.visible_sprites[go_index];
+					
+					let xpos=go.position.x - gameManager.camera.position.x;
+					let ypos=go.position.y - gameManager.camera.position.y;
+					if(mouseX> xpos-go.width/2 && 
+					   mouseX< xpos+go.width/2 && 
+					   mouseY> ypos-go.height/2 && 
+					   mouseY< ypos+go.height/2  
+						)
+					{
+						this.objIndex=go_index;
+						this.changeObject(gameManager.visible_sprites[this.objIndex]);
+					}
+
+				}
+			}else if(this.mouseTrigger && !mousePressed )
+			this.mouseTrigger=false;
+
+		}
 		adjustObjPosition()
 			{
 			 if(ipress || jpress || mpress || lpress) 
@@ -923,6 +958,199 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 	this.obj.width=this.obj.width + this.moveSpeed;
 			 else if(fPress)
 			 	this.obj.width=this.obj.width - this.moveSpeed;
+			}
+		prepareData()
+			{
+				let outputJson=[];
+				for (let i in gameManager.visible_sprites)
+				{
+				 let go=gameManager.visible_sprites[i];
+				 let outputJsonObj={};
+				 if(go.sprite_type=='WallGripper')
+				 	{
+				 		outputJsonObj['sprite']='WallGripper';
+				 		outputJsonObj['x']=(go.position.x/xscale).toFixed(2);
+				 		outputJsonObj['y']=(go.position.y/yscale).toFixed(2);
+				 		outputJsonObj['width']=(go.width/xscale).toFixed(2);
+				 		outputJsonObj['height']=(go.height/yscale).toFixed(2);
+				 	}
+				 else if(go.sprite_type=='platform')
+				 	{
+				 		outputJsonObj['sprite']='platform';
+				 		outputJsonObj['x']=(go.position.x/xscale).toFixed(2);
+				 		outputJsonObj['y']=(go.position.y/yscale).toFixed(2);
+				 		outputJsonObj['width']=(go.width/xscale).toFixed(2);
+				 		outputJsonObj['height']=(go.height/yscale).toFixed(2);
+				 	}
+				 else if (go.sprite_type.split('_')[0]=='camstopper')
+				 	{
+				 		outputJsonObj['sprite']=go.sprite_type;
+				 		outputJsonObj['x']=(go.position.x/xscale).toFixed(2);
+				 		outputJsonObj['y']=(go.position.y/yscale).toFixed(2);				 		
+				 	}
+				 else if (go.sprite_type=='fkjumpup' || go.sprite_type=='enemystopleft' ||
+				 	      go.sprite_type=='enemystoptop' || go.sprite_type=='enemystopright'
+				 	     )
+				 	{
+				 		outputJsonObj['sprite']='MarkedSpot_'+go.sprite_type;
+				 		outputJsonObj['x']=(go.position.x/xscale).toFixed(2);
+				 		outputJsonObj['y']=(go.position.y/yscale).toFixed(2);				 		
+				 	}
+				 else if (go.sprite_type=='entry' || go.sprite_type=='exit')
+				 	{
+				 		outputJsonObj['sprite']='entryexit_'+go.sprite_type;
+				 		outputJsonObj['x']=(go.position.x/xscale).toFixed(2);
+				 		outputJsonObj['y']=(go.position.y/yscale).toFixed(2);				 		
+				 	}
+				 else if (go.sprite_type=='scright' || go.sprite_type=='scleft')
+				 	{
+				 		outputJsonObj['sprite']='scenechanger_'+go.sprite_type;
+				 		outputJsonObj['x']=(go.position.x/xscale).toFixed(2);
+				 		outputJsonObj['y']=(go.position.y/yscale).toFixed(2);				 		
+				 	}
+				 else if (go.sprite_type=='husk')
+				 	{
+				 		outputJsonObj['sprite']=go.sprite_type;
+				 		outputJsonObj['x']=(go.position.x/xscale).toFixed(2);
+				 		outputJsonObj['y']=(go.position.y/yscale).toFixed(2);	
+				 		outputJsonObj['width']=(go.width/xscale).toFixed(2);
+				 		outputJsonObj['height']=(go.height/yscale).toFixed(2);
+				 		outputJsonObj['dialogue']=go.dialogue;
+				 		outputJsonObj['spriteId']=go.spriteId;			 		
+				 	}
+				 else if (go.sprite_type=='lance')
+				 	{
+				 		outputJsonObj['sprite']=go.sprite_type;
+				 		outputJsonObj['x']=(go.position.x/xscale).toFixed(2);
+				 		outputJsonObj['y']=(go.position.y/yscale).toFixed(2);	
+				 		outputJsonObj['width']=(go.width/xscale).toFixed(2);
+				 		outputJsonObj['height']=(go.height/yscale).toFixed(2);				 		
+				 		outputJsonObj['spriteId']=go.spriteId;			 		
+				 	}
+				 else if (go.sprite_type=='falseknight')
+				 	{
+				 		outputJsonObj['sprite']=go.sprite_type;
+				 		outputJsonObj['x']=(go.position.x/xscale).toFixed(2);
+				 		outputJsonObj['y']=(go.position.y/yscale).toFixed(2);	
+				 		outputJsonObj['width']=(go.width/xscale).toFixed(2);
+				 		outputJsonObj['height']=(go.height/yscale).toFixed(2);				 		
+				 		outputJsonObj['spriteId']=go.spriteId;	
+				 		outputJsonObj['spawnedBoss']=!go.onScreen;		 		
+				 	}
+				 else if (go.sprite_type.split('_')[0]=='MarkedSpot')
+				 	{
+				 		outputJsonObj['sprite']='MarkedSpot_'+go.sprite_type;
+				 		outputJsonObj['x']=(go.position.x/xscale).toFixed(2);
+				 		outputJsonObj['y']=(go.position.y/yscale).toFixed(2);				 		
+				 	}
+				 else if (go.sprite_type=='BossFightTriggGO')
+				 	{
+				 		outputJsonObj['sprite']=go.sprite_type;
+				 		outputJsonObj['x']=(go.position.x/xscale).toFixed(2);
+				 		outputJsonObj['y']=(go.position.y/yscale).toFixed(2);	
+				 		outputJsonObj['mywidth']=(go.width/xscale).toFixed(2);
+				 		outputJsonObj['myheight']=(go.height/yscale).toFixed(2);				 		
+				 		outputJsonObj['br1posx']=go.br1pos.x;	
+				 		outputJsonObj['br1posy']=go.br1pos.y;
+				 		outputJsonObj['br2posx']=go.br2pos.x;	
+				 		outputJsonObj['br2posy']=go.br2pos.y;
+				 		outputJsonObj['spriteId']=go.spriteId;				 			 		
+				 	}
+				 else if (go.sprite_type=='huskMiner')
+				 	{
+				 		outputJsonObj['sprite']=go.sprite_type;
+				 		outputJsonObj['x']=(go.position.x/xscale).toFixed(2);
+				 		outputJsonObj['y']=(go.position.y/yscale).toFixed(2);	
+				 		outputJsonObj['width']=(go.width/xscale).toFixed(2);
+				 		outputJsonObj['height']=(go.height/yscale).toFixed(2);				 		
+				 		outputJsonObj['spriteId']=go.spriteId;	
+				 		outputJsonObj['cutscene']=go.hasCutScene;		 		
+				 	}
+				 else if (go.sprite_type=='barrierTree')
+				 	{
+				 		outputJsonObj['sprite']='tree';
+				 		outputJsonObj['x']=(go.position.x/xscale).toFixed(2);
+				 		outputJsonObj['y']=(go.position.y/yscale).toFixed(2);	
+				 		outputJsonObj['width']=(go.width/xscale).toFixed(2);
+				 		outputJsonObj['height']=(go.height/yscale).toFixed(2);		 				 		
+				 	}
+				 else if (go.sprite_type=='thorn')
+				 	{
+				 		outputJsonObj['sprite']=go.sprite_type;
+				 		outputJsonObj['x']=(go.position.x/xscale).toFixed(2);
+				 		outputJsonObj['y']=(go.position.y/yscale).toFixed(2);	
+				 		outputJsonObj['width']=(go.width/xscale).toFixed(2);
+				 		outputJsonObj['height']=go.height/xscale;	
+				 		outputJsonObj['xoffset']=(go.hitboxOffset.x/xscale).toFixed(2);
+				 		outputJsonObj['yoffset']=(go.hitboxOffset.y/yscale).toFixed(2);	 				 		
+				 	}
+				 else if (go.sprite_type=='flower')
+				 	{
+				 		outputJsonObj['sprite']=go.sprite_type;
+				 		outputJsonObj['x']=(go.position.x/xscale).toFixed(2);
+				 		outputJsonObj['y']=(go.position.y/yscale).toFixed(2);	
+				 		outputJsonObj['width']=(go.width/xscale).toFixed(2);
+				 		outputJsonObj['height']=go.height/xscale;	
+				 		outputJsonObj['xoffset']=(go.hitboxOffset.x/xscale).toFixed(2);
+				 		outputJsonObj['yoffset']=(go.hitboxOffset.y/yscale).toFixed(2);
+				 		outputJsonObj['spriteId']=go.spriteId;
+				 		outputJsonObj['exp']=go.exp;	 				 		
+				 	}
+				 else if (go.sprite_type=='saw')
+				 	{
+				 		outputJsonObj['sprite']='sawwheel';
+				 		outputJsonObj['x']=(go.position.x/xscale).toFixed(2);
+				 		outputJsonObj['y']=(go.position.y/yscale).toFixed(2);	
+				 		outputJsonObj['width']=(go.width/xscale).toFixed(2);
+				 		outputJsonObj['height']=go.height/xscale;	
+				 		outputJsonObj['xoffset']=(go.hitboxOffset.x/xscale).toFixed(2);
+				 		outputJsonObj['yoffset']=(go.hitboxOffset.y/yscale).toFixed(2);
+				 		outputJsonObj['moveTime']=go.moveTime;
+				 		outputJsonObj['moveTimeInit']=go.moveTimeInit;
+				 		outputJsonObj['speed']=go.speed;
+				 		outputJsonObj['isHoriWheel']=go.horiWheel;	 				 		
+				 	}
+				 else if (go.sprite_type=='shrub')
+				 	{
+				 		outputJsonObj['sprite']='tree';
+				 		outputJsonObj['x']=(go.position.x/xscale).toFixed(2);
+				 		outputJsonObj['y']=(go.position.y/yscale).toFixed(2);	
+				 		outputJsonObj['width']=(go.width/xscale).toFixed(2);
+				 		outputJsonObj['height']=(go.height/yscale).toFixed(2);	
+				 		outputJsonObj['xoffset']=(go.hitboxOffset.x/xscale).toFixed(2);
+				 		outputJsonObj['yoffset']=(go.hitboxOffset.y/yscale).toFixed(2);	 				 		
+				 	}
+				 else if (go.sprite_type=='combinedwall')
+				 	{
+				 		outputJsonObj['sprite']='wall';
+				 		outputJsonObj['x']=(go.position.x/xscale).toFixed(2);
+				 		outputJsonObj['y']=(go.position.y/yscale).toFixed(2);	
+				 		outputJsonObj['width']=(go.width/xscale).toFixed(2);
+				 		outputJsonObj['height']=(go.height/yscale).toFixed(2);	
+				 		outputJsonObj['isHorizontal']=go.angle==0;
+				 		outputJsonObj['copies']=go.copies;	 				 		
+				 	}
+				 else{
+				 	continue;
+				 }
+				 outputJson.push(outputJsonObj);
+				}
+				const popupWindow = window.open("", "popup", "width=300,height=200");
+				popupWindow.document.write(`<p>${JSON.stringify(outputJson)}</p>`);
+				popupWindow.document.title = "Your Design";
+				return outputJson;
+			}
+			mindOutput(){
+
+				if(!this.outputTrigger &&  GetKeyPressedx('q')){
+					console.log('here');
+					this.outputTrigger=true;
+					const outputJson=this.prepareData();
+					console.log(JSON.stringify(outputJson));
+
+				}else if(this.outputTrigger && !GetKeyPressedx('q')){
+					this.outputTrigger=false;
+				}
 			}
 
 		}
@@ -6423,7 +6651,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.gamePaused=false;
 		 	 this.inTransition=false;
 		 	 this.sceneForward=true;
-		 	 this.followMouse=false;
+		 	 this.followMouse=true;
 		 	 this.sceneStartTime= 0;
 		 	 this.positionAdjuster=new PositionAdjuster(null,[this.visible_sprites,this.active_sprites]);
 
