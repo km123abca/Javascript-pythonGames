@@ -37,6 +37,30 @@ let scenes=[
 			],
             [                               
                 {"sprite":"platform","x":-1110,"y":600,"width":775,"height":50},
+                  
+                    
+                {"sprite":"wall","x":-812,"y":837,"width":250,"height":150,"isHorizontal":false,"copies":10},
+                {"sprite":"wall","x":1513,"y":-239,"width":250,"height":150,"isHorizontal":false,"copies":12},
+                {"sprite":"wall","x":-587,"y":612,"width":250,"height":150,"isHorizontal":true,"copies":8},
+                {"sprite":"wall","x":-400,"y":1526,"width":250,"height":150,"isHorizontal":true,"copies":8},
+                {"sprite":"wall","x":-762,"y":1920,"width":250,"height":150,"isHorizontal":true,"copies":14},  
+                 
+                                     
+                {"sprite":"camstopper_left","x":-600,"y":394},
+                {"sprite":"camstopper_right","x":1575,"y":1774},
+                {"sprite":"entryexit_entry","x":-900,"y":464},
+                {"sprite":"entryexit_exit","x":2100,"y":1767},
+                {"sprite":"scenechanger_scleft","x":-1450,"y":464},
+                {"sprite":"scenechanger_scright","x":2300,"y":1767},
+                // {"sprite":"BossFightTriggGO","x":0,"y":2111,"mywidth":40,"myheight":600,
+                //  "br1posx":-660,"br1posy":-147,"br2posx":1600,"br2posy":-147,
+                //  "spriteId":"BossFightTriggGO"
+                // },             
+                // {"sprite":"huskMiner","x":550,"y":2260,"width":170,"height":220,
+                //    "spriteId":"boss_huskminer1","cutscene":true}              
+            ],
+            [                               
+                {"sprite":"platform","x":-1110,"y":600,"width":775,"height":50},
                 {"sprite":"wall","x":-887,"y":2156,"width":250,"height":150,"isHorizontal":false,"copies":5},  
                 {"sprite":"wall","x":1888,"y":1698,"width":250,"height":150,"isHorizontal":false,"copies":5},    
                 {"sprite":"wall","x":-812,"y":837,"width":250,"height":150,"isHorizontal":false,"copies":6},

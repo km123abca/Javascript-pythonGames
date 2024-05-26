@@ -6423,7 +6423,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.gamePaused=false;
 		 	 this.inTransition=false;
 		 	 this.sceneForward=true;
-		 	 this.followMouse=false;
+		 	 this.followMouse=true;
 		 	 this.sceneStartTime= 0;
 		 	 this.positionAdjuster=new PositionAdjuster(null,[this.visible_sprites,this.active_sprites]);
 
@@ -6806,7 +6806,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 	new CameraStopper(elem['x']*xscale,
 		 	 	 		   	   elem['y']*yscale,
 		 	 	 		   	   elem['sprite'],
-		 	 	 		   	   [//this.visible_sprites,
+		 	 	 		   	   [this.visible_sprites,
                                 this.camera_stop_sprites,this.active_sprites]
 		 	 	 		   	   );
 		 	 	 else if(elem['sprite'].split('_')[0]=='entryexit')
