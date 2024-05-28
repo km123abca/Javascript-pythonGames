@@ -2022,6 +2022,96 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	
 		}
 	//Spear ends
+	class TraitorLord
+		{
+			constructor(x,y,wid,hei,spriteGroups,spriteId='traitor0')
+			{
+				this.position=new CreateVector(x,y);
+				this.spriteGroups=spriteGroups;
+				this.width=wid;
+				this.height=hei;
+				this.sprite_type="TraitorLord";
+				this.spriteId=spriteId;
+				this.isBoss=this.spriteId.split("_")[0]=="boss";
+				this.active=!this.isBoss;
+				this.onScreen=!this.isBoss;
+				this.acceleration=new CreateVector(0,0);
+			 	this.velocity=new CreateVector(0,0);
+			 	this.maxVelocity=new CreateVector(5*xscale,2*yscale);
+			 	this.gravityScale=2*yscale;
+			 	for(let grp of spriteGroups)
+			 		grp.push(this);	
+			 	this.hit_box=new HitBox(x,y,this.width*0.4,this.height*0.8,[
+                                                        gameManager.collission_sprites
+                                                        // gameManager.active_sprites
+                                                        ],'traitorlordhitbox');
+			 	this.image_offset=new CreateVector(-30*xscale,-15*yscale);
+			 	let folderPath='sprites/TraitorLord';
+			 	this.animations={
+						 	'idle':{'imgsheet':LoadImagex(folderPath,'idle.png'),
+						  		    'width':2118,
+						  		    'height':590,			  		    
+						  		    'rows':1,
+						  		    'cols':3,
+						  		    'maxFrames':3,
+						  		    'width_extend':1.25,
+						  		    'height_extend':1.25,
+						  		    'anim_speed':0.15
+						  		     },
+						  		 };
+
+			}
+		 applyVelocity()
+		 	{		 	 	 	 
+		 	 this.hit_box.position.x+=this.velocity.x;		 	
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(x==this.hit_box) continue;
+		 	 	 
+		 	 	 if(b_collision(this.hit_box,x)) 
+		 	 	 	{		 	 	 	
+		 	 	 	 if(this.velocity.x > 0)
+		 	 	 	 	this.hit_box.position.x=x.position.x-x.width/2-this.hit_box.width/2-2;
+		 	 	 	 else 
+		 	 	 	 	this.hit_box.position.x=x.position.x+x.width/2+this.hit_box.width/2+2;
+		 	 	 	}
+		 	 	 		 	 	
+		 	 	}
+
+		 	 this.hit_box.position.y+=this.velocity.y;
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(x==this.hit_box) continue;
+		 	 	 if(b_collision(this.hit_box,x)) 
+		 	 	 	{
+		 	 	 	
+		 	 	 	if(this.velocity.y > 0)
+		 	 	 		this.hit_box.position.y=x.position.y-x.height/2-this.hit_box.height/2-2;
+		 	 	 	else
+		 	 	 		this.hit_box.position.y=x.position.y+x.height/2+this.hit_box.height/2+2;	
+		 	 	 	}
+		 	 	}
+		 	}
+		applyVelocityRestrictions()
+		 	{
+		 	 let xdir=this.velocity.x/Math.abs(this.velocity.x);
+		 	 let ydir=this.velocity.y/Math.abs(this.velocity.y);
+		 	 if(Math.abs(this.velocity.y) > this.maxVelocity.y)
+		 	 	this.velocity.y=ydir*this.maxVelocity.y;
+		 	 if(Math.abs(this.velocity.x) > this.maxVelocity.x)
+		 	 	this.velocity.x=xdir*this.maxVelocity.x;
+		 	}
+		applyGravity()
+		 	{
+		 	 this.acceleration.y+=this.gravityScale;
+		 	}
+		 update_and_display_hitbox()
+		 	{	 		
+	 		this.position.setVec(this.hit_box.position.copy().add(this.image_offset));
+		 	}
+		}
 	//Lance starts
 	class Lance
 		{
@@ -2029,8 +2119,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		    {
 		     this.position=new CreateVector(x,y);
              this.initPosition=new CreateVector(x,y);
-		     this.width = wid * xscale;
-		     this.height = hei * yscale;
+		     this.width = wid;
+		     this.height = hei;
 		     this.spriteId=spriteId;
 		     let folderPath='sprites/lanceSentry/';
 		     this.onScreen= true;

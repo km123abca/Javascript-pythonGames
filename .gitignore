@@ -19,6 +19,7 @@ autogitpull.bat
 /build
 /ThePigGame
 /Mario
+sprites/
 
 # misc
 .DS_Store
