@@ -2030,6 +2030,11 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 				this.spriteGroups=spriteGroups;
 				this.width=wid;
 				this.height=hei;
+				this.imgWidth=0;
+				this.imgHeight=0;
+				this.animInQueue=null;
+		 		this.startx=0;
+		 		this.starty=0;
 				this.sprite_type="TraitorLord";
 				this.spriteId=spriteId;
 				this.isBoss=this.spriteId.split("_")[0]=="boss";
@@ -2039,6 +2044,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 	this.velocity=new CreateVector(0,0);
 			 	this.maxVelocity=new CreateVector(5*xscale,2*yscale);
 			 	this.gravityScale=2*yscale;
+			 	this.state='idle';
+			 	this.sx=1;
+    		 	this.sy=1;
+    		 	this.animationFrame=0;
 			 	for(let grp of spriteGroups)
 			 		grp.push(this);	
 			 	this.hit_box=new HitBox(x,y,this.width*0.4,this.height*0.8,[
@@ -2049,15 +2058,137 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 	let folderPath='sprites/TraitorLord';
 			 	this.animations={
 						 	'idle':{'imgsheet':LoadImagex(folderPath,'idle.png'),
-						  		    'width':2118,
-						  		    'height':590,			  		    
+						  		    'width':859,
+						  		    'height':322,			  		    
 						  		    'rows':1,
 						  		    'cols':3,
 						  		    'maxFrames':3,
-						  		    'width_extend':1.25,
-						  		    'height_extend':1.25,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
 						  		    'anim_speed':0.15
 						  		     },
+				  'attackanticipate':{'imgsheet':LoadImagex(folderPath,'attackanticipate.png'),
+						  		    'width':2424,
+						  		    'height':291,			  		    
+						  		    'rows':1,
+						  		    'cols':6,
+						  		    'maxFrames':6,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.15
+						  		     },
+				 'attackpart1':{'imgsheet':LoadImagex(folderPath,'attackpart1.png'),
+						  		    'width':988,
+						  		    'height':358,			  		    
+						  		    'rows':1,
+						  		    'cols':2,
+						  		    'maxFrames':2,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.15
+						  		     },
+				 'attackpart2':{'imgsheet':LoadImagex(folderPath,'attackpart2.png'),
+						  		    'width':414,
+						  		    'height':298,			  		    
+						  		    'rows':1,
+						  		    'cols':1,
+						  		    'maxFrames':1,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.15
+						  		     },
+				 'attackrecover':{'imgsheet':LoadImagex(folderPath,'attackrecover.png'),
+						  		    'width':1545,
+						  		    'height':284,			  		    
+						  		    'rows':1,
+						  		    'cols':4,
+						  		    'maxFrames':4,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.15
+						  		     },
+				'jump':{'imgsheet':LoadImagex(folderPath,'jump.png'),
+						  		    'width':1464,
+						  		    'height':426,			  		    
+						  		    'rows':1,
+						  		    'cols':4,
+						  		    'maxFrames':4,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.15
+						  		     },
+				'jumpanticipate':{'imgsheet':LoadImagex(folderPath,'jumpanticipate.png'),
+						  		    'width':2016,
+						  		    'height':348,			  		    
+						  		    'rows':1,
+						  		    'cols':5,
+						  		    'maxFrames':5,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.15
+						  		     },
+				'jumpslash':{'imgsheet':LoadImagex(folderPath,'jumpslash.png'),
+						  		    'width':990,
+						  		    'height':361,			  		    
+						  		    'rows':1,
+						  		    'cols':2,
+						  		    'maxFrames':2,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.15
+						  		     },
+				'jumpslash_anticipate':{'imgsheet':LoadImagex(folderPath,'jumpslash_anticipate.png'),
+						  		    'width':990,
+						  		    'height':361,			  		    
+						  		    'rows':1,
+						  		    'cols':2,
+						  		    'maxFrames':2,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.15
+						  		     },
+				'jumpslash_anticipate':{'imgsheet':LoadImagex(folderPath,'jumpslash_anticipate.png'),
+						  		    'width':2913,
+						  		    'height':438,			  		    
+						  		    'rows':1,
+						  		    'cols':8,
+						  		    'maxFrames':8,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.15
+						  		     },
+				'shockwave_anticipate':{'imgsheet':LoadImagex(folderPath,'shockwave_anticipate.png'),
+						  		    'width':2142,
+						  		    'height':350,			  		    
+						  		    'rows':1,
+						  		    'cols':6,
+						  		    'maxFrames':6,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.15
+						  		     },
+				'shockwave_recover':{'imgsheet':LoadImagex(folderPath,'shockwave_recover.png'),
+						  		    'width':1026,
+						  		    'height':275,			  		    
+						  		    'rows':1,
+						  		    'cols':3,
+						  		    'maxFrames':3,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.15
+						  		     },
+				'walk':{'imgsheet':LoadImagex(folderPath,'walk.png'),
+						  		    'width':2874,
+						  		    'height':550,			  		    
+						  		    'rows':1,
+						  		    'cols':2,
+						  		    'maxFrames':9,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.15
+						  		     },
+
+						  	 
 						  		 };
 
 			}
@@ -2110,6 +2241,56 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 update_and_display_hitbox()
 		 	{	 		
 	 		this.position.setVec(this.hit_box.position.copy().add(this.image_offset));
+		 	}
+
+    	runAnimation()
+    		{
+			  this.animationFrame+=this.animations[this.animation]['anim_speed'];
+			  if(this.animationFrame >= this.animations[this.animation]['maxFrames'])
+			  	{
+		  		this.animationFrame=0;
+		  		if(this.animInQueue) 
+		  			{
+		  			this.animation=this.animInQueue;
+		  			//console.log('back to '+this.animation);
+		  			this.animInQueue=null;
+		  			}
+			  	}
+			  let rowIndex=parseInt(parseInt(this.animationFrame)/this.animations[this.animation]['cols']);
+			  let colIndex=parseInt(this.animationFrame)%this.animations[this.animation]['cols'];
+			  this.startx=colIndex * this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
+			  this.starty=rowIndex * this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
+			  this.imgWidth = this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
+			  this.imgHeight = this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
+			}
+		switchAnimation(animx)
+			{
+			 if(this.animation != animx)
+			 	{
+			 	this.animationFrame=0;
+			 	this.animation=animx;			 	
+			 	}
+			}
+    	display()
+		 	{		 	 
+		 	 if(!this.onScreen) return false;             
+		 	 this.runAnimation();
+		 	 ctx.save();
+		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
+		 	 	 		   this.position.y-gameManager.camera.position.y);
+		 	 ctx.rotate(d2r(this.angle));
+		 	 ctx.scale(this.sx,this.sy);
+		 	 if(this.flickerControl())
+		 	 ctx.drawImage(this.animations[this.animation]['imgsheet'],
+		 	 				this.startx,this.starty,this.imgWidth,this.imgHeight,
+		 	 			   -this.width/2,
+		 	 			   -this.height/2,
+		 	 			   this.width*this.animations[this.animation]['width_extend'],
+		 	 			   this.height*this.animations[this.animation]['height_extend']
+		 	 			  );
+		 	 // context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
+		 	 ctx.restore();
+		 	 w2screen(this.state,this.position.x-gameManager.camera.position.x,this.position.y-50*yscale-gameManager.camera.position.y);
 		 	}
 		}
 	//Lance starts
