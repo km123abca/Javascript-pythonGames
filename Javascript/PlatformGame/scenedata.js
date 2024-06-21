@@ -52,12 +52,12 @@ let scenes=[
                 {"sprite":"entryexit_exit","x":2100,"y":1767},
                 {"sprite":"scenechanger_scleft","x":-1450,"y":464},
                 {"sprite":"scenechanger_scright","x":2300,"y":1767},
-                // {"sprite":"BossFightTriggGO","x":0,"y":2111,"mywidth":40,"myheight":600,
-                //  "br1posx":-660,"br1posy":-147,"br2posx":1600,"br2posy":-147,
-                //  "spriteId":"BossFightTriggGO"
-                // },             
-                // {"sprite":"huskMiner","x":550,"y":2260,"width":170,"height":220,
-                //    "spriteId":"boss_huskminer1","cutscene":true}              
+                {"sprite":"BossFightTriggGO","x":125,"y":1208,"mywidth":40,"myheight":600,
+                 "br1posx":-660,"br1posy":-167,"br2posx":1237,"br2posy":-200,
+                 "spriteId":"BossFightTriggGO"
+                },             
+                {"sprite":"traitorLord","x":-74,"y":941,"width":170,"height":220,
+                   "spriteId":"boss_traitorlord1","cutscene":true}              
             ],
             [                               
                 {"sprite":"platform","x":-1110,"y":600,"width":775,"height":50},

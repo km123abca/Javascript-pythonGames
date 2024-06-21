@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Platformer</title>
+	<title>Editor</title>
 	<script src="scenedata.js"></script>
 <script>	
 	let mouseX,mouseY;
@@ -6654,7 +6654,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.followMouse=true;
 		 	 this.sceneStartTime= 0;
 		 	 this.positionAdjuster=new PositionAdjuster(null,[this.visible_sprites,this.active_sprites]);
-
+		 	 this.spritePlaced=false;
 		 	 this.playerHealthBar= new UIBar(50,20,300,30,100,100,'#222222','#FF0000',[this.visible_sprites,this.active_sprites],true,'playerhealth');
 			 this.playerEnergyBar= new UIBar(50,100,300,30,100,100,'#222222','#0000FF',[this.visible_sprites,this.active_sprites],true,'playerenergy');
 			 this.levelUpBox=new LevelUpBox(this.player);			 
@@ -6805,7 +6805,24 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.checkScenes();	
 		 	 this.showExperience();	
 		 	 this.showLevelUpBox(); 
+		 	 this.lookForNewMarks();
 		 	}
+		 lookForNewMarks(){
+		 	if(mousePressed && GetKeyPressedx('n')&& !this.spritePlaced){
+		 		this.spritePlaced=true;
+		 		// console.log(`new object will be placed at ${mouseX},${mouseY}`);
+	 	 	 	new MarkedSpot(mouseX+gameManager.camera.position.x,
+ 		   	   				   mouseY+gameManager.camera.position.y,
+ 		   	   				   'golocation',
+ 		   	   					[this.visible_sprites]
+ 		   	   					);
+
+		 	}else if(this.spritePlaced && !(mousePressed && GetKeyPressedx('n'))){
+		 		this.spritePlaced=false;
+
+		 	}
+
+		 }
 		 showLevelUpBox()
 		 	{
 		 	 this.levelUpBox.update();
