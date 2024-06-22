@@ -2085,6 +2085,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 		this.attacks=['traitorstrike'];
 		 		this.enemyClosed=false;
 		 		this.traitorAttackPrepTime=500;
+                this.traitorAttackCloseTime=4*this.traitorAttackPrepTime;
 		 		this.initPrepOver=false;
 		 		
 
@@ -2109,7 +2110,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 						  		    'maxFrames':6,
 						  		    'width_extend':1,
 						  		    'height_extend':1,
-						  		    'anim_speed':0.05
+						  		    'anim_speed':0.5
 						  		     },
 				 'attackpart1':{'imgsheet':LoadImagex(folderPath,'attackpart1.png'),
 						  		    'width':988,
@@ -2119,7 +2120,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 						  		    'maxFrames':2,
 						  		    'width_extend':1,
 						  		    'height_extend':1,
-						  		    'anim_speed':0.05
+						  		    'anim_speed':0.1
 						  		     },
 				 'attackpart2':{'imgsheet':LoadImagex(folderPath,'attackpart2.png'),
 						  		    'width':414,
@@ -2129,7 +2130,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 						  		    'maxFrames':1,
 						  		    'width_extend':1,
 						  		    'height_extend':1,
-						  		    'anim_speed':0.05
+						  		    'anim_speed':0.1
 						  		     },
 				 'attackrecover':{'imgsheet':LoadImagex(folderPath,'attackrecover.png'),
 						  		    'width':1545,
@@ -2346,7 +2347,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 	break;
 		 	 	 case 'traitorstrike':
 		 	 	 	this.traitorStrike();
-		 	 	 	break;	 	 	 
+		 	 	 	break;	
+                 case 'traitorMovingBack':
+                    this.traitorMovingBack();
+                    break; 	 	 
 		 	 	 default:
 		 	 	 	break;
 		 	 	}
@@ -2380,16 +2384,18 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	if(!this.enemyClosed){
 		 		let plungeForce=new CreateVector(this.sx,0);		 		
 		 		this.acceleration.add(plungeForce);
-		 		let timedOut=gameManager.runningClock- this.attackStartTime > 2000;
+		 		let timedOut=gameManager.runningClock- this.attackStartTime > this.traitorAttackCloseTime;
 		 		if(timedOut ||
 		 			Math.abs(gameManager.player.position.x - this.position.x) < this.traitorStrikeDist)
 		 		{
 		 			this.enemyClosed=true;
+                    this.velocity.x=0;
+                    this.acceleration.set(0,0);
 		 			this.switchAnimation('attackanticipate');
 		 		}
 		 		return false;
 		 	}
-		 	this.velocity.set(0,0);
+		 	
 		 	if(this.animation=='attackanticipate' && this.animInQueue!='attackpart1'){
 		 		this.animInQueue='attackpart1';
 		 	}else if(this.animation=='attackpart1' && this.animInQueue!='attackpart2'){
@@ -2405,8 +2411,21 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 		this.state='agro';
 		 		this.traitorAttackInitiated=false;
 		 		this.initPrepOver=false;
+                if(Math.abs(this.position.x - gameManager.player.position.x)<100*xscale)
+                    this.sideWaysPush();
 		 	}
 		 }
+         sideWaysPush(){
+            console.log('side ways push is required');
+            this.state='traitorMovingBack';
+         }
+         traitorMovingBack(){
+            if(Math.abs(this.position.x - gameManager.player.position.x)<100*xscale){
+                this.acceleration.add(new CreateVector(-20,0));
+            }else{
+                this.state='agro';
+            }
+         }
 		 turnTowardsPlayer(){
 		 	if (this.playerInFront())
 		 		{
@@ -2491,7 +2510,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 			  );
 		 	 // context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
 		 	 ctx.restore();
-		 	 w2screen(this.state,this.position.x-gameManager.camera.position.x,this.position.y-50*yscale-gameManager.camera.position.y);
+		 	 w2screen(this.animation,this.position.x-gameManager.camera.position.x,this.position.y-50*yscale-gameManager.camera.position.y);
 		 	}
 		  update()
 		  	{
@@ -2503,7 +2522,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	  this.move();
 		 	  this.updateHealthBarPos();
 		 	  this.manageInvincibility();
-		 	  w2screen(this.state,this.position.x-gameManager.camera.position.x,this.position.y-50*yscale-gameManager.camera.position.y);
+		 	  // w2screen(this.state,this.position.x-gameManager.camera.position.x,this.position.y-50*yscale-gameManager.camera.position.y);
 		  	}
 		}
 	//Lance starts
