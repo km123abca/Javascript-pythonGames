@@ -8,6 +8,7 @@
 	let spacePress,upPress,rightPress,downPress,leftPress,gPress,fPress,enterPress;
 	let ipress,lpress,mpress,jpress,tpress,hpress,bpress,ppress;
 	let mousePressed;
+    let clickDetector=false;
 
 	// let backGroundColor="#16a1b3";
 	let backGroundColor='#051405';
@@ -2049,6 +2050,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 				this.onScreen=!this.isBoss;
 				this.acceleration=new CreateVector(0,0);
 			 	this.velocity=new CreateVector(0,0);
+                this.traitor_normalVelocityx=20*xscale;
+                this.traitor_plungeVelocityx=50*xscale;
 			 	this.maxVelocity=new CreateVector(20*xscale,20*yscale);
 			 	this.gravityScale=2*yscale;
 			 	this.state='idle';
@@ -2090,6 +2093,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
                 this.traitor_moveBackStartedTime=0;
                 this.traitor_moveBackDirection=new CreateVector(-1,0);	 		
+                this.downCheckRaycast=130*yscale;
 
 			 	//setting up animations
 			 	let folderPath='sprites/TraitorLord';
@@ -2192,7 +2196,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 						  		    'maxFrames':8,
 						  		    'width_extend':1,
 						  		    'height_extend':1,
-						  		    'anim_speed':0.15
+						  		    'anim_speed':0.05
 						  		     },
 				'shockwave_anticipate':{'imgsheet':LoadImagex(folderPath,'shockwave_anticipate.png'),
 						  		    'width':2142,
@@ -2352,17 +2356,27 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 	break;	
                  case 'traitorMovingBack':
                     this.traitorMovingBack();
-                    break; 	 	 
+                    break; 	
+                 case 'shockwave':
+                    this.traitorShockwave();
+                    break; 	 
 		 	 	 default:
 		 	 	 	break;
 		 	 	}
 		 	}
 		 idleTraitor(){
 		 	this.switchAnimation('idle');
+            // if(ipress && !this.clickDetector){
+            //     this.downCheckRaycast+=3;
+            //     console.log((this.downCheckRaycast/yscale).toFixed(2));
+            //     this.clickDetector=true;
+            // }else if(!ipress) this.clickDetector=false;
+            // this.checkIfOnGround();
 		 	this.turnTowardsPlayer();		 	
 		 }
 
 		 agroTraitor(){
+            if(!gameManager.player || !gameManager.player.isActive) return false;
 		 	this.turnTowardsPlayer();
 		 	if(gameManager.runningClock - this.lastAttackTime > this.maxAttackGap){
 		 		this.state=this.attacks[Math.floor(Math.random()*this.attacks.length)];
@@ -2370,9 +2384,11 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 }
 		
 		 traitorStrike(){
+            if(!gameManager.player || !gameManager.player.isActive) return false;
 		 	if(!this.traitorAttackInitiated){
 		 		this.traitorAttackInitiated=true;
 		 		this.attackStartTime=gameManager.runningClock;
+                
 		 	}
 		 	if(!this.initPrepOver){
                 if(Math.abs(gameManager.player.position.x - this.position.x) < 
@@ -2391,7 +2407,11 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 		return false;
 		 	}
 		 	if(!this.enemyClosed){
-		 		let plungeForce=new CreateVector(this.sx,0);		 		
+		 		let plungeForce=new CreateVector(this.sx*5,0);
+                if(this.checkIfOnGround()) {
+                    this.maxVelocity.x=this.traitor_plungeVelocityx;
+                    console.log('velocity increased');
+                }
 		 		this.acceleration.add(plungeForce);
 		 		let timedOut=gameManager.runningClock- this.attackStartTime > this.traitorAttackCloseTime;
 		 		if(timedOut ||
@@ -2399,6 +2419,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 		{
 		 			this.enemyClosed=true;
                     this.velocity.x=0;
+                    this.maxVelocity.x=this.traitor_normalVelocityx;
                     this.acceleration.set(0,0);
 		 			this.switchAnimation('attackanticipate');
 		 		}
@@ -2430,7 +2451,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                                   150*xscale,100*yscale, //width,height
                                   [gameManager.active_sprites,
                                    gameManager.hitbox_sprites,
-                                   gameManager.visible_sprites],
+                                   // gameManager.visible_sprites
+                                  ],
                                  'enemy_hitbox',this,//hitboxName,parent
                                  90*xscale,10*yscale,//xoffset,yoffset
                                  10,-this.sx*0,//damage,damagehitback
@@ -2441,6 +2463,39 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
          sideWaysPush(){            
             this.state='traitorMovingBack';
          }
+         traitorShockwave(){
+            if(!this.traitorAttackInitiated){
+                this.traitorAttackInitiated=true;
+                this.switchAnimation('shockwave_anticipate');
+                this.animInQueue='shockwave';
+                return 1;
+            }
+            if(this.animation=='shockwave' && this.animInQueue!='shockwave_recover')
+                this.animInQueue='shockwave_recover';
+            else if(this.animation=='shockwave_recover' && this.animInQueue!='idle')
+                this.animInQueue='idle';
+            if(this.traitorAttackInitiated && this.animation=='idle'){
+                this.state='agro';  
+                this.lastAttackTime=gameManager.runningClock;
+                this.traitorAttackInitiated=false;              
+            }
+
+         }
+
+        checkIfOnGround()
+        {
+        for(let x of gameManager.collission_sprites)
+            {
+             if(!x.onScreen || x==this.hit_box) continue;
+             
+             if(Raycast(this.position.copy(),new CreateVector(0,1),this.downCheckRaycast,x) )
+                {
+                return true;
+                }
+            }
+        return false;
+        }
+
          
          traitorMovingBack(){
             if(this.traitor_moveBackStartedTime==0){
