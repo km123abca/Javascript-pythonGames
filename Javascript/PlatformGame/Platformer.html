@@ -2232,7 +2232,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 			}
 		 applyVelocity()
-		 	{		 	 	 	 
+		 	{		 	
+             // if(this.state=='traitorstrike') console.log(this.velocity.x); 	 	 
 		 	 this.hit_box.position.x+=this.velocity.x;		 	
 		 	 for(let x of gameManager.collission_sprites)
 		 	 	{
@@ -2407,12 +2408,14 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 		return false;
 		 	}
 		 	if(!this.enemyClosed){
-		 		let plungeForce=new CreateVector(this.sx*5,0);
-                if(this.checkIfOnGround()) {
+		 		let plungeForce=new CreateVector(this.sx,0);
+                if(this.checkIfOnGround() && this.maxVelocity.x!=this.traitor_plungeVelocityx) {
                     this.maxVelocity.x=this.traitor_plungeVelocityx;
+                    // plungeForce.x*=50;
                     console.log('velocity increased');
                 }
 		 		this.acceleration.add(plungeForce);
+
 		 		let timedOut=gameManager.runningClock- this.attackStartTime > this.traitorAttackCloseTime;
 		 		if(timedOut ||
 		 			Math.abs(gameManager.player.position.x - this.position.x) < this.traitorStrikeDist)
