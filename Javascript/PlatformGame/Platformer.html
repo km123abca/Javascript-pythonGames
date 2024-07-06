@@ -2038,6 +2038,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 					this.tgt=gameManager.player;
 				this.width=wid;
 				this.height=hei;
+                this.expVal=1000;
 				this.imgWidth=0;
 				this.imgHeight=0;
 				this.animInQueue=null;
@@ -2292,6 +2293,14 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	{	 		
 	 		this.position.setVec(this.hit_box.position.copy().add(this.image_offset));
 		 	}
+        removeBars()
+            {
+             for(let go of gameManager.active_sprites)
+                {
+                 if(go.spriteId && go.spriteId=="BossFightTriggGO")
+                    go.bossHasDiedRemoveBars();
+                }
+            }
 		 takeDamage(dmg,dir=0)
 		 	{
 		 	//this.acceleration.add(new CreateVector(dir,0));
@@ -2305,11 +2314,16 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 			if(this.tgt && this.tgt.isActive)
 	 				this.tgt.giveExp(this.expVal);
 	 			SpawnClouds(this.position);
+                fogGateSound.play();
+                this.removeBars();
 	 			destroySelf(this);
 	 			destroySelf(this.hit_box);
 	 			destroySelf(this.traitorHealthBar);
-	 			if(this.isBoss)
+
+	 			if(this.isBoss){
 	 			gameManager.listOfDestroyedSprites.push(this.spriteId);
+                //saving the game will cause this enemy to not appear
+                }
 	 			this.isActive=false;
 	 			}	
 		 	}
