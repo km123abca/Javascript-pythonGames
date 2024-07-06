@@ -1492,6 +1492,100 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 
         }
+    class flame extends GeneralSprite
+        {
+            constructor(x,y,width,height,spriteGroups)
+                {
+                    super(x,y,width,height,0,0,spriteGroups);
+                    this.enlargedHeight=2*height;
+                    this.sprite_type='flame';
+
+                    this.animations={
+                                     'small':{'imgsheet':LoadImagex('sprites/misc','fire1_64.png'),
+                                               'width':64,
+                                               'height':64,                        
+                                               'rows':6,
+                                               'cols':10,
+                                               'maxFrames':60,
+                                               'width_extend':1,
+                                               'height_extend':1,
+                                               'anim_speed':0.15
+                                              },
+                                    };  
+                    this.animation='small';
+                    this.animInQueue=null;
+                    this.startTime=gameManager.runningClock;
+                    this.flareTime=2000;
+                    this.lifeTime=4000;
+                    this.heightGrow=false;
+                }
+        update()
+            {
+                if(this.heightGrow)
+                this.growFlame();
+                if(gameManager.runningClock - this.startTime >this.lifeTime){
+                    destroySelf(this);
+                }else if(gameManager.runningClock - this.startTime >this.flareTime){
+                    this.heightGrow=true;  
+                }
+            }
+        growFlame(){
+            if(this.height<this.enlargedHeight) this.height+=0.25;
+        }
+        display()
+            {
+                super.display();
+                return;
+             if(!this.onScreen) return false;
+
+             this.runAnimation();
+             // console.log('here at 2976');
+             ctx.save();
+             ctx.translate(this.position.x-gameManager.camera.position.x, 
+                           this.position.y-gameManager.camera.position.y);
+             ctx.rotate(d2r(this.angle));
+             // ctx.scale(this.sx,this.sy);
+             // if(this.flickerControl())
+             ctx.drawImage(this.animations[this.animation]['imgsheet'],
+                            this.startx,this.starty,this.imgWidth,this.imgHeight,
+                           -this.width/2,
+                           -this.height/2,
+                           this.width*this.animations[this.animation]['width_extend'],
+                           this.height*this.animations[this.animation]['height_extend']
+                          );
+             // context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
+             ctx.restore();
+             w2screen(this.state,this.position.x-gameManager.camera.position.x,this.position.y-50*yscale-gameManager.camera.position.y);
+            }
+        runAnimation()
+            {
+              this.animationFrame+=this.animations[this.animation]['anim_speed'];
+              if(this.animationFrame >= this.animations[this.animation]['maxFrames'])
+                {
+                this.animationFrame=0;
+                if(this.animInQueue) 
+                    {
+                    this.animation=this.animInQueue;
+                    //console.log('back to '+this.animation);
+                    this.animInQueue=null;
+                    }
+                }
+              let rowIndex=parseInt(parseInt(this.animationFrame)/this.animations[this.animation]['cols']);
+              let colIndex=parseInt(this.animationFrame)%this.animations[this.animation]['cols'];
+              this.startx=colIndex * this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
+              this.starty=rowIndex * this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
+              this.imgWidth = this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
+              this.imgHeight = this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
+            }
+        switchAnimation(animx)
+            {
+             if(this.animation != animx)
+                {
+                this.animationFrame=0;
+                this.animation=animx;               
+                }
+            }
+        }
         
    class WallGripper extends GeneralSprite
         {
@@ -2086,7 +2180,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 		this.traitorHealthBar.onScreen=false;
 		 		this.lastAttackTime=0;
 		 		this.maxAttackGap=1000;
-		 		this.attacks=['traitorstrike'];
+		 		this.attacks=['traitorstrike','shockwave'];
 		 		this.enemyClosed=false;
 		 		this.traitorAttackPrepTime=500;
                 this.traitorAttackCloseTime=4*this.traitorAttackPrepTime;
@@ -2483,6 +2577,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
          traitorShockwave(){
             if(!this.traitorAttackInitiated){
                 this.traitorAttackInitiated=true;
+                new flame(this.position.x-50,
+                          this.position.y,50*xscale,200*yscale,
+                          [gameManager.visible_sprites,gameManager.active_sprites]
+                    );
                 this.switchAnimation('shockwave_anticipate');
                 this.animInQueue='shockwave';
                 return 1;

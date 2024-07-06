@@ -1236,6 +1236,15 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 return true;
 		 	}
 		}
+   class flame extends GeneralSprite
+   		{
+   			constructor(x,y,width,height,spriteGroups)
+   				{
+   					super(x,y,width,height,0,0,spriteGroups);
+   					this.sprite_type='flame';
+   					
+   				}
+   		}
    class WallGripper extends GeneralSprite
         {
 
