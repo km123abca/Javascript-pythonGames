@@ -1262,7 +1262,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			  	 this.parentx.hitBoxMadeContact(this.hitboxName);			  	 
 			  	}
 			  this.destroySelf();
-			  SpawnClouds(this.position);			 
+			  SpawnClouds(go.position);			 
 			}
 		update()
 			{
@@ -1497,13 +1497,13 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
             constructor(x,y,width,height,spriteGroups)
                 {
                     super(x,y,width,height,0,0,spriteGroups);
-                    this.enlargedHeight=2*height;
+                    this.enlargedHeight=4*height;
                     this.sprite_type='flame';
 
                     this.animations={
                                      'small':{'imgsheet':LoadImagex('sprites/misc','fire1_64.png'),
-                                               'width':64,
-                                               'height':64,                        
+                                               'width':640,
+                                               'height':384,                        
                                                'rows':6,
                                                'cols':10,
                                                'maxFrames':60,
@@ -1514,15 +1514,24 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                                     };  
                     this.animation='small';
                     this.animInQueue=null;
+                    this.animationFrame=0;
+                    this.startx=0;
+                    this.starty=0;
+                    this.imgWidth=0;
+                    this.imgHeight=0;
                     this.startTime=gameManager.runningClock;
-                    this.flareTime=2000;
-                    this.lifeTime=4000;
+                    this.flareTime=500;
+                    this.lifeTime=2000;
                     this.heightGrow=false;
+                    this.sx=1;
+                    this.sy=1;
+                    this.flame_hitbox_spawned=false;
                 }
         update()
             {
                 if(this.heightGrow)
                 this.growFlame();
+
                 if(gameManager.runningClock - this.startTime >this.lifeTime){
                     destroySelf(this);
                 }else if(gameManager.runningClock - this.startTime >this.flareTime){
@@ -1530,12 +1539,31 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                 }
             }
         growFlame(){
-            if(this.height<this.enlargedHeight) this.height+=0.25;
+            if(this.height<this.enlargedHeight) 
+                {
+                    this.height+=40;
+                    this.position.y-=20;
+                }
+                else if(!this.flame_hitbox_spawned){
+                    this.flame_hitbox_spawned=true;
+                    new DamageHitBox(this.position.x,this.position.y, //x,y
+                                  20*xscale,this.height*2, //width,height
+                                  [gameManager.active_sprites,
+                                   gameManager.hitbox_sprites,
+                                   // gameManager.visible_sprites
+                                  ],
+                                 'enemy_hitbox',this,//hitboxName,parent
+                                 0*xscale,0*yscale,//xoffset,yoffset
+                                 10,0,//damage,damagehitback
+                                 1000//life
+                                 ); 
+                    // destroySelf(this);
+                }
         }
         display()
             {
-                super.display();
-                return;
+                // super.display();
+                // return;
              if(!this.onScreen) return false;
 
              this.runAnimation();
@@ -1546,6 +1574,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
              ctx.rotate(d2r(this.angle));
              // ctx.scale(this.sx,this.sy);
              // if(this.flickerControl())
+             // ctx.drawImage(this.imagex,-this.width/2,-this.height/2,this.width,this.height);
              ctx.drawImage(this.animations[this.animation]['imgsheet'],
                             this.startx,this.starty,this.imgWidth,this.imgHeight,
                            -this.width/2,
@@ -1553,9 +1582,9 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                            this.width*this.animations[this.animation]['width_extend'],
                            this.height*this.animations[this.animation]['height_extend']
                           );
-             // context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
+             
              ctx.restore();
-             w2screen(this.state,this.position.x-gameManager.camera.position.x,this.position.y-50*yscale-gameManager.camera.position.y);
+             // w2screen(this.animation,this.position.x-gameManager.camera.position.x,this.position.y-50*yscale-gameManager.camera.position.y);
             }
         runAnimation()
             {
@@ -2121,6 +2150,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	
 		}
 	//Spear ends
+    //Traitor starts
 	class TraitorLord
 		{
 			constructor(x,y,wid,hei,spriteGroups,spriteId='traitor0')
@@ -2148,6 +2178,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                 this.traitor_normalVelocityx=20*xscale;
                 this.traitor_plungeVelocityx=50*xscale;
 			 	this.maxVelocity=new CreateVector(20*xscale,20*yscale);
+
 			 	this.gravityScale=2*yscale;
 			 	this.state='idle';
 			 	this.sx=1;
@@ -2179,12 +2210,17 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 		this.traitorHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,'#222222','#FF0000',[gameManager.visible_sprites],false,'traitorhealth');
 		 		this.traitorHealthBar.onScreen=false;
 		 		this.lastAttackTime=0;
+                this.rareAttackTime=gameManager.runningClock+4000;
+                this.rareAttackTimeGap=4000;
 		 		this.maxAttackGap=1000;
-		 		this.attacks=['traitorstrike','shockwave'];
+		 		this.attacks=['traitorstrike'];
+                this.rareAttacks=['shockwave'];
+                this.attacks=['traitorHighThrow'];
 		 		this.enemyClosed=false;
 		 		this.traitorAttackPrepTime=500;
                 this.traitorAttackCloseTime=4*this.traitorAttackPrepTime;
 		 		this.initPrepOver=false;
+                this.animRepeater=0;
 
                 this.traitor_moveBackStartedTime=0;
                 this.traitor_moveBackDirection=new CreateVector(-1,0);	 		
@@ -2324,6 +2360,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 						  		    'anim_speed':0.15
 						  		     },						  	 
 						  		 };
+                this.traitor_flame_gap=190*xscale;
+                this.throwPrepTime=1000;
 
 			}
 		 applyVelocity()
@@ -2468,28 +2506,31 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                     break; 	
                  case 'shockwave':
                     this.traitorShockwave();
-                    break; 	 
+                    break; 
+                 case 'traitorHighThrow':
+                    this.traitorHighThrow();
+                    break;	 
 		 	 	 default:
 		 	 	 	break;
 		 	 	}
 		 	}
 		 idleTraitor(){
 		 	this.switchAnimation('idle');
-            // if(ipress && !this.clickDetector){
-            //     this.downCheckRaycast+=3;
-            //     console.log((this.downCheckRaycast/yscale).toFixed(2));
-            //     this.clickDetector=true;
-            // }else if(!ipress) this.clickDetector=false;
-            // this.checkIfOnGround();
+           
 		 	this.turnTowardsPlayer();		 	
 		 }
 
 		 agroTraitor(){
             if(!gameManager.player || !gameManager.player.isActive) return false;
 		 	this.turnTowardsPlayer();
-		 	if(gameManager.runningClock - this.lastAttackTime > this.maxAttackGap){
+            if(gameManager.runningClock - this.rareAttackTime > this.rareAttackTimeGap)
+                {
+
+                this.state=this.rareAttacks[Math.floor(Math.random()*this.rareAttacks.length)];            
+                }
+		 	else if(gameManager.runningClock - this.lastAttackTime > this.maxAttackGap)
 		 		this.state=this.attacks[Math.floor(Math.random()*this.attacks.length)];
-		 	}
+		 	
 		 }
 		
 		 traitorStrike(){
@@ -2520,7 +2561,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                 if(this.checkIfOnGround() && this.maxVelocity.x!=this.traitor_plungeVelocityx) {
                     this.maxVelocity.x=this.traitor_plungeVelocityx;
                     // plungeForce.x*=50;
-                    console.log('velocity increased');
+                    
                 }
 		 		this.acceleration.add(plungeForce);
 
@@ -2553,6 +2594,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 		this.traitorAttackInitiated=false;
 		 		this.initPrepOver=false;
                 this.traitorStruck=false;
+                if(!(!gameManager.player || !gameManager.player.isActive))
                 if(Math.abs(this.position.x - gameManager.player.position.x)<100*xscale)
                     this.sideWaysPush();
 		 	}
@@ -2566,7 +2608,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                                   ],
                                  'enemy_hitbox',this,//hitboxName,parent
                                  90*xscale,10*yscale,//xoffset,yoffset
-                                 10,-this.sx*0,//damage,damagehitback
+                                 10,this.sx*30*xscale,//damage,damagehitback
                                  10//life
                                  ); 
             }
@@ -2574,25 +2616,72 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
          sideWaysPush(){            
             this.state='traitorMovingBack';
          }
+         
+         traitorHighThrow(){
+            if(!this.traitorAttackInitiated){
+                this.traitorAttackInitiated=true;
+                SpawnClouds(this.position);
+                this.attackStartTime=gameManager.runningClock;
+            }
+            if(!this.initPrepOver){
+                if(gameManager.runningClock - this.attackStartTime < this.throwPrepTime)
+                    return;
+                this.initPrepOver=true;
+                this.switchAnimation('attackanticipate');
+            }
+            if(this.animation=='attackanticipate' && this.animInQueue!='attackpart1'){
+                this.animInQueue='attackpart1';
+            }else if(this.animation=='attackpart1' && this.animInQueue!='attackpart2'){
+                this.animInQueue='attackpart2';
+            }else if(this.animation=='attackpart2' && this.animInQueue!='attackrecover'){
+                this.animInQueue='attackrecover';
+            }else if(this.animation=='attackrecover' && this.animInQueue!='idle'){
+                this.animInQueue='idle';
+            }
+            if(this.animation=='idle' && this.initPrepOver){                
+                this.lastAttackTime=gameManager.runningClock;
+                this.state='agro';
+                this.traitorAttackInitiated=false;
+                this.initPrepOver=false;
+            }   
+         }
          traitorShockwave(){
             if(!this.traitorAttackInitiated){
                 this.traitorAttackInitiated=true;
-                new flame(this.position.x-50,
-                          this.position.y,50*xscale,200*yscale,
+                for(let i=1;i<=5;i++)
+                {
+                new flame(this.position.x-this.traitor_flame_gap*i*xscale,
+                          this.position.y+50*yscale,100*xscale,200*yscale,
                           [gameManager.visible_sprites,gameManager.active_sprites]
                     );
+                new flame(this.position.x+this.traitor_flame_gap*i*xscale,
+                          this.position.y+50*yscale,100*xscale,200*yscale,
+                          [gameManager.visible_sprites,gameManager.active_sprites]
+                    );
+                }
                 this.switchAnimation('shockwave_anticipate');
                 this.animInQueue='shockwave';
-                return 1;
+                return true;
             }
             if(this.animation=='shockwave' && this.animInQueue!='shockwave_recover')
                 this.animInQueue='shockwave_recover';
-            else if(this.animation=='shockwave_recover' && this.animInQueue!='idle')
+            else if(this.animation=='shockwave_recover' && 
+                    this.animRepeater<2 &&  
+                    this.animInQueue!='shockwave'){
+                this.animInQueue='shockwave';
+                this.animRepeater+=1;
+                }
+            else if(this.animation=='shockwave_recover' && 
+                    this.animRepeater==2 &&
+                    this.animInQueue!='idle')
                 this.animInQueue='idle';
             if(this.traitorAttackInitiated && this.animation=='idle'){
                 this.state='agro';  
                 this.lastAttackTime=gameManager.runningClock;
-                this.traitorAttackInitiated=false;              
+                this.rareAttackTime=gameManager.runningClock;
+                this.traitorAttackInitiated=false; 
+                this.animRepeater=0; 
+
             }
 
          }
@@ -2715,11 +2804,20 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 			  );
 		 	 // context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
 		 	 ctx.restore();
-		 	 w2screen(this.state,this.position.x-gameManager.camera.position.x,this.position.y-50*yscale-gameManager.camera.position.y);
+		 	 // w2screen(this.state,this.position.x-gameManager.camera.position.x,this.position.y-50*yscale-gameManager.camera.position.y);
 		 	}
+          usercontrol(){
+             if(ipress && !this.clickDetector){
+                this.traitor_flame_gap+=3;
+                console.log((this.traitor_flame_gap/xscale).toFixed(2));
+                this.clickDetector=true;
+            }else if(!ipress) this.clickDetector=false;
+            // this.checkIfOnGround();
+          }
 		  update()
 		  	{
 		  	  if(!this.isActive) return false;
+              // this.usercontrol();
 		 	  this.runAnimation();
 		 	  this.stateMachine();
 		 	  this.update_and_display_hitbox();
@@ -2730,6 +2828,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	  // w2screen(this.state,this.position.x-gameManager.camera.position.x,this.position.y-50*yscale-gameManager.camera.position.y);
 		  	}
 		}
+        //traitor ends
 	//Lance starts
 	class Lance
 		{
@@ -5916,6 +6015,11 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
              this.IsInContactWithWallVar=0;
 			 this.maxVelocity=new CreateVector(this.maxHoriVel_player,this.maxVertVel_player);
 			 this.horiForce=new CreateVector(0.8*xscale,0);
+             /*
+             this.manual_velocity=new CreateVector(0,0);
+             this.manual_horizontal_velocity=5*xscale;
+             //defunct for the moment
+             */
              this.wallForceWhileJumping=new CreateVector(2*xscale,0);
 			 this.gravityScale=1*yscale;
              this.isOnContactWithGround=true;
@@ -5985,7 +6089,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 		 	 this.inEnemyRadar=false;
              this.gravitySwitchedOff=false;
-             this.gravityPauseTime=0;	 
+             this.gravityPauseTime=0;
+
+             this.maxParamChangeTime=2000;
+             this.parameterChangedClock=0;	 
 			}
 		
         CheckIfIsInContactWithWall()
@@ -6048,7 +6155,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			this.maxEnergy = maxEnergy;
 			this.weaponDamage = weaponDamage;
 			this.experience = experience;
-			this.health = health;
+			this.health = health; 
 			gameManager.playerHealthBar.setValues(this.health,this.maxHealth);
 		 	// gameManager.playerEnergyBar.setValues(this.energy,this.maxEnergy);	
             gameManager.playerEnergyBar.setValues(this.hitCredit,this.maxHitCredit);
@@ -6101,17 +6208,33 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			  			  
 			  	}
 			}
-
-
+         
+        fixChangedParameters(){
+            if(this.parameterChangedClock==0) return;
+            if(gameManager.runningClock - this.parameterChangedClock > this.maxParamChangeTime)
+            {
+                this.parameterChangedClock=0;
+                this.maxVelocity.x=this.maxHoriVel_player;
+                
+            }
+        }
 		takeDamage(dmg,dir=0)
 		 	{	
-		 	this.acceleration.add(new CreateVector(dir,0));	 	
+            // console.log(`player takes damage, acceleration added:${dir}`);
+		 	 	
 		 	// return false;
 		 	if(this.invincibleState && !gameManager.playerDied) return false;
 		 	if(!gameManager.playerDied)
 		 	document.querySelector('#LossBuzz').play();	
-		 	this.invincibleState=true;	 	
+		 	this.invincibleState=true;
+            if(Math.abs(dir)>0){	 	
+            if(Math.abs(dir) > this.maxVelocity.x){
+                this.maxVelocity.x=Math.abs(dir);
+                
+                this.parameterChangedClock=gameManager.runningClock;
+            }
 		 	this.acceleration.add(new CreateVector(dir,0));
+            }
 	 		this.health-=dmg;
 	 		gameManager.playerHealthBar.updateValue(this.health);	 		
 	 		if(this.health<=0)
@@ -6381,8 +6504,11 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
             	 this.reverseDashFns();
             	 return;
             	}
-		 	if(this.invincibleState && this.invin_count < 0.5*this.max_invin_time)
+		 	if(this.invincibleState && this.invin_count < 0.5*this.max_invin_time){
+                
+                this.velocity.x=Lerp(this.velocity.x,0,4); 
 		 		return false; 
+            }
 		 	if(this.dashing)
 		 		{
 		 		 this.dashStateFns();
@@ -6405,22 +6531,26 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 			if(this.sx!=-1) this.sx=-1;
 		 			this.changeAnimation('run');
 		 			this.acceleration.sub(this.horiForce);
+                    // this.manual_velocity.x=-this.manual_horizontal_velocity;
 		 			}
 		 		else if(rightPress || rightArrow)
 		 			{
 		 			if(this.sx!=1) this.sx=1;
 		 			this.changeAnimation('run');
 		 			this.acceleration.add(this.horiForce);
+                    // this.manual_velocity.x=this.manual_horizontal_velocity;
 		 			}		 		
 		 		else
 		 			{
 		 			this.changeAnimation('idle');
-		 			this.velocity.x=Lerp(this.velocity.x,0,16);	 					 		
+		 			this.velocity.x=Lerp(this.velocity.x,0,4);	 
+                    // this.manual_velocity.x=0;					 		
 		 			}
 		 		}
 	 		else
 		 		{
-		 		this.velocity.x=Lerp(this.velocity.x,0,32);	 	
+		 		this.velocity.x=Lerp(this.velocity.x,0,32);	
+                // this.manual_velocity.x=0;   	
 		 		}
 
 	 		if(GetKeyPressedx(gameManager.strikeKey) && this.slashTrigger)
@@ -6507,7 +6637,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 applyVelocity()
 		 	{		 	 	 	 
 		 	 this.hit_box.position.x+=this.velocity.x;
-		 	 
+		 	 // this.hit_box.position.x+=this.manual_velocity.x;
 		 	 for(let k in gameManager.collission_sprites)
 		 	 	{ 
 		 	 	 let x=gameManager.collission_sprites[k];
@@ -6579,6 +6709,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 update()
 		 	{
 		 	 if(!this.onScreen) return false;
+             this.fixChangedParameters();
 		 	 this.runAnimation();
 		 	 this.move();
 		 	 this.fallDamage();
