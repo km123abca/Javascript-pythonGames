@@ -1797,6 +1797,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 	this.velocity=new CreateVector(0,0);
 			 else		 
 			 	this.velocity=new CreateVector(parentx.sx*horiVel*xscale,0);
+             
 			 this.gravityScale=2*yscale;
 			 this.maxVelocity=new CreateVector(horiVel*xscale,12*yscale);
 			 this.spriteGroups=spriteGroups;
@@ -2213,9 +2214,9 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                 this.rareAttackTime=gameManager.runningClock+4000;
                 this.rareAttackTimeGap=4000;
 		 		this.maxAttackGap=1000;
-		 		this.attacks=['traitorstrike'];
+		 		this.attacks=['traitorstrike','traitorHighThrow'];
                 this.rareAttacks=['shockwave'];
-                this.attacks=['traitorHighThrow'];
+                // this.attacks=['traitorHighThrow'];
 		 		this.enemyClosed=false;
 		 		this.traitorAttackPrepTime=500;
                 this.traitorAttackCloseTime=4*this.traitorAttackPrepTime;
@@ -2638,11 +2639,22 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
             }else if(this.animation=='attackrecover' && this.animInQueue!='idle'){
                 this.animInQueue='idle';
             }
+            if(this.animation=='attackpart2' && !this.traitorStruck){
+                this.traitorStruck=true;
+                new ThornyBall(this.position.x,
+                           this.position.y,
+                           50*xscale,
+                           50*yscale,
+                           this,200*xscale,0,
+                           [gameManager.visible_sprites,gameManager.active_sprites],40,800
+                                  ); 
+            }
             if(this.animation=='idle' && this.initPrepOver){                
                 this.lastAttackTime=gameManager.runningClock;
                 this.state='agro';
                 this.traitorAttackInitiated=false;
                 this.initPrepOver=false;
+                this.traitorStruck=false;
             }   
          }
          traitorShockwave(){

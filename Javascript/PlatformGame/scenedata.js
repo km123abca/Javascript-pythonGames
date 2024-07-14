@@ -48,7 +48,8 @@ let scenes=[
                                      
                 {"sprite":"camstopper_left","x":-600,"y":394},
                 {"sprite":"camstopper_right","x":1575,"y":1774},
-                {"sprite":"entryexit_entry","x":-900,"y":464},
+                // {"sprite":"entryexit_entry","x":-900,"y":464}, //backdoor
+                {"sprite":"entryexit_entry","x":612,"y":995},
                 {"sprite":"entryexit_exit","x":2100,"y":1767},
                 {"sprite":"scenechanger_scleft","x":-1450,"y":464},
                 {"sprite":"scenechanger_scright","x":2300,"y":1767},
