@@ -1295,21 +1295,22 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			}
 		}
 
-	function SpawnClouds(pos,n=60)
+	function SpawnClouds(pos,n=60,type="normal")
 		{
 		 for(let i=0;i<n;i++)
-		 	new CloudBurst(pos.x,pos.y,[gameManager.visible_sprites,gameManager.active_sprites]);
+		 	new CloudBurst(pos.x,pos.y,[gameManager.visible_sprites,gameManager.active_sprites],type);
 		}
 
 	class CloudBurst
 		{
-		 constructor(x,y,spriteGroups)
+		 constructor(x,y,spriteGroups,type="normal")
 		 	{
 		 	 this.position = new CreateVector(x,y);
 		 	 this.width= 15 * xscale;
 		 	 this.sprite_type='cloud';
 		 	 this.height= 15 * yscale;
 		 	 this.imagex= WHITECLOUD;
+             if(type!="normal") this.imagex=BLACKCLOUD;
 		 	 this.onScreen=true;
 		 	 this.isActive=true;
 		 	 this.spriteGroups=spriteGroups;
@@ -2621,7 +2622,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
          traitorHighThrow(){
             if(!this.traitorAttackInitiated){
                 this.traitorAttackInitiated=true;
-                SpawnClouds(this.position);
+                SpawnClouds(this.position,60,"black");
                 this.attackStartTime=gameManager.runningClock;
             }
             if(!this.initPrepOver){
