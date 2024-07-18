@@ -402,6 +402,7 @@
 		 
 		}
 	
+let HORIZONTALPIPE=LoadImagex('sprites/Pipes','pipeHori.png');
 let BLACKCLOUD= LoadImagex('sprites','cloud-1dark.png');
 let WHITECLOUD= LoadImagex('sprites','cloud-1.png');
 let THORNYBALL = LoadImagex('sprites','Thornyball.png');
@@ -843,10 +844,26 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 	}
 			 this.mouseTrigger=false;
 			 this.outputTrigger=false;
+			 this.designMode=false;
+			 this.placeTrigger=true;
+			 this.placeMode=false;
+			 this.tiles=[
+			 	{"sprite":"platform","img":HORIZONTALPIPE,"width":50,"height":1280}
+			 ];
+			 this.tileIndex=0;
 			}
 		changeObject(obj)
 			{
 			 this.obj=obj;
+			}
+		displayTileForDisplay()
+			{
+			let currentTile=this.tiles[this.tileIndex];
+			ctx.save();			
+			ctx.translate(100 - gameManager.camera.position.x,
+				          100 - gameManager.camera.position.y);
+			ctx.drawImage(currentTile.img,0,0,100*xscale,10*yscale);
+			ctx.restore();
 			}
 
 		display()
@@ -861,6 +878,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			ctx.fill();
 			ctx.stroke();
 			ctx.restore();
+			this.displayTileForDisplay();
 			}
 		update()
 			{
@@ -882,10 +900,28 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			}	
 
 		attractFocus()
-			{
+			{	
+
+			if(GetKeyPressedx('u') && this.placeTrigger)
+				{
+				this.placeMode=!this.placeMode;
+				if(this.placeMode)
+					{
+
+					 this.designMode=false;
+					 this.obj=null;
+					}
+				this.placeTrigger=false;
+				}				
+			else if(!GetKeyPressedx('p') && !this.placeTrigger)
+				{
+				this.placeTrigger=true;
+				}
+
 			if(gPress)
 				{
-				  
+				  this.designMode=true;
+				  this.placeMode=false;
 				  if(gameManager.runningClock - this.last_gpress_time > 250)
 				  	{
 				  	  this.last_gpress_time=gameManager.runningClock;
@@ -898,7 +934,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 				}
 			}
 		catchOnMousePress(){
-			if(!gameManager.followMouse) return;
+			if(!gameManager.followMouse ) return;
+			if(!this.designMode) return;
 			if(mousePressed && !this.mouseTrigger){
 				this.mouseTrigger=true;
 				if(this.obj){
