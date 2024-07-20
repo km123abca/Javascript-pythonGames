@@ -7,7 +7,7 @@
 	let mouseX,mouseY;
 	let spacePress,upPress,rightPress,downPress,leftPress,gPress,fPress,enterPress;
 	let ipress,lpress,mpress,jpress,tpress,hpress,bpress,ppress;
-	let mousePressed;
+	let mousePressed,mouseRightPressed,mouseMiddle;
 
 	// let backGroundColor="#16a1b3";
 	let backGroundColor='#051405';
@@ -652,12 +652,50 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 					};
 	document.onmousedown=function(e)
 					{
-					mousePressed=true;													
+					if(e.button==0)
+						{
+						mousePressed=true;
+						// console.log('left press');
+						}
+					else if(e.button==1)
+						{
+						mouseMiddle=true;
+						// console.log('middle press');
+						}
+					else if(e.button==2)
+						{
+						mouseRightPressed=true;	
+						// console.log('right press');										
+						}
 					};	
 	document.onmouseup=function(e)
 					{
-					mousePressed=false;												
+					if(e.button==0)
+						mousePressed=false;
+					else if(e.button==1)
+						mouseMiddle=false;
+					else if(e.button==2)
+						mouseRightPressed=false;	
 					};
+	document.oncontextmenu = function(e) {
+    						e.preventDefault();
+							};
+	let scrollUp,scrollDown;
+	document.onwheel = function(e) {
+    // e.deltaY provides the amount and direction of the scroll
+    if (e.deltaY < 0) {
+        console.log('Scrolled up');
+        scrollUp=true;
+    } else{
+    	scrollUp=false;
+    }
+    if (e.deltaY > 0) {
+        console.log('Scrolled down');
+        scrollDown=true;
+    }else{
+    	scrollDown=false;
+    }
+};
 	//keypresses end
 
 	let checkVar=true;
@@ -843,15 +881,22 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 	 grp.push(this);
 			 	}
 			 this.mouseTrigger=false;
+			 this.mouseRightTrigger=false;
 			 this.outputTrigger=false;
 			 this.designMode=false;
 			 this.placeTrigger=true;
 			 this.placeMode=true;
 			 this.tiles=[
-			 	{"sprite":"platform","img":HORIZONTALPIPE,"width":50,"height":1280}
+			 	{"sprite":"platform","img":HORIZONTALPIPE,"displayWidth":100,"displayHeight":50},
+			 	{"sprite":"platformvert","img":HORIZONTALPIPE,"displayWidth":50,"displayHeight":100}
 			 ];
 			 this.tileIndex=0;
 			}
+		scrollThroughTileIndex(dirx){
+			this.tileIndex+=dirx;
+			if(this.tileIndex>=this.tiles.length) this.tileIndex=0;
+			else if(this.tileIndex < 0) this.tileIndex=this.tiles.length-1;
+		}
 		placeObjectsOnMousePress()
 			{
 			 if(!this.placeMode) return;
@@ -875,6 +920,13 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 				 50*yscale,
 		 	 	 				 [gameManager.visible_sprites]
 		 	 	 				);
+			if(this.tiles[this.tileIndex]['sprite']=='platformvert')
+			 	 	new Platform((mouseX+gameManager.camera.position.x),
+			 	 				 (mouseY+gameManager.camera.position.y),
+			 	 				 50*xscale,
+			 	 				 1000*yscale,
+			 	 				 [gameManager.visible_sprites]
+			 	 				);
 			}
 		changeObject(obj)
 			{
@@ -889,7 +941,9 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			ctx.translate(100,50);
 
 			ctx.globalAlpha=0.4;
-			ctx.drawImage(currentTile.img,0,0,100*xscale,50*yscale);
+			ctx.drawImage(currentTile.img,0,0,
+							currentTile.displayWidth*xscale,
+							currentTile.displayHeight*yscale);
 			ctx.globalAlpha=1;
 			ctx.restore();
 			this.displayTileForDisplayAtMousePoint();
@@ -902,7 +956,11 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			ctx.save();			
 			ctx.translate(mouseX,mouseY);
 			ctx.globalAlpha=0.2;
-			ctx.drawImage(currentTile.img,-50*xscale,-25*yscale,100*xscale,50*yscale);
+			ctx.drawImage(currentTile.img,
+						-currentTile.displayWidth/2 *xscale,
+						-currentTile.displayHeight/2*yscale,
+						currentTile.displayWidth*xscale,
+						currentTile.displayHeight*yscale);
 			ctx.globalAlpha=1;
 			ctx.restore();
 			}
@@ -927,6 +985,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.placeObjectsOnMousePress();
 			 this.attractFocus();
 			 this.catchOnMousePress();
+			 this.deleteOnMousePress();
 			 this.mindOutput();
 			 if(!this.obj) return false;
 			 this.adjustObjPosition();
@@ -976,7 +1035,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 				  	}
 				}
 			}
-		catchOnMousePress(){
+		catchOnMousePress()
+		{
 			if(!gameManager.followMouse ) return;
 			if(!this.designMode) return;
 			if(mousePressed && !this.mouseTrigger){
@@ -1004,6 +1064,46 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 				}
 			}else if(this.mouseTrigger && !mousePressed )
 			this.mouseTrigger=false;
+
+		}
+	deleteOnMousePress()
+		{
+			if(!gameManager.followMouse ) return;
+			if(!this.placeMode) return;
+			if(scrollUp) this.scrollThroughTileIndex(-1);
+			else if(scrollDown) this.scrollThroughTileIndex(1);
+			if(mouseRightPressed && !this.mouseRightTrigger)
+			{
+				this.mouseRightTrigger=true;
+				let objToDelete=-1;	
+
+				for (let go_index in gameManager.visible_sprites)
+				{
+					if(gameManager.visible_sprites[go_index]==this) continue;					
+					let go=gameManager.visible_sprites[go_index];
+					
+					let xpos=go.position.x - gameManager.camera.position.x;
+					let ypos=go.position.y - gameManager.camera.position.y;
+					if(mouseX> xpos-go.width/2 && 
+					   mouseX< xpos+go.width/2 && 
+					   mouseY> ypos-go.height/2 && 
+					   mouseY< ypos+go.height/2  
+						)					
+						{objToDelete=go_index;break;}
+				}
+				if(objToDelete!=-1){
+					// destroySelf(objToDelete);
+					// console.log(`${objToDelete.sprite_type} will be deleted`)
+					gameManager.visible_sprites.splice(objToDelete,1);
+				}
+				else{
+					// this.scrollThroughTileIndex();
+					
+				}
+
+			}
+			else if(this.mouseRightTrigger && !mouseRightPressed )
+			this.mouseRightTrigger=false;
 
 		}
 		adjustObjPosition()
