@@ -680,20 +680,18 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	document.oncontextmenu = function(e) {
     						e.preventDefault();
 							};
-	let scrollUp,scrollDown;
+	let scrollUp=0,scrollDown=0;
 	document.onwheel = function(e) {
     // e.deltaY provides the amount and direction of the scroll
     if (e.deltaY < 0) {
         console.log('Scrolled up');
-        scrollUp=true;
-    } else{
-    	scrollUp=false;
-    }
+        scrollUp-=1;
+        if(scrollUp<-100) scrollUp=0;
+    } 
     if (e.deltaY > 0) {
         console.log('Scrolled down');
-        scrollDown=true;
-    }else{
-    	scrollDown=false;
+        scrollDown+=1;
+        if(scrollDown > 100) scrollDown=0;
     }
 };
 	//keypresses end
@@ -1070,8 +1068,17 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		{
 			if(!gameManager.followMouse ) return;
 			if(!this.placeMode) return;
-			if(scrollUp) this.scrollThroughTileIndex(-1);
-			else if(scrollDown) this.scrollThroughTileIndex(1);
+			if(scrollUp!=this.lastScrollUp) 
+				{
+				this.scrollThroughTileIndex(-1);
+				this.lastScrollUp=scrollUp;
+				}
+			else if(scrollDown!=this.lastScrollDown)
+				{
+				this.scrollThroughTileIndex(1);
+				this.lastScrollDown=scrollDown;
+				} 
+				
 			if(mouseRightPressed && !this.mouseRightTrigger)
 			{
 				this.mouseRightTrigger=true;

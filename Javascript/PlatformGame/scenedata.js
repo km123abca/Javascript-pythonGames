@@ -35,6 +35,14 @@ let scenes=[
 				{"sprite":"flower","x":268,"y":554,"width":50,"height":50,"xoffset":0,"yoffset":0,"exp":10,"spriteId":"f3"},	
 				{"sprite":"flower","x":1081,"y":430,"width":50,"height":50,"xoffset":0,"yoffset":0,"exp":10,"spriteId":"f4"},				
 			],
+			/*
+			[
+			   {"sprite":"entryexit_entry","x":-600,"y":464}, //backdoor
+			   {"sprite":"wall","x":-587,"y":612,"width":250,"height":150,"isHorizontal":true,"copies":8},
+			   {"sprite":"camstopper_left","x":-600,"y":394},			  
+			],
+			//basic block
+			*/
             [                               
                 {"sprite":"platform","x":-1110,"y":600,"width":775,"height":50},
                   
