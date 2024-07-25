@@ -412,7 +412,8 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 let FLOWERIMAGE= LoadImagex('sprites/misc','Flower.png');
 let GATEIMAGE= LoadImagex('sprites/misc','gate.png');
 let VERTICALSHRUB=LoadImagex('sprites/Shrub','VerticalShrub.png');
-let HORIZONTALPLATFORMTILE=LoadImagex(`./sprites/workshop/platform1.png`);  
+let HORIZONTALPLATFORMTILE=LoadImagex('sprites/workshop','platform1.png'); 
+let REDDOT=LoadImagex('sprites/misc','RedDot.png') 
 
 let SAWWHEEL1= LoadImagex('sprites/workshop','sawwheel1.png');
 let SAWWHEEL2= LoadImagex('sprites/workshop','sawwheel2.png');
@@ -886,10 +887,14 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.placeTrigger=true;
 			 this.placeMode=true;
 			 this.tiles=[
-			 	{"sprite":"platform","img":HORIZONTALPIPE,"displayWidth":100,"displayHeight":50},
-			 	{"sprite":"platformvert","img":HORIZONTALPIPE,"displayWidth":50,"displayHeight":100},
+			 	{"sprite":"platform","img":HORIZONTALPIPE,
+			 	  "displayWidth":100,"displayHeight":50,widthx:1000,heightx:50},
+			 	{"sprite":"platformvert","img":HORIZONTALPIPE,
+			 	  "displayWidth":50,"displayHeight":100,widthx:50,heightx:1000},
 			 	{"sprite":"horizontaltile","img":HORIZONTALPLATFORMTILE,
-			 	"displayWidth":50,"displayHeight":10 }
+			 	"displayWidth":100,"displayHeight":50,widthx:250,heightx:150 },
+			 	{"sprite":"reddot","img":REDDOT,
+			 	"displayWidth":50,"displayHeight":50,widthx:50,heightx:50 }
 			 ];
 			 this.tileIndex=0;
 			}
@@ -913,31 +918,55 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			}
 		placeObject()
 			{
-
+			let newobj;	
 			if(this.tiles[this.tileIndex]['sprite']=='platform')
-		 	 	 	new Platform((mouseX+gameManager.camera.position.x),
+		 	 	 	newobj=new Platform((mouseX+gameManager.camera.position.x),
 		 	 	 				 (mouseY+gameManager.camera.position.y),
-		 	 	 				 1000*xscale,
-		 	 	 				 50*yscale,
+		 	 	 				 this.tiles[this.tileIndex]['widthx']*xscale,
+		 	 	 				 this.tiles[this.tileIndex]['heightx']*yscale,
 		 	 	 				 [gameManager.visible_sprites]
 		 	 	 				);
 			else if(this.tiles[this.tileIndex]['sprite']=='platformvert')
-			 	 	new Platform((mouseX+gameManager.camera.position.x),
+			 	 	newobj=new Platform((mouseX+gameManager.camera.position.x),
 			 	 				 (mouseY+gameManager.camera.position.y),
-			 	 				 50*xscale,
-			 	 				 1000*yscale,
+			 	 				 this.tiles[this.tileIndex]['widthx']*xscale,
+			 	 				 this.tiles[this.tileIndex]['heightx']*yscale,
 			 	 				 [gameManager.visible_sprites]
 			 	 				);
-			 // else if(this.tiles[this.tileIndex]['sprite']=='horizontaltile')
-			 // 	 	new Wall((mouseX+gameManager.camera.position.x),
-		 	//  				 (mouseY+gameManager.camera.position.y),
-		 	//  				 250*xscale,
-		 	//  				 150*yscale,
-		 	//  				 true,4,
-		 	//  				 [gameManager.visible_sprites],0
-		 	//  				);
-
+			 else if(this.tiles[this.tileIndex]['sprite']=='reddot')
+		 	 	 	newobj=new MarkedSpot(mouseX+gameManager.camera.position.x,
+		 	 	 		   	   mouseY+gameManager.camera.position.y,
+		 	 	 		   	   "REDDOT",
+		 	 	 		   	   [gameManager.visible_sprites]
+		 	 	 		   	   );
+			 else if(this.tiles[this.tileIndex]['sprite']=='horizontaltile')
+			 	 	newobj=new Wall((mouseX+gameManager.camera.position.x),
+		 	 				 (mouseY+gameManager.camera.position.y),
+		 	 				 this.tiles[this.tileIndex]['widthx']*xscale,
+		 	 				 this.tiles[this.tileIndex]['heightx']*yscale,
+		 	 				 true,4,
+		 	 				 [gameManager.visible_sprites],0
+		 	 				);
+			 this.autoCatchup(newobj);
 			}
+		autoCatchup(obj){
+			for(let go of gameManager.visible_sprites){
+				if(go==obj || go==this) continue;
+
+				// console.log(go.sprite_type); 
+				// try{
+				// 	console.log(go.position.x);
+				// }catch(err){
+				// 	console.log('error here');
+				// }
+				// continue;
+
+				if(Math.abs(obj.position.x - go.position.x)<30)
+					obj.position.x=go.position.x;
+				if(Math.abs(obj.position.y - go.position.y)<30)
+					obj.position.y=go.position.y;
+			}
+		}
 		changeObject(obj)
 			{
 			 this.obj=obj;
@@ -969,8 +998,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			ctx.drawImage(currentTile.img,
 						-currentTile.displayWidth/2 *xscale,
 						-currentTile.displayHeight/2*yscale,
-						currentTile.displayWidth*xscale,
-						currentTile.displayHeight*yscale);
+						currentTile.widthx*xscale,
+						currentTile.heightx*yscale);
 			ctx.globalAlpha=1;
 			ctx.restore();
 			}
