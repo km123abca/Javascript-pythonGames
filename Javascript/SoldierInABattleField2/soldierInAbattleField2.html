@@ -167,7 +167,7 @@
             }
         desc()
             {
-            return `Vector:${this.x},${this.y}`
+            return `Vector:${this.x.toFixed(2)},${this.y.toFixed(2)}`;
             }
         heading()
             {
@@ -2783,7 +2783,7 @@ class GenericMovable extends GeneralSprite
     applyVelocity()
             {    
              if(!this.onScreen) return;  
-             this.hit_box.updateAngle(this.angle);              
+             this.hit_box.updateAngle(this.angle);
              this.hit_box.position.x+=this.velocity.x;         
              for(let k in gameManager.collission_sprites)
                 { 
@@ -2834,6 +2834,13 @@ class GenericMovable extends GeneralSprite
          }
          applyVelocityRestrictions()
             {
+            /*
+            if(this.sprite_type=='zombie' && this.velocity.mag()>0)
+                {
+                console.log(`max velocity:${this.maxVelocity}`);
+                console.log(`velocity:${this.velocity.mag()}`);
+                }
+                */
             if(this.velocity.mag() < this.maxVelocity) return;
             this.velocity.normalize().mult(this.maxVelocity);         
             }
@@ -2844,8 +2851,14 @@ class GenericMovable extends GeneralSprite
             }
         move()
             {             
-             this.applyFriction();
+             this.applyFriction();             
              this.velocity.add(this.acceleration);
+             if(this.sprite_type=='zombie' && this.velocity.mag()>0)
+                {                
+                console.log(`velocity mag:${this.velocity.mag()}`);
+                if(this.acceleration.mag()>0) 
+                    console.log(`acceleration applied:${this.acceleration.desc()}`);
+                }
              this.acceleration.set(0,0);             
              this.applyVelocity();
              this.applyVelocityRestrictions();
@@ -3393,6 +3406,7 @@ class Zombie extends GenericMovable
         
         // let enemyDir=gameManager.player.position.copy().sub(this.position);
         this.acceleration.add(this.enemyDirForMoveIn.normalized().mult(2));
+
         if((gameManager.player.position.copy().sub(this.position).mag() < this.stopGrabDistance)||
             (gameManager.runningClock - this.lastFarAttackTime > this.maxTimeEngagedInMoveIn )
             ){
