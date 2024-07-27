@@ -1090,14 +1090,37 @@ document.onmousedown = function(event) {
                  this.numClicks=0;
                 }
             }
+          adjustFPSonKeyPress()
+            {
+
+                if(GetKeyPressedx('s'))
+                    {
+                        console.log(`deltatime:${deltaTime}`);
+                    if(FPS==60)
+                        {
+                        FPS=1;
+                        deltaTime=1000 / FPS;
+                        console.log('fps reduced');
+                        }
+                    else
+                        {
+                        // FPS=60;
+                        // deltaTime=1000 / FPS;  
+                        }
+                    
+                    
+                    }
+            }
           runClock()
             {
             this.runningClock+=deltaTime;
             if(this.runningClock > 300000) this.runningClock=0;
             }
+
           update()
             {            
-            this.runClock();
+            this.runClock(); 
+            // this.adjustFPSonKeyPress();           
             this.runGame();            
             this.detectMouseClicks();
             if(!this.gamePaused) this.checkScenes();
@@ -2750,7 +2773,7 @@ class GenericMovable extends GeneralSprite
          this.acceleration=new CreateVector(0,0);
          this.velocity=new CreateVector(0,0);
          this.maxVelocity=10*xscale; 
-         this.frictionConstant=0.8;   
+         this.frictionConstant=0.1;   
          this.rotationOffset=0;     
         }
     applyFriction()
@@ -2783,8 +2806,9 @@ class GenericMovable extends GeneralSprite
     applyVelocity()
             {    
              if(!this.onScreen) return;  
-             this.hit_box.updateAngle(this.angle);
-             this.hit_box.position.x+=this.velocity.x;         
+             // this.hit_box.updateAngle(this.angle);
+             this.hit_box.position.x+=this.velocity.x;     
+             
              for(let k in gameManager.collission_sprites)
                 { 
                  let x=gameManager.collission_sprites[k];
@@ -2794,8 +2818,7 @@ class GenericMovable extends GeneralSprite
                  if(b_collision(this.hit_box,x)) 
                     {  
                     
-                    this.performSpecTaskOnCollision(x);                           
-                    // console.log('collision with '+x.sprite_type);         
+                    this.performSpecTaskOnCollision(x);                            
                      if(this.velocity.x > 0)
                         {                    
                         this.hit_box.position.x=x.position.x - x.width/2-this.hit_box.width/2-2;                        
@@ -2805,9 +2828,10 @@ class GenericMovable extends GeneralSprite
                         this.hit_box.position.x=x.position.x + x.width/2 + this.hit_box.width/2+2;                      
                         }
                     }
-                }
+                } 
 
-             this.hit_box.position.y+=this.velocity.y;           
+             this.hit_box.position.y+=this.velocity.y; 
+
              for(let x of gameManager.collission_sprites)
                 {
                  if(!x.onScreen) continue;
@@ -2828,19 +2852,13 @@ class GenericMovable extends GeneralSprite
                         }
                     }
                 }
+
             }
          performSpecTaskOnCollision(){
             return false;
          }
          applyVelocityRestrictions()
-            {
-            /*
-            if(this.sprite_type=='zombie' && this.velocity.mag()>0)
-                {
-                console.log(`max velocity:${this.maxVelocity}`);
-                console.log(`velocity:${this.velocity.mag()}`);
-                }
-                */
+            {            
             if(this.velocity.mag() < this.maxVelocity) return;
             this.velocity.normalize().mult(this.maxVelocity);         
             }
@@ -2853,12 +2871,14 @@ class GenericMovable extends GeneralSprite
             {             
              this.applyFriction();             
              this.velocity.add(this.acceleration);
+             /*Deletable
              if(this.sprite_type=='zombie' && this.velocity.mag()>0)
                 {                
                 console.log(`velocity mag:${this.velocity.mag()}`);
                 if(this.acceleration.mag()>0) 
                     console.log(`acceleration applied:${this.acceleration.desc()}`);
                 }
+            */
              this.acceleration.set(0,0);             
              this.applyVelocity();
              this.applyVelocityRestrictions();
@@ -3210,6 +3230,7 @@ class Zombie extends GenericMovable
     constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups,sprite_id)
         {
          super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
+         gameManager.visible_sprites.push(this.hit_box);
          this.testing=false;
          this.sprite_id=sprite_id; //sprite_id uniquely identifies this sprite
 
@@ -3225,7 +3246,7 @@ class Zombie extends GenericMovable
          this.animation='idle';           
          this.state='idle'; 
          //zombie will have a default move velocity, in certain circumstances it will have an enchanced velocity
-         this.maxVelocity_normal=5*xscale;
+         this.maxVelocity_normal=1*xscale;
 
          this.maxVelocity_dashing=30*xscale;
          this.maxVelocity=this.maxVelocity_normal;

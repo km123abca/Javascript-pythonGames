@@ -2894,7 +2894,7 @@ class GenericEnemy extends GenericMovable
          else this.onScreen=true;
          this.maxStrikeTime=2000; 
          this.bulletOffset=new CreateVector(55*xscale,25*yscale); 
-         
+
          this.longAttacks=['farstrike'];
          this.shortAttacks=['strike'];  
          this.strikeBoxSpawned=false;
@@ -3092,9 +3092,12 @@ class Zombie extends GenericMovable
          this.state='idle'; 
          //zombie will have a default move velocity, in certain circumstances it will have an enchanced velocity
          this.maxVelocity_normal=1*xscale;
+
          this.maxVelocity_dashing=30*xscale;
          this.maxVelocity=this.maxVelocity_normal;
+
          this.stopGrabDistance=80*xscale;
+
 
          this.enemyDetectDistance=200*xscale;
          this.nearAttackDistance=120*xscale;
@@ -3108,8 +3111,8 @@ class Zombie extends GenericMovable
          this.maxTimeEngagedInMoveIn=4000;
          this.bulletOffset=new CreateVector(60*xscale,10*yscale); 
          this.longAttacksFull=['spawn_circle','runin','runin','farstrike','movein'];
-         // this.longAttacks=['runin','runin','runin','farstrike','movein'];//farstrike
-         this.longAttacks=['farstrike','spawn_circle'];
+         this.longAttacks=['movein','movein','runin','farstrike','movein'];//farstrike
+         // this.longAttacks=['farstrike','spawn_circle'];
          this.shortAttacks=['strike'];  
          this.strikeBoxSpawned=false;
          this.expVal=50;
