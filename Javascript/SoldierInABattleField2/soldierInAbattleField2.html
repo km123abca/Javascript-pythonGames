@@ -1016,8 +1016,7 @@ document.onmousedown = function(event) {
           this.camera=new Camera(0,0);
           this.gamePaused=false;
           this.runningClock=0;  
-          this.testing=false;
-          
+          this.testing=false;         
           
           this.playerDiedClock=0;
 
@@ -2821,11 +2820,11 @@ class GenericMovable extends GeneralSprite
                     this.performSpecTaskOnCollision(x);                            
                      if(this.velocity.x > 0)
                         {                    
-                        this.hit_box.position.x=x.position.x - x.width/2-this.hit_box.width/2-2;                        
+                        this.hit_box.position.x=x.position.x - x.width/2-this.hit_box.width/2-2;    
                         }
                      else 
                         {
-                        this.hit_box.position.x=x.position.x + x.width/2 + this.hit_box.width/2+2;                      
+                        this.hit_box.position.x=x.position.x + x.width/2 + this.hit_box.width/2+2;  
                         }
                     }
                 } 
@@ -3216,6 +3215,7 @@ class Beetle extends GenericEnemy
             }
             update(){
                 super.update();
+                this.hit_box.updateAngle(this.angle);
                 this.bulletPosition.position=this.position.copy().add(this.bulletOffset.copy().rotateByAngle(this.angle));
                 // console.log(`spawn position: ${this.bulletPosition.position.x.toFixed(2)},
                 //     ${this.bulletPosition.position.y.toFixed(2)}`);
@@ -3230,7 +3230,7 @@ class Zombie extends GenericMovable
     constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups,sprite_id)
         {
          super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
-         gameManager.visible_sprites.push(this.hit_box);
+         // gameManager.visible_sprites.push(this.hit_box);
          this.testing=false;
          this.sprite_id=sprite_id; //sprite_id uniquely identifies this sprite
 
@@ -3272,7 +3272,7 @@ class Zombie extends GenericMovable
          this.strikeBoxSpawned=false;
          this.expVal=50;
          this.maxHealth=100;
-         this.health=100;
+         this.health=20;
          this.enemyHealthBar= new UIBar(50,20,100,15,
                                         this.health,this.health,
                                         '#222222','#FF0000',
