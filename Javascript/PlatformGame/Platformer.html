@@ -472,6 +472,9 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	<audio id="whoosh" >
 		<source src="./sounds/whoosh.wav" type="audio/mpeg">
 	</audio>
+	<audio id="cornifer" >
+		<source src="./sounds/individualSounds/Cornifer_01.wav" type="audio/mpeg">
+	</audio>
 <!--audio list ends-->
 <script>
 	var canvas = document.querySelector('canvas');
@@ -5507,7 +5510,9 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		  		this.sx=-1;
 			  	}
 			}
-
+			/*
+			document.querySelector('#cornifer').play();
+			*/
         FriendlyBehav()
             {
              this.velocity.x=Lerp(this.velocity.x,0,2);

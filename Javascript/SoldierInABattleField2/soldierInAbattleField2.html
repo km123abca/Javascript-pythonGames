@@ -3129,6 +3129,7 @@ class GenericEnemy extends GenericMovable
 
      CarryOutAttacks(){
          // Draw_a_line(this.position,Get_A_Point(this.position,this.nearAttackDistance,this.angle));
+
          if(gameManager.player.position.copy().sub(this.position).mag() < this.nearAttackDistance){
             if(this.lastFarAttackTime!=0) this.lastFarAttackTime=0;                
             if(gameManager.runningClock - this.lastCloseAttackTime > this.maxCloseAttackTimeGap){
@@ -3207,19 +3208,77 @@ class Beetle extends GenericEnemy
              this.rotationOffset=90;
              this.frameToStrike=1;
              this.frameToShoot=1;
+             this.nearAttackDistance=500*xscale;
+             this.maxVelocity_normal=this.maxVelocity;
+             this.maxVelocity_quick=this.maxVelocity*4;
+             this.maxStrikeTime=2000;
+
+             // this.farAttackDistance=300*xscale; 
+
+             /*
+             //bullet position was created just to get an indication of the point
+             //were bullet is spawned
              this.bulletPosition=new GeneralSprite(this.position.x+this.bulletOffset.x,
                                this.position.y+this.bulletOffset.y,
                                30,30,0,0,
                             [gameManager.visible_sprites]
                           );
+            */
+            this.beetle_move_start_time=0;
+            this.beetle_move_stage='back';
+            this.beetle_move_gap=200;
+            this.pull=null;
+            this.stopMoving=false;
+
             }
             update(){
                 super.update();
                 this.hit_box.updateAngle(this.angle);
+                /*
+             //bullet position was created just to get an indication of the point
+             //were bullet is spawned
                 this.bulletPosition.position=this.position.copy().add(this.bulletOffset.copy().rotateByAngle(this.angle));
-                // console.log(`spawn position: ${this.bulletPosition.position.x.toFixed(2)},
-                //     ${this.bulletPosition.position.y.toFixed(2)}`);
+                */            
             }
+            
+            Strike(){
+                super.Strike();
+                if(this.maxVelocity==this.maxVelocity_normal)
+                    { 
+                    console.log('here');
+                    this.maxVelocity=this.maxVelocity_quick;
+                    this.beetle_move_start_time=gameManager.runningClock;
+                    this.pull=new CreateVector(1,0);
+                    this.pull.mult(-2).rotateByAngle(this.angle);
+                    this.beetle_move_stage='backward';
+                    }
+                if(!this.stopMoving)
+                    this.acceleration.add(this.pull);
+                if(gameManager.runningClock- this.beetle_move_start_time > this.beetle_move_gap)
+                    {
+                    if(this.beetle_move_stage=='forward')
+                        {
+                        this.stopMoving=true;
+                        this.velocity.set(0,0);
+                        this.beetle_move_start_time=gameManager.runningClock;
+                        this.beetle_move_stage='stopped';
+                        }
+                    else if(this.beetle_move_stage=='backward')
+                        {
+                            this.pull.mult(-1);
+                            this.beetle_move_stage='forward';
+                            this.velocity.set(0,0);
+                            this.beetle_move_start_time=gameManager.runningClock;
+                        }
+
+                    }
+                
+                if(gameManager.runningClock - this.lastCloseAttackTime > this.maxStrikeTime*0.9){ 
+                 this.maxVelocity=this.maxVelocity_normal;
+                 this.stopMoving=false;
+                } 
+            }
+
 
     }
 //beetle ends

@@ -897,12 +897,29 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 	"displayWidth":50,"displayHeight":50,widthx:50,heightx:50 }
 			 ];
 			 this.tileIndex=0;
+			 this.dotTypes=['entry_sprite_c','exit_sprite_c',
+			                'camera_left_stop_c','camer_right_stop_c',
+			                'scenechanger_left','scenechanger_right'];
+			 this.dotTypeMap={"entry_sprite_c":"entryexit_entry",
+			               	  "exit_sprite_c":"entryexit_entry",
+			               	  "camera_left_stop_c":"camstopper_left",
+			               	  "camer_right_stop_c":"camstopper_right",
+			               	  "scenechanger_left":"scenechanger_scleft",
+			               	  "scenechanger_right":"scenechanger_scright",
+			                 };
+			 this.dotIndex=0;
 			}
 		scrollThroughTileIndex(dirx){
 			this.tileIndex+=dirx;
 			if(this.tileIndex>=this.tiles.length) this.tileIndex=0;
 			else if(this.tileIndex < 0) this.tileIndex=this.tiles.length-1;
 		}
+		scrollThroughDotIndex(dirx){
+			this.dotIndex+=dirx;
+			if(this.dotIndex>=this.dotTypes.length) this.dotIndex=0;
+			else if(this.dotIndex < 0) this.dotIndex=this.dotTypes.length-1;
+		}
+
 		placeObjectsOnMousePress()
 			{
 			 if(!this.placeMode) return;
@@ -936,7 +953,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 else if(this.tiles[this.tileIndex]['sprite']=='reddot')
 		 	 	 	newobj=new MarkedSpot(mouseX+gameManager.camera.position.x,
 		 	 	 		   	   mouseY+gameManager.camera.position.y,
-		 	 	 		   	   "REDDOT",
+		 	 	 		   	   this.dotTypes[this.dotIndex],
 		 	 	 		   	   [gameManager.visible_sprites]
 		 	 	 		   	   );
 			 else if(this.tiles[this.tileIndex]['sprite']=='horizontaltile')
@@ -1001,7 +1018,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 						currentTile.widthx*xscale,
 						currentTile.heightx*yscale);
 			ctx.globalAlpha=1;
+
 			ctx.restore();
+			if(currentTile['sprite']=='reddot')
+			w2screen(this.dotTypes[this.dotIndex],mouseX,mouseY-100);
 			}
 
 		display()
@@ -1111,12 +1131,18 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			if(!this.placeMode) return;
 			if(scrollUp!=this.lastScrollUp) 
 				{
-				this.scrollThroughTileIndex(-1);
+				if(!GetKeyPressedx('f'))
+					this.scrollThroughTileIndex(-1);
+				else
+					this.scrollThroughDotIndex(-1);
 				this.lastScrollUp=scrollUp;
 				}
 			else if(scrollDown!=this.lastScrollDown)
 				{
-				this.scrollThroughTileIndex(1);
+				if(!GetKeyPressedx('f'))
+					this.scrollThroughTileIndex(1);
+				else
+					this.scrollThroughDotIndex(1);
 				this.lastScrollDown=scrollDown;
 				} 
 				
@@ -1215,6 +1241,15 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 				 		outputJsonObj['sprite']=go.sprite_type;
 				 		outputJsonObj['x']=(go.position.x/xscale).toFixed(2);
 				 		outputJsonObj['y']=(go.position.y/yscale).toFixed(2);				 		
+				 	}
+	 			 // self.dotTypes=['entry_sprite_c','exit_sprite_c',
+      //           'camera_left_stop_c','camer_right_stop_c'];
+				 else if(this.dotTypes.indexOf(go.sprite_type) !=-1)
+				 	{
+				 		outputJsonObj['sprite']=this.dotTypeMap[go.sprite_type];
+
+				 		outputJsonObj['x']=(go.position.x/xscale).toFixed(2);
+				 		outputJsonObj['y']=(go.position.y/yscale).toFixed(2);
 				 	}
 				 else if (go.sprite_type=='fkjumpup' || go.sprite_type=='enemystopleft' ||
 				 	      go.sprite_type=='enemystoptop' || go.sprite_type=='enemystopright'
