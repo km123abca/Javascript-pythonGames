@@ -6892,6 +6892,111 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		  	}
 
 		}
+//generic button starts
+	class GenericButton
+    	{
+        constructor(x,y,wid,hei,tex,btnType,btnGroups,btnName,parentPanel)      
+          {
+           this.position=new CreateVector(x,y);
+           this.parentPanel=parentPanel;
+           this.tex=tex;
+           this.sprite_type="generic button";
+           this.btnName=btnName;
+           this.btnType=btnType;
+           this.onScreen=true;
+           this.width=wid;
+           this.height=hei;
+           this.arrowCornerPoints=[[-0.5,-0.5],[0.5,0],[-0.5,0.5]];
+           this.mouseOverMe=false;
+           this.x_text_offset=-40;
+           this.y_text_offset=10;
+           
+           if(this.btnType=='rightArrow')             
+              this.tex='';
+           else if (this.btnType=='leftArrow')
+             {
+              this.tex='';
+              this.arrowCornerPoints=[[0.5,-0.5],[-0.5,0],[0.5,0.5]];
+             } 
+           this.arrowCornerPoints=this.arrowCornerPoints.map(x=>[x[0]*this.width,x[1]*this.height]);  
+           this.fillColor='#a3a375';
+           this.clickColor='#ccccb3';
+           this.btnGroups=btnGroups;
+           for(let grp of this.btnGroups)
+              {
+               grp.push(this);
+              }
+           this.mouseTrigger=false;
+           }
+        colorSwitch()
+            {           
+            let leftx=this.position.x - this.width/2;
+            let rightx = this.position.x + this.width/2;
+            let lefty=this.position.y - this.height/2;
+            let righty = this.position.y + this.height/2;        
+            if(mouseX > leftx && mouseX <rightx && mouseY > lefty && mouseY < righty )
+                { 
+                this.mouseOverMe=true;
+                if(mousePressed)
+                this.presentColor = this.fillColor;
+                else
+                this.presentColor=this.clickColor;  
+                }
+            else
+                {    
+                this.mouseOverMe=false;           
+                this.presentColor=this.fillColor;
+                }
+            }
+        update()
+            {
+             this.colorSwitch();  
+             if(mousePressed && !this.mouseTrigger)
+               {
+                this.mouseTrigger=true;
+                if(this.mouseOverMe)
+                    {
+                      this.specialButtonTask();
+                    }
+               }
+             else if(!mousePressed && this.mouseTrigger)
+                {
+                 this.mouseTrigger=false;                
+                }           
+            }
+        display()
+            {              
+             ctx.save();
+             ctx.translate(this.position.x,this.position.y);
+             ctx.fillStyle=this.presentColor;//#ccccb3
+             ctx.strokeStyle='#000000';
+             ctx.beginPath();
+             // ctx.rect(-this.width/2,-this.height/2,this.width,this.height);
+             if(this.btnType=='leftArrow' || this.btnType=='rightArrow')
+                this.draw_arrow_button();
+             else
+                ctx.ellipse(0,0,this.width/2,this.height/2,0,0,2*Math.PI);
+             ctx.stroke();
+             ctx.fill();             
+             ctx.restore();
+             w2screen(this.tex,this.position.x+this.x_text_offset,
+                               this.position.y+this.y_text_offset);
+            }
+
+        draw_arrow_button()
+            {                
+               ctx.moveTo(this.arrowCornerPoints[0][0],this.arrowCornerPoints[0][1]);
+               ctx.lineTo(this.arrowCornerPoints[1][0],this.arrowCornerPoints[1][1]);
+               ctx.lineTo(this.arrowCornerPoints[2][0],this.arrowCornerPoints[2][1]);
+               ctx.closePath();
+            }
+        specialButtonTask()
+            {
+                console.log(`${this.btnType}`);
+            }
+
+    	}
+//generic button ends
 	class Button
 		{
 		constructor(x,y,tex,btnGroups,enclosingPanel)
@@ -7377,6 +7482,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.localStorageChecked=false;
 			 this.bottomY=2000;
 			 this.playerDied=false;
+			 this.onStartUpScreen=false;
 
 			 this.dashKey="c";
 			 this.jumpKey=" ";
@@ -7514,13 +7620,22 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 		 update()
 		 	{
-		 	 //DisplayInGaps(this.collission_sprites.map(x=>x.sprite_type).reduce((s,x)=>s+x+',',''));		 	 
+		 	 //DisplayInGaps(this.collission_sprites.map(x=>x.sprite_type).reduce((s,x)=>s+x+',',''));	
 		 	 this.runClock();
-		 	 this.runGame();
-		 	 		 	 
+		 	 if(this.onStartUpScreen)
+		 	 	{
+		 	 	  this.showStartScreen();
+		 	 	  return;
+		 	 	} 	 
+		 	 
+		 	 this.runGame();		 	 		 	 
 		 	 this.checkScenes();	
 		 	 this.showExperience();	
 		 	 this.showLevelUpBox(); 
+		 	}
+		 showStartScreen()
+		 	{
+		 		//todo display button and screen here
 		 	}
 		 showLevelUpBox()
 		 	{
@@ -7582,6 +7697,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 
 		 runGame()
 		 	{
+
 		 	 this.checkHitWithKillPlants();
 		 	 if(!this.gamePaused)	this.checkPlayerExistence();		 	
 		 	 const [hori,vert]=this.camChecker();
