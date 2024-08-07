@@ -6909,8 +6909,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
            this.arrowCornerPoints=[[-0.5,-0.5],[0.5,0],[-0.5,0.5]];
            this.mouseOverMe=false;
            this.x_text_offset=-40;
-           this.y_text_offset=10;
-           
+           this.y_text_offset=10;           
            if(this.btnType=='rightArrow')             
               this.tex='';
            else if (this.btnType=='leftArrow')
@@ -6992,7 +6991,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
             }
         specialButtonTask()
             {
-                console.log(`${this.btnType}`);
+                // console.log(`${this.btnType}`);
+                gameManager.performButtonPressFn(this.btnName);
             }
 
     	}
@@ -7464,6 +7464,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.scenesReady=[];
 		 	 this.scenesLoaded=[];
 		 	 this.listOfDestroyedSprites=[];
+		 	 		 	 
 		 	 this.testing=false;
 		 	 this.playerDiedClock = 0;		 	 
 		 	 this.runningClock=0;		 	 
@@ -7482,7 +7483,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.localStorageChecked=false;
 			 this.bottomY=2000;
 			 this.playerDied=false;
-			 this.onStartUpScreen=false;
+
+			 this.onStartUpScreen=true;
+			 this.loader_ui_visiblesprites=[];
+			 this.loadedStartScreen=false;
 
 			 this.dashKey="c";
 			 this.jumpKey=" ";
@@ -7589,6 +7593,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	this.kill_plants=[];
 		 	this.killables=[];
 		 	this.enemy_sprites=[];
+
 		 	if(!this.player)
 		 		{
 		 		this.visible_sprites=[this.playerHealthBar,this.playerEnergyBar,this.positionAdjuster];
@@ -7633,9 +7638,29 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.showExperience();	
 		 	 this.showLevelUpBox(); 
 		 	}
-		 showStartScreen()
+		 performButtonPressFn(btnName)
 		 	{
-		 		//todo display button and screen here
+		 		this.onStartUpScreen=false;
+		 	}
+		 showStartScreen()
+		 	{	
+		 	 if(!this.loadedStartScreen)
+		 	 	{
+		 	 		this.loadedStartScreen=true;
+		 	 		this.onStartUpScreen=true;
+		 	 		new GenericButton(0.4*canvas.width,0.4*canvas.height,
+		 	 			       200,80,
+		 	 			       "Start","Start",
+		 	 			       [this.loader_ui_visiblesprites],"Start",
+		 	 			       null
+		 	 			      );
+		 	 		//constructor(x,y,wid,hei,tex,btnType,btnGroups,btnName,parentPanel)  
+		 	 	}	 		
+		 	 for (let sp of this.loader_ui_visiblesprites)
+		 		{
+		 		  sp.update();
+		 		  sp.display();
+		 		}
 		 	}
 		 showLevelUpBox()
 		 	{
