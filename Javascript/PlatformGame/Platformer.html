@@ -416,7 +416,8 @@ let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 let FLOWERIMAGE= LoadImagex('sprites/misc','Flower.png');
 let GATEIMAGE= LoadImagex('sprites/misc','gate.png');
 let VERTICALSHRUB=LoadImagex('sprites/Shrub','VerticalShrub.png');
-let HORIZONTALPLATFORMTILE=`./sprites/workshop/platform1.png`;    
+let HORIZONTALPLATFORMTILE=`./sprites/workshop/platform1.png`;  
+let FORESTBACKGROUND=LoadImagex('sprites','ForestBackground.jpg');  
 
 let SAWWHEEL1= LoadImagex('sprites/workshop','sawwheel1.png');
 let SAWWHEEL2= LoadImagex('sprites/workshop','sawwheel2.png');
@@ -6205,9 +6206,11 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                 for(let x of gameManager.wall_grippers)
                     {
                      if(b_collision(this,x))
-                        {                         
+                        {          
+                         console.log('collided');               
                          this.IsInContactWithWallVar=Math.sign(x.position.x-this.position.x);
-                         this.maxVelocity.y=this.maxVertVel_player_sliding/4;                         
+                         this.maxVelocity.y=this.maxVertVel_player_sliding/4;	
+                         this.velocity.y=0;                         
                          return true;   
                         } 
                     }
@@ -6456,12 +6459,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                     // this.velocity.set(this.velocity.x,0);
                     // this.velocity.y=Math.min(this.velocity.y,0);
                     this.velocity.y=-this.maxVelocity.y;
-                    if(Math.abs(this.IsInContactWithWallVar)==1)	 
-                        {
-                        this.reverseDashing=true;
-                        // this.HoriForceBanned=true;        
-                        // this.fixedWallForce.setVec(this.wallForceWhileJumping.copy().mult(-1*this.sx));  
-                        }
+  					if(Math.abs(this.IsInContactWithWallVar)==1)                      
+                        this.reverseDashing=true; 
                     //snippet added on 07-05-2023 to implement different jumping parameters starts    
                     if(this.numJumps==0)
                     	{
@@ -6492,7 +6491,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 	this.jumpTimer=0;
 		 	 	 	}
 		 	 	 else if(this.jumping)
-		 	 	 	{
+		 	 	 	{                       
 		 	 	 	 this.acceleration.y-=this.jumpingForce;
 		 	 	 	 this.jumpTimer+=deltaTime;		 	 	 	 
 		 	 	 	 if(this.jumpTimer > this.maxJumpTime)
@@ -6501,10 +6500,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 	 	}
 		 	 	 	}
 		 	 	}
-		 	 else if(!this.spaceTrigger && this.numJumps<2 ) 
+		 	 else if(!this.spaceTrigger && this.numJumps<2) //
 		 	 	this.spaceTrigger=true;
 		 	 if(!GetKeyPressedx(gameManager.jumpKey) && this.jumping) this.jumping=false;
-             // this.isOnContactWithGround=this.checkIfOnGround();
+             
              
 		 	 if(!GetKeyPressedx(gameManager.jumpKey) && this.numJumps>0 && 
                 (this.checkIfOnGround()|| Math.abs(this.IsInContactWithWallVar) ) ) 
@@ -6573,6 +6572,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 	  this.maxVelocity.x= this.dashSpeed*0.5;			 	  
 			 	  document.querySelector('#HitPaddleBloop').play();
 			 	 }
+			 console.log('reverse dashing');
 		 	 this.acceleration.add(this.horiForce.copy().mult(-this.IsInContactWithWallVar*3));
 		 	 if(gameManager.runningClock - this.dashStartTime > this.maxDashTime*0.6)
 		 	 	 {
@@ -7442,6 +7442,42 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	}
 		 	}
 		}
+	 //Parallax class starts
+//constructor of GeneralSprite(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups)
+	class Parallax extends GeneralSprite
+		{
+		 constructor(imagex,spriteGroups,widthToBeDisplayed,heightToBeDisplayed,fullWidth,fullHeight,xSpeed,ySpeed)
+		 	{
+		 	 super(0,0,975,640,0,0,spriteGroups);
+		 	 
+		 	 this.imagex=imagex;
+		 	 this.startPoint=new CreateVector(0,0);
+		 	 this.wTD=widthToBeDisplayed;
+		 	 this.hTD=heightToBeDisplayed;
+		 	 this.fullWidth=fullWidth;
+		 	 this.fullHeight=fullHeight;
+		 	 this.speed=new CreateVector(xSpeed,ySpeed);		 	 
+		 	}
+		 update()
+		 	{
+		 	 this.startPoint.add(this.speed);
+		 	 if(this.startPoint.x+this.wTD >= this.fullWidth)
+		 	 	this.startPoint.x=0;
+		 	 if(this.startPoint.y+this.hTD>=this.fullHeight) 
+		 	 	this.startPoint.y=0;
+		 	}
+		 display()
+		 	{		 	
+		 	  ctx.drawImage(this.imagex,
+		 	  			    this.startPoint.x,this.startPoint.y,
+		 	  			    this.startPoint.x+this.wTD,this.startPoint.y+this.hTD,
+		 	  			    this.position.x,this.position.y,
+		 	  			    this.width,this.height
+		 	  			   );
+		 	}
+
+		}
+	//Parallax class ends
 
 
 	class GameManager
@@ -7640,7 +7676,15 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	}
 		 performButtonPressFn(btnName)
 		 	{
+		 		if(btnName=="Continue")
 		 		this.onStartUpScreen=false;
+		 		else if(btnName=="Start")
+		 		{
+		 			localStorage.removeItem("GameSaveData");
+					 // window.location.href='Platformer.html';
+					 this.onStartUpScreen=false;
+		 		}
+
 		 	}
 		 showStartScreen()
 		 	{	
@@ -7648,14 +7692,27 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	{
 		 	 		this.loadedStartScreen=true;
 		 	 		this.onStartUpScreen=true;
+		 	 		//constructor(x,y,wid,hei,tex,btnType,btnGroups,btnName,parentPanel) 
+		 	 		//constructor(imagex,spriteGroups,widthToBeDisplayed,heightToBeDisplayed,fullWidth,fullHeight,xSpeed,ySpeed)
+		 	 		new Parallax(FORESTBACKGROUND,[this.loader_ui_visiblesprites],
+		 	 					 1000,3500,
+		 	 					 5250,3500,5,0
+		 	 			        ); 
 		 	 		new GenericButton(0.4*canvas.width,0.4*canvas.height,
 		 	 			       200,80,
 		 	 			       "Start","Start",
 		 	 			       [this.loader_ui_visiblesprites],"Start",
 		 	 			       null
 		 	 			      );
-		 	 		//constructor(x,y,wid,hei,tex,btnType,btnGroups,btnName,parentPanel)  
-		 	 	}	 		
+		 	 		if(localStorage.getItem("GameSaveData"))
+		 	 			new GenericButton(0.4*canvas.width,0.6*canvas.height,
+		 	 			       200,80,
+		 	 			       "Continue","Continue",
+		 	 			       [this.loader_ui_visiblesprites],"Continue",
+		 	 			       null
+		 	 			      );
+
+		 	 	}	 			
 		 	 for (let sp of this.loader_ui_visiblesprites)
 		 		{
 		 		  sp.update();
