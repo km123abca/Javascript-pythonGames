@@ -7460,6 +7460,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	}
 		 update()
 		 	{
+
 		 	 this.startPoint.add(this.speed);
 		 	 if(this.startPoint.x+this.wTD >= this.fullWidth)
 		 	 	this.startPoint.x=0;
@@ -7470,9 +7471,9 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	{		 	
 		 	  ctx.drawImage(this.imagex,
 		 	  			    this.startPoint.x,this.startPoint.y,
-		 	  			    this.startPoint.x+this.wTD,this.startPoint.y+this.hTD,
+		 	  			    this.wTD,this.hTD,
 		 	  			    this.position.x,this.position.y,
-		 	  			    this.width,this.height
+		 	  			    canvas.width,canvas.height
 		 	  			   );
 		 	}
 
@@ -7665,7 +7666,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.runClock();
 		 	 if(this.onStartUpScreen)
 		 	 	{
-		 	 	  this.showStartScreen();
+		 	 	  this.showStartScreen();                  
 		 	 	  return;
 		 	 	} 	 
 		 	 
@@ -7696,7 +7697,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 		//constructor(imagex,spriteGroups,widthToBeDisplayed,heightToBeDisplayed,fullWidth,fullHeight,xSpeed,ySpeed)
 		 	 		new Parallax(FORESTBACKGROUND,[this.loader_ui_visiblesprites],
 		 	 					 1000,3500,
-		 	 					 5250,3500,5,0
+		 	 					 5250,3500,2,0
 		 	 			        ); 
 		 	 		new GenericButton(0.4*canvas.width,0.4*canvas.height,
 		 	 			       200,80,
