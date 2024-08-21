@@ -6209,8 +6209,17 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
              this.maxParamChangeTime=2000;
              this.parameterChangedClock=0;	
              // this.wallContacted=false;
+             this.firstStruck=false;
+             this.struckTime=0;
 			}
-		
+		ResetFirstStruck(){
+            if(this.lastSlash==1) return;
+            if(gameManager.runningClock-this.struckTime > 500) this.lastSlash=1;            
+        }
+        RecordFirstStrike(){
+            this.struckTime=gameManager.runningClock;
+            this.lastSlash=0;
+        }
         CheckIfIsInContactWithWall()
             {
                 for(let x of gameManager.wall_grippers)
@@ -6682,7 +6691,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                  if(this.lastSlash==1)
                     {
 	 			   this.changeAnimation("slash");	
-                    this.lastSlash=0;
+                    this.RecordFirstStrike();
                     
                     }
                     else
@@ -6842,6 +6851,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.runAnimation();
 		 	 this.move();
 		 	 this.fallDamage();
+             this.ResetFirstStruck();
 		 	 //this.testCollisionWithKillPlants();
 		 	 // this.testCollisionWithLoot(); //now player has to strike loot to get it
 		 	}
