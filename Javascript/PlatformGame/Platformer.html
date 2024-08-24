@@ -6212,6 +6212,9 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
              this.firstStruck=false;
              this.struckTime=0;
              this.slashQueue=[];
+             this.slashQueueFull=false;
+
+             this.startExhausting=false;
 			}
         //delete this block after implementing chaining    
 		ResetFirstStruck(){
@@ -6628,24 +6631,36 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	  this.maxVelocity.x= this.maxHoriVel_player;
 		 	 	 }
 		 	}
-         
+         //
          exhaustSlashQueue()
             {
+                if(!this.startExhausting) return false;
                 if(this.slashQueue.length==0) return false;
-                if(this.animation=='slash' || this.animation=='slash2')
+                if((this.animation=='slash' || this.animation=='slash2') &&
+                    (this.animationFrame< this.animations[this.animation].length-1) )
                     {
-                      if(this.animationFrame < this.animations[this.animation].length-1)
-                         return false;
-                      this.slashQueue.shift();
-                      if(this.slashQueue && this.energy >= this.energyCosts["slash"]) 
-                        this.animInQueue=this.slashQueue[0];
-                      else
+                     if(this.slashQueue.length==1 && this.animInQueue!='idle') 
+                        {
                         this.animInQueue='idle';
-                    }          
+                        }
+                     else (this.slashQueue.length>1 && this.slashQueue[1])
+                        {
+                        this.animInQueue=this.slashQueue[1];   
+                        console.log(`next animation changed to ${this.animInQueue}`);
+                        }                
+                    }   
+                else if(this.animation=='slash' || this.animation=='slash2')
+                {
+                    console.log(`${this.slashQueue[0]} shifted out`);
+                    this.slashQueue.shift();
+                }
+                else 
+                    this.changeAnimation(this.slashQueue[0]);
 
             }
 		 manualControls()
 		 	{
+            if(GetKeyPressedx("b")) this.startExhausting=true;
             if(this.reverseDashing)
             	{
             	 this.reverseDashFns();
@@ -6699,7 +6714,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 		this.velocity.x=Lerp(this.velocity.x,0,32);	
                 // this.manual_velocity.x=0;   	
 		 		}
-            //this.slashQueueFull=false;
+            
 	 		if(GetKeyPressedx(gameManager.strikeKey) && this.slashTrigger)
 	 			{
 	 			 if(this.energy < this.energyCosts["slash"] || this.slashQueueFull
@@ -6708,7 +6723,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 			 this.energy-=this.energyCosts["slash"]; 
 	 			 this.slashTrigger=false;
 	 			 // this.animInQueue="idle";
-                 if(!this.slashQueue)
+                 if(this.slashQueue.length==0)                    
                  this.slashQueue.push("slash");
                  else{
                     let last=this.slashQueue[this.slashQueue.length-1];
@@ -6716,6 +6731,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                     else this.slashQueue.push('slash');
                     if(this.slashQueue.length==3) this.slashQueueFull=true;
                  }
+                 console.log(JSON.stringify(this.slashQueue));
                 }
             /*
             //old strike code before slash chaining, delete after new
@@ -6892,6 +6908,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.runAnimation();
 		 	 this.move();
 		 	 this.fallDamage();
+             this.exhaustSlashQueue();
              //this.ResetFirstStruck();	//used prior to slash chaining delete	
 		 	}
 		 display()
