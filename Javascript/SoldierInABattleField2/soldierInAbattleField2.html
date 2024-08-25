@@ -3063,6 +3063,10 @@ class GenericEnemy extends GenericMovable
         if(!this.strikeBoxSpawned && this.animation=="attack" && 
             parseInt(this.animationFrame)==this.frameToStrike)
             {
+                /*
+                 constructor(x,y,wid,hei,offsetx,offsety,damage,hitback,
+                      spriteGroups,hitboxName="unknown hitbox",parent=false)
+                */
             new DamageHitBox(this.position.x,
                              this.position.y,
                              40*xscale,40*yscale,
@@ -3241,11 +3245,12 @@ class Beetle extends GenericEnemy
                 */            
             }
             
-            Strike(){
+            Strike()
+            {
                 super.Strike();
                 if(this.maxVelocity==this.maxVelocity_normal)
                     { 
-                    console.log('here');
+                    
                     this.maxVelocity=this.maxVelocity_quick;
                     this.beetle_move_start_time=gameManager.runningClock;
                     this.pull=new CreateVector(1,0);
@@ -3270,13 +3275,12 @@ class Beetle extends GenericEnemy
                             this.velocity.set(0,0);
                             this.beetle_move_start_time=gameManager.runningClock;
                         }
-
                     }
                 
                 if(gameManager.runningClock - this.lastCloseAttackTime > this.maxStrikeTime*0.9){ 
-                 this.maxVelocity=this.maxVelocity_normal;
-                 this.stopMoving=false;
-                } 
+                    this.maxVelocity=this.maxVelocity_normal;
+                    this.stopMoving=false;
+                    } 
             }
 
 
