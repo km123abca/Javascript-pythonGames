@@ -6641,10 +6641,16 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                     {
                      if(this.slashQueue.length==1 && this.animInQueue!='idle') 
                         {
+                        console.log(`animation is ${this.animation}`)
+                        console.log(`size is ${this.animations[this.animation].length}`)
+                        console.log(`present frame:${this.animationFrame}`)
                         this.animInQueue='idle';
                         }
-                     else (this.slashQueue.length>1 && this.slashQueue[1])
+                     else (this.slashQueue.length>1 && this.animInQueue!=this.slashQueue[1])
                         {
+                        console.log(`animation is ${this.animation}`)
+                        console.log(`size is ${this.animations[this.animation].length}`)
+                        console.log(`present frame:${this.animationFrame}`)
                         this.animInQueue=this.slashQueue[1];   
                         console.log(`next animation changed to ${this.animInQueue}`);
                         }                
