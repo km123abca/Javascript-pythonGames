@@ -2387,6 +2387,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                 this.throwPrepTime=1000;
                 this.teleport_appear_distance=200*xscale;                
                 this.agroStartTime=0;
+                this.onAir=false;
 			}
 		 applyVelocity()
 		 	{		 	
@@ -2612,6 +2613,15 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                 this.rareAttackTime=gameManager.runningClock;
                 this.lastAttackTime=gameManager.runningClock;
             }
+         }
+         
+         traitorOnAir(){
+         	if(this.checkIfOnGround() && this.onAir){
+         		this.onAir=false;
+         		gameManager.screenShakeTimer=gameManager.runningClock;
+         	}else if(!this.checkIfOnGround() && !this.onAir){
+         		this.onAir=true;
+         	}
          }
 		 traitorStrike(){
             if(!gameManager.player || !gameManager.player.isActive) return false;
@@ -2910,6 +2920,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		  	{
 		  	  if(!this.isActive) return false;
               // this.usercontrol();
+              this.traitorOnAir();
 		 	  this.runAnimation();
 		 	  this.stateMachine();
 		 	  this.update_and_display_hitbox();
@@ -6213,7 +6224,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
              this.struckTime=0;
              this.slashQueue=[];
              this.slashQueueFull=false;
-
+             this.onAir=false;
              // this.startExhausting=false;
 			}
         //delete this block after implementing chaining    
@@ -6470,10 +6481,20 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 		}
 		 	return false;
 		 	}
+		 
+		 recordOnAir(){
 
-
+		 	if(this.checkIfOnGround() && this.onAir) 
+		 		{
+		 		this.onAir=false;
+		 		gameManager.screenShakeTimer=gameManager.runningClock;
+		 		}
+		 	else if(!this.checkIfOnGround() && !this.onAir) this.onAir=true;
+		 }
 		 jumpingContols()
 		 	{
+		 	 // this.recordOnAir(); #can be used for screenshaking
+
 		 	/*
 		 	 if(this.checkIfOnGround())
 		 		DisplayInGaps("player is on ground");
@@ -6966,6 +6987,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		  	 this.mouseLockY=0;	
 		  	 this.tgt=null;	  
 		  	 this.lerpFactor=4;	 
+		  	 this.shakeVals=[0,0];
 		  	}
 		  runWithMouse()
 		  	{
@@ -6997,7 +7019,13 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		  	 	this.position.x=Lerp(this.position.x,this.tgt.position.x-canvas.width/2,this.lerpFactor);
 		  	 if(followV)
 		  	 	this.position.y=Lerp(this.position.y,this.tgt.position.y-canvas.height/2,this.lerpFactor);
+		  	 this.shakeCamera();
 		  	}
+		   shakeCamera()
+		    {
+		    	this.position.x+=this.shakeVals[0];
+		    	this.position.y+=this.shakeVals[1];
+		    }
 
 		}
 //generic button starts
@@ -7639,7 +7667,18 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.healKey="q";
              this.castKey="x";
 			 this.allKeys=[this.jumpKey,this.dashKey,this.strikeKey,this.healKey,this.castKey];
+		 	
+		 	 this.screenShakeTimer=0;
+		 	 this.maxScreenShakeTime=500;
+		 
 		 	}
+		 MindScreenShake(){
+		 	if(this.screenShakeTimer==0) return;
+		 	if(gameManager.runningClock - this.screenShakeTimer > this.maxScreenShakeTime)
+		 		this.screenShakeTimer=0;
+		 	this.camera.shakeVals[0]=Math.random()*20;
+		 	this.camera.shakeVals[1]=Math.random()*20;
+		 }
 		 isNewKey(keyx){
             // console.log('checking:'+keyx);
 		 	for(let i in this.allKeys)	{	
@@ -7772,6 +7811,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	{
 		 	 //DisplayInGaps(this.collission_sprites.map(x=>x.sprite_type).reduce((s,x)=>s+x+',',''));	
 		 	 this.runClock();
+
 		 	 if(this.onStartUpScreen)
 		 	 	{
 		 	 	  this.showStartScreen();                  
@@ -7888,7 +7928,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 
 		 runGame()
 		 	{
-
+		 	 this.MindScreenShake();
 		 	 this.checkHitWithKillPlants();
 		 	 if(!this.gamePaused)	this.checkPlayerExistence();		 	
 		 	 const [hori,vert]=this.camChecker();
