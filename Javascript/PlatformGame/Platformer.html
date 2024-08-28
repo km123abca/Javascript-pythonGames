@@ -2221,7 +2221,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 		grp.push(this);	
 			 	this.hit_box=new HitBox(x,y,this.width*0.4,this.height*0.8,[
                                                         gameManager.collission_sprites,
-                                                        // gameManager.visible_sprites
+                                                        gameManager.visible_sprites
                                                         // gameManager.active_sprites
                                                         ],'traitorlordhitbox');
 			 	this.image_offset=new CreateVector(-30*xscale,-15*yscale);
@@ -6432,12 +6432,12 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 							 this.position.y,
 	 							 this.width*0.8,
 	 							 this.height*0.8,
-	 							 [//gameManager.visible_sprites,
+	 							 [gameManager.visible_sprites,
 	 							 	gameManager.hitbox_sprites,
 	 							 	gameManager.active_sprites],
 	 							 'player_hitbox',
 	 							 this,
-	 							 40,0,this.weaponDamage,this.sx*1.5);
+	 							 40,0,this.weaponDamage,this.sx*1.5,50);
                 else{
                 this.casting=false;
                 if(this.hitCredit > 20)
