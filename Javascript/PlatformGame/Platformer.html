@@ -1276,6 +1276,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			}
 		causeDamage(go)
 			{
+			  console.log(`caused damage to ${go.sprite_type}`);
 			  go.takeDamage(this.dmg,this.hitback);
 			  if(this.parentx.hitBoxMadeContact)
 			  	{
@@ -1287,7 +1288,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		update()
 			{
 			 if(gameManager.runningClock - this.startTime > this.life)
-			 	{			 	
+			 	{	
+			 	console.log("timed out");		 	
 			 	this.destroySelf();			 	
 			 	}
 			 this.updatePosition();
@@ -2221,11 +2223,11 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 		grp.push(this);	
 			 	this.hit_box=new HitBox(x,y,this.width*0.4,this.height*0.8,[
                                                         gameManager.collission_sprites,
-                                                        gameManager.visible_sprites
+                                                        // gameManager.visible_sprites
                                                         // gameManager.active_sprites
                                                         ],'traitorlordhitbox');
 			 	this.image_offset=new CreateVector(-30*xscale,-15*yscale);
-			 	this.health=100;
+			 	this.health=10;
 		 		this.maxHealth=100;
 		 		this.uiBarTimer=0;
 		 		this.uiBarMaxTime=3000;
@@ -6430,8 +6432,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                 if(!this.casting)
 	 			new DamageHitBox(this.position.x,
 	 							 this.position.y,
-	 							 this.width*0.8,
-	 							 this.height*0.8,
+	 							 this.width*0.4,
+	 							 this.height*0.4,
 	 							 [gameManager.visible_sprites,
 	 							 	gameManager.hitbox_sprites,
 	 							 	gameManager.active_sprites],
@@ -7961,7 +7963,25 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 if(hb.sprite_type=="player_hitbox")
 		 	 	 	{
 		 	 	 	 for(let sprite of this.enemy_sprites)
-		 	 	 	 	{		 	 	 	 	 
+		 	 	 	 	{
+		 	 	 	 		/*
+		 	 	 	 		//deleteable for confirming that a shorter wider collison box fails to detect its collision with
+		 	 	 	 		  a longer thinner box. None of the points of one are within the other.
+		 	 	 	 	if(sprite.sprite_type=="TraitorLord") 
+		 	 	 	 		{
+		 	 	 	 			console.log('coordinates follow')
+		 	 	 	 			let px=sprite.hit_box.position.x;
+		 	 	 	 			let py=sprite.hit_box.position.y;
+		 	 	 	 			let w=sprite.hit_box.width;
+		 	 	 	 			let h=sprite.hit_box.height;
+		 	 	 	 			console.log(`${(px-w/2).toFixed(0)},${(py-h/2).toFixed(0)} ${(px+w/2).toFixed(0)},${(py-h/2).toFixed(0)} ${(px-w/2).toFixed(0)},${(py+h/2).toFixed(0)} ${(px+w/2).toFixed(0)},${(py+h/2).toFixed(0)}`);
+		 	 	 	 			 px=hb.position.x;
+		 	 	 	 			 py=hb.position.y;
+		 	 	 	 			 w=hb.width;
+		 	 	 	 			 h=hb.height;
+		 	 	 	 			console.log(`${(px-w/2).toFixed(0)},${(py-h/2).toFixed(0)} ${(px+w/2).toFixed(0)},${(py-h/2).toFixed(0)} ${(px-w/2).toFixed(0)},${(py+h/2).toFixed(0)} ${(px+w/2).toFixed(0)},${(py+h/2).toFixed(0)}`);
+		 	 	 	 		}
+		 	 	 	 		*/	 	 	 	 	 
 		 	 	 	 	 if(b_collision(sprite.hit_box,hb))
 		 	 	 	 	 	{	
                              gameManager.player.fillHitCredits();	 	 	 	 	 		
