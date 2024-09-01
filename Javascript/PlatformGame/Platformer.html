@@ -1288,8 +1288,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		update()
 			{
 			 if(gameManager.runningClock - this.startTime > this.life)
-			 	{	
-			 	console.log("timed out");		 	
+			 	{			 			 	
 			 	this.destroySelf();			 	
 			 	}
 			 this.updatePosition();
@@ -1396,6 +1395,20 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 return true;
 		 	}
 		}
+
+   class Elevator extends GeneralSprite
+   	    {
+           constructor(x,y,wid,hei,spriteGroups)
+           	{
+           		super(x,y,wid,hei,spriteGroups);
+           		this.hit_box=new HitBox(this.position.x,
+           			                    this.position.y-0.25*this.height,
+                	                    this.width,
+                	                    this.height*0.5,
+                                                     [],
+                                     'elevatorhitbox');
+           	}
+   	    }
         
    class Bullet extends GeneralSprite
         {
@@ -1403,7 +1416,9 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
             {
                 super(x,y,wid,hei,0,0,spriteGroups); 
 
-                this.hit_box=new HitBox(this.position.x,this.position.y,this.width*0.5,this.height*0.5,
+                this.hit_box=new HitBox(this.position.x,this.position.y,
+                	                    this.width*0.5,
+                	                    this.height*0.5,
                                      [ //gameManager.collission_sprites,
                                       // gameManager.visible_sprites
                                      ],
@@ -6433,7 +6448,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 			new DamageHitBox(this.position.x,
 	 							 this.position.y,
 	 							 this.width*0.4,
-	 							 this.height*0.4,
+	 							 this.height*0.8,
 	 							 [gameManager.visible_sprites,
 	 							 	gameManager.hitbox_sprites,
 	 							 	gameManager.active_sprites],
@@ -7675,9 +7690,15 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 
 		 	}
 		 MindScreenShake(){
+		 	
 		 	if(this.screenShakeTimer==0) return;
 		 	if(gameManager.runningClock - this.screenShakeTimer > this.maxScreenShakeTime)
+		 		{		 		
 		 		this.screenShakeTimer=0;
+		 	    this.camera.shakeVals[0]=0;
+		 	    this.camera.shakeVals[1]=0;
+		 	    return;
+		 	    }
 		 	this.camera.shakeVals[0]=Math.random()*20;
 		 	this.camera.shakeVals[1]=Math.random()*20;
 		 }
