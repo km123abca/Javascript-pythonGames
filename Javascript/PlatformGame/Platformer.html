@@ -1394,6 +1394,56 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	{
 		 	 return true;
 		 	}
+		//addition on 05-09-2024 to add up on the functionality of general sprite
+//velocity application
+         applyVelocity(hit_box,velocity)
+            {                    
+             hit_box.position.x+=velocity.x;          
+             for(let k in gameManager.collission_sprites)
+                { 
+                 let x=gameManager.collission_sprites[k];
+                 if(!x.onScreen) continue;
+                 if(x==this || x==hit_box) continue;               
+                 if(b_collision(hit_box,x)) 
+                    {                     
+                     if(velocity.x > 0)                                            
+                        hit_box.position.x=x.position.x - x.width/2-hit_box.width/2-2;   
+                     else                     
+                        hit_box.position.x=x.position.x + x.width/2 + hit_box.width/2+2;        
+                    }
+                }
+             hit_box.position.y+=velocity.y;
+             for(let x of gameManager.collission_sprites)
+                {
+
+                 if(!x.onScreen) continue;
+                 if(x==this || x==hit_box) continue;
+
+                 if(b_collision(hit_box,x)) 
+                    {
+                         
+                    collidedObj=x.sprite_type;                 
+                    if(velocity.y > 0)                        
+                        hit_box.position.y=x.position.y-x.height/2-hit_box.height/2-2;  
+                    else                        
+                        hit_box.position.y=x.position.y+x.height/2+hit_box.height/2+2;     
+                    }
+                }
+            }
+         update_and_display_hitbox(hit_box)
+            {           
+            this.position.setVec(hit_box.position);
+            }
+         applyVelocityRestrictions(velocity,maxVelocity)
+            {
+             let xdir=velocity.x/Math.abs(velocity.x);
+             let ydir=velocity.y/Math.abs(velocity.y);
+             if(Math.abs(velocity.y) > maxVelocity.y)
+                velocity.y=ydir*maxVelocity.y;
+             if(Math.abs(velocity.x) > maxVelocity.x)
+                velocity.x=xdir*maxVelocity.x;
+            }
+		//addition ends
 		}
 
    class Elevator extends GeneralSprite
@@ -1407,7 +1457,9 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                 	                    this.height*0.5,
                                                      [],
                                      'elevatorhitbox');
+
            	}
+
    	    }
         
    class Bullet extends GeneralSprite

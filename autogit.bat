@@ -7,7 +7,7 @@ set /p userMessage="Enter commit message (leave blank for default message): "
 :: Check if the user entered a message
 if "%userMessage%"=="" (
     :: No message entered, use the default message
-    set commitMessage="commit made at %time% date:%date%"
+    set commitMessage="commit_made_at_%time%_date:%date%"
 ) else (
     :: User entered a message, use it for the commit
     set commitMessage=%userMessage% on %time% date:%date%

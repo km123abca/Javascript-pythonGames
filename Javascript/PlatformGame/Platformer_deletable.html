@@ -8,6 +8,7 @@
 	let spacePress,upPress,rightPress,downPress,leftPress,gPress,fPress,enterPress;
 	let ipress,lpress,mpress,jpress,tpress,hpress,bpress,ppress;
 	let mousePressed;
+    let clickDetector=false;
 
 	// let backGroundColor="#16a1b3";
 	let backGroundColor='#051405';
@@ -38,7 +39,11 @@
 			{
 			 this.x=x;
 			 this.y=y;	
-			}		
+			}	
+		show(vecName='unknown vector')
+			{
+			 return (`${vecName}:${this.x},${this.y}`);
+			}	
 		set(x,y)
 			{
 			 this.x=x;
@@ -410,6 +415,10 @@ let THORNIMAGE = LoadImagex('sprites/misc','thorn.png');
 let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 let FLOWERIMAGE= LoadImagex('sprites/misc','Flower.png');
 let GATEIMAGE= LoadImagex('sprites/misc','gate.png');
+let VERTICALSHRUB=LoadImagex('sprites/Shrub','VerticalShrub.png');
+let GRAYBOX =LoadImagex('sprites','graybox.png');
+let HORIZONTALPLATFORMTILE=`./sprites/workshop/platform1.png`;  
+let FORESTBACKGROUND=LoadImagex('sprites','ForestBackground.jpg');  
 
 let SAWWHEEL1= LoadImagex('sprites/workshop','sawwheel1.png');
 let SAWWHEEL2= LoadImagex('sprites/workshop','sawwheel2.png');
@@ -456,12 +465,32 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	<audio id="RockSmash" >
 		<source src="./sounds/RockSmash.wav" type="audio/mpeg">
 	</audio>
+    <audio id="retroJump" >
+        <source src="./sounds/retroJump.wav" type="audio/mpeg">
+    </audio>
 	<audio id="LossBuzz" >
 		<source src="./sounds/LossBuzz.wav" type="audio/mpeg">
 	</audio>
 	<audio id="whoosh" >
 		<source src="./sounds/whoosh.wav" type="audio/mpeg">
 	</audio>
+	<audio id="cornifer" >
+		<source src="./sounds/individualSounds/Cornifer_01.wav" type="audio/mpeg">
+	</audio>
+	<audio id="cornifer2" >
+		<source src="./sounds/individualSounds/Cornifer_02.wav" type="audio/mpeg">
+	</audio>
+	<audio id="mawlekscream" >
+		<source src="./sounds/individualSounds/mawlek_scream.wav" type="audio/mpeg">
+	</audio>
+<script>
+	const playRandomCornifer=()=>{
+		if(Math.random()<0.5)
+			document.querySelector('#cornifer').play();
+		else
+			document.querySelector('#cornifer2').play();
+	}
+</script>
 <!--audio list ends-->
 <script>
 	var canvas = document.querySelector('canvas');
@@ -531,7 +560,22 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	//keypresses start
     let upArrow=false,leftArrow=false,rightArrow=false,downArrow=false;
     let keysPressed=new Set();
+    let specKeys=new Set([38]);
+    
+    GetSpecialKeyNames=(keyCode)=>{
+        if(keyCode==38) return 'upArrow';
+        return -1;
+    }
     CapturePressedKey=(keyCode,pressed=true)=>{
+
+        if (specKeys.has(keyCode)){
+            if(pressed)
+            keysPressed.add(GetSpecialKeyNames(keyCode));
+            else
+            keysPressed.delete(GetSpecialKeyNames(keyCode));
+            return;
+        }
+
     	if(!((keyCode>64 && keyCode<91)||(keyCode > 96 && keyCode < 123)||(keyCode==32))) return false;
     	let charx=String.fromCharCode(keyCode);
     	let charx2=String.fromCharCode(keyCode+32);    	
@@ -551,15 +595,17 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     let pressedKeyCode=-1;
 	document.onkeydown=function(e)
 	                 {
-	                 	// console.log(e.keyCode);
+	                 	// console.log(`pressed ${e.keyCode}`);
 	                 	// CapturePressedKey(e.keyCode);             	
 	                 	if(!okToStartMusic)
 	                 		{
 	                 		 okToStartMusic=true;
 	                 		 startMusic();
 	                 		}
+                        CapturePressedKey(e.keyCode);
+                        pressedKeyCode=e.keyCode;
 	                 	if(e.keyCode==37) leftArrow=true;
-	                 	if(e.keyCode==38) upArrow=true;
+	                 	if(e.keyCode==38) upArrow=true;                        
 	                 	if(e.keyCode==39) rightArrow=true;
 	                 	if(e.keyCode==40) downArrow=true;
 	                 }
@@ -600,7 +646,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 					};
 	document.onkeyup=function (e)
 					{	
-					// console.log(e.keyCode);
+					// console.log(`released ${e.keyCode}`);
 					pressedKeyCode=-1;
 					CapturePressedKey(e.keyCode,false);
 					if(e.keyCode==32) spacePress=false;					
@@ -678,6 +724,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		{
 		constructor(x,y,sprite_type,spriteGroups)
 			{
+
 			  super(x,y,'#0000FF',sprite_type,spriteGroups);
 			  // this.sprite_type=sprite_type;
 			}
@@ -771,10 +818,12 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		       (this.sprite_type=='camstopper_right' && objx.position.x > this.position.x)
 		      )
 		    	resultArray[0]=false;//return [false,true];
-		    if((this.sprite_type=='camstopper_left' && objx.position.y < this.position.y) ||
-		       (this.sprite_type=='camstopper_right' && objx.position.y > this.position.y)
-		      )
-		    	resultArray[1]=false;//return [true,false];
+		    // if((this.sprite_type=='camstopper_left' && objx.position.y < this.position.y) ||
+		    //    (this.sprite_type=='camstopper_right' && objx.position.y > this.position.y)
+		    //   )
+		    // 	resultArray[1]=false;
+            if(this.sprite_type=='camstopper_right' && objx.position.y > this.position.y)
+                resultArray[1]=false;
 		    return resultArray;//return [true,true];
 		  }
 		 update()
@@ -987,12 +1036,13 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 	class Wall 
 		{
-		constructor(x,y,wid,hei,isHorizontal,copies,spriteGroups)
+		constructor(x,y,wid,hei,isHorizontal,copies,spriteGroups,destructTime=0)
 			{
-			 
+			 this.destructTime=destructTime;             
 			 this.position=new CreateVector(x,y);
 			 this.width=wid;
 			 this.height=hei;
+             this.birthTime=gameManager.runningClock;
 			 this.onScreen=true;
 			 this.sprite_type="combinedwall";
 			 this.isHorizontal=isHorizontal;
@@ -1008,15 +1058,17 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 	grp.push(this);
 			 this.angle=this.isHorizontal?0:90;
 			 this.copies=copies;
-			 if(this.isHorizontal)
+             this.obeyGravity=false;
+             this.widFrac=destructTime==0?1:0.9;
+			 if(this.isHorizontal)             
 			 this.hit_box=new HitBox(this.position.x+this.copies*this.width/2-this.width/2,
 			 						 this.position.y,
-			 						 this.width*this.copies,
+			 						 this.width*this.copies*this.widFrac,
 			 						 this.height*0.5,
 			                         [ 
 			                          // gameManager.visible_sprites,
 			                          gameManager.collission_sprites
-			                         ],
+			                         ],this,
 				                     'hori_wallhitbox');
 			else
 			this.hit_box=new HitBox(this.position.x,
@@ -1026,13 +1078,117 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			                         [ 
 			                          // gameManager.visible_sprites,
 			                          gameManager.collission_sprites
-			                         ],
-				                     'vert_wallhitbox');	
+			                         ],this,
+				                     'vert_wallhitbox');
+            this.dustSpawned=false;	
+            this.gravityScale=1*yscale;
+            this.velocity=new CreateVector(0,0);
+            this.acceleration=new CreateVector(0,0);
+            this.maxVelocity=new CreateVector(5*xscale,20*yscale);
 			}
 		update()
 		 	{
-		 	 return true;
+             this.selfDestruct();
+             if(this.obeyGravity)
+                {
+                this.applyGravity();   
+                this.velocity.add(this.acceleration);
+                this.acceleration.set(0,0);
+                this.applyVelocity();
+                this.applyVelocityRestrictions();
+                this.update_and_display_hitbox();
+                // console.log(`${this.position.x.toFixed(2)},${this.position.y.toFixed(2)}`);
+                }          		 	
 		 	}
+        applyGravity()
+            {
+             this.acceleration.y+=this.gravityScale;
+            }
+        selfDestruct(){
+            if(this.destructTime==0)
+                return;
+            if(gameManager.runningClock - this.birthTime > 0.9*this.destructTime)
+            {
+                if(!this.dustSpawned){
+                    this.dustSpawned=true;
+                    SpawnClouds(this.position);
+                }
+            }
+            if(gameManager.runningClock - this.birthTime > this.destructTime && !this.obeyGravity){
+                if(okToStartMusic)
+                document.querySelector('#RockSmash').play();
+                this.obeyGravity=true;
+            }
+            if(gameManager.runningClock - this.birthTime-2000 > this.destructTime){
+                console.log('wall gone');
+                destroySelf(this.hit_box);
+                destroySelf(this);
+            }
+        }
+//velocity application
+         applyVelocity()
+            {                    
+             this.hit_box.position.x+=this.velocity.x;          
+             for(let k in gameManager.collission_sprites)
+                { 
+                 let x=gameManager.collission_sprites[k];
+                 if(!x.onScreen) continue;
+                 if(x==this || x==this.hit_box) continue;               
+                 if(b_collision(this.hit_box,x)) 
+                    {    
+                            
+                     this.collidedObj=x.sprite_type;     
+                     if(this.velocity.x > 0)
+                        {                    
+                        this.hit_box.position.x=x.position.x - x.width/2-this.hit_box.width/2-2;    
+
+                        }
+                     else 
+                        {
+                        this.hit_box.position.x=x.position.x + x.width/2 + this.hit_box.width/2+2;                      
+                        }
+                    }
+                }
+
+             this.hit_box.position.y+=this.velocity.y;
+             for(let x of gameManager.collission_sprites)
+                {
+
+                 if(!x.onScreen) continue;
+                 if(x==this || x==this.hit_box) continue;
+
+                 if(b_collision(this.hit_box,x)) 
+                    {
+                         
+                    this.collidedObj=x.sprite_type;                 
+                    if(this.velocity.y > 0)
+                        {
+                        this.hit_box.position.y=x.position.y-x.height/2-this.hit_box.height/2-2;    
+                        this.acceleration.add(new CreateVector(0,2*-this.velocity.y));                  
+                        }
+                    else
+                        {
+                        this.hit_box.position.y=x.position.y+x.height/2+this.hit_box.height/2+2;        
+                        this.acceleration.add(new CreateVector(0,2*this.velocity.y));               
+                        }
+                    }
+                }
+            }
+         update_and_display_hitbox()
+            {           
+            this.position.setVec(this.hit_box.position);
+            }
+         applyVelocityRestrictions()
+            {
+             let xdir=this.velocity.x/Math.abs(this.velocity.x);
+             let ydir=this.velocity.y/Math.abs(this.velocity.y);
+             if(Math.abs(this.velocity.y) > this.maxVelocity.y)
+                this.velocity.y=ydir*this.maxVelocity.y;
+             if(Math.abs(this.velocity.x) > this.maxVelocity.x)
+                this.velocity.x=xdir*this.maxVelocity.x;
+            }
+//velocity application ends
+
 		display()
 			{
 			 if(!this.onScreen) return false;
@@ -1062,8 +1218,9 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 	class HitBox
 		{
-		 constructor(x,y,wid,hei,spriteGroups,hitboxName="unknown hitbox")
+		 constructor(x,y,wid,hei,spriteGroups,parent,hitboxName="unknown hitbox")
 		 	{
+             this.parent=parent;
 		 	 this.position= new CreateVector(x,y);
 		 	 this.width = wid;
 			 this.height= hei;
@@ -1108,7 +1265,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		{
 		constructor(x,y,wid,hei,spriteGroups,hitboxName="unknown hitbox",parentx,xoffset,yoffset,dmg=10,dmghitback=0,life=50)
 			{
-			super(x,y,wid,hei,spriteGroups,hitboxName);
+			super(x,y,wid,hei,spriteGroups,parentx,hitboxName);
 			this.spriteGroups=spriteGroups;
 			this.startTime= gameManager.runningClock;
 			this.parentx=parentx;
@@ -1119,18 +1276,19 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			}
 		causeDamage(go)
 			{
+			  console.log(`caused damage to ${go.sprite_type}`);
 			  go.takeDamage(this.dmg,this.hitback);
 			  if(this.parentx.hitBoxMadeContact)
 			  	{
 			  	 this.parentx.hitBoxMadeContact(this.hitboxName);			  	 
 			  	}
 			  this.destroySelf();
-			  SpawnClouds(this.position);			 
+			  SpawnClouds(go.position);			 
 			}
 		update()
 			{
 			 if(gameManager.runningClock - this.startTime > this.life)
-			 	{			 	
+			 	{			 			 	
 			 	this.destroySelf();			 	
 			 	}
 			 this.updatePosition();
@@ -1158,21 +1316,22 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			}
 		}
 
-	function SpawnClouds(pos,n=60)
+	function SpawnClouds(pos,n=60,type="normal")
 		{
 		 for(let i=0;i<n;i++)
-		 	new CloudBurst(pos.x,pos.y,[gameManager.visible_sprites,gameManager.active_sprites]);
+		 	new CloudBurst(pos.x,pos.y,[gameManager.visible_sprites,gameManager.active_sprites],type);
 		}
 
 	class CloudBurst
 		{
-		 constructor(x,y,spriteGroups)
+		 constructor(x,y,spriteGroups,type="normal")
 		 	{
 		 	 this.position = new CreateVector(x,y);
 		 	 this.width= 15 * xscale;
 		 	 this.sprite_type='cloud';
 		 	 this.height= 15 * yscale;
 		 	 this.imagex= WHITECLOUD;
+             if(type!="normal") this.imagex=BLACKCLOUD;
 		 	 this.onScreen=true;
 		 	 this.isActive=true;
 		 	 this.spriteGroups=spriteGroups;
@@ -1236,15 +1395,265 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 return true;
 		 	}
 		}
-   class flame extends GeneralSprite
-   		{
-   			constructor(x,y,width,height,spriteGroups)
-   				{
-   					super(x,y,width,height,0,0,spriteGroups);
-   					this.sprite_type='flame';
-   					
-   				}
-   		}
+
+   class Elevator extends GeneralSprite
+   	    {
+           constructor(x,y,wid,hei,spriteGroups)
+           	{
+           		super(x,y,wid,hei,spriteGroups);
+           		this.hit_box=new HitBox(this.position.x,
+           			                    this.position.y-0.25*this.height,
+                	                    this.width,
+                	                    this.height*0.5,
+                                                     [],
+                                     'elevatorhitbox');
+           	}
+   	    }
+        
+   class Bullet extends GeneralSprite
+        {
+           constructor(x,y,wid,hei,parent,spriteGroups)
+            {
+                super(x,y,wid,hei,0,0,spriteGroups); 
+
+                this.hit_box=new HitBox(this.position.x,this.position.y,
+                	                    this.width*0.5,
+                	                    this.height*0.5,
+                                     [ //gameManager.collission_sprites,
+                                      // gameManager.visible_sprites
+                                     ],
+                                     'bullethitbox');
+                this.imagex=THORNYBALL;
+                this.rotAngle=0; 
+                this.rotSpeed=0.25;
+                this.parent=parent;
+                this.speed=20*xscale;
+                // this.velocity=new CreateVector(this.speed*this.parent.sx*xscale,0);
+                this.velocity=new CreateVector(0,0);
+                this.maxVelocity=new CreateVector(40*xscale,20*yscale);
+                this.acceleration=new CreateVector(0,0); 
+                this.lifeTime=3000;
+                this.birthTime=gameManager.runningClock;
+
+            } 
+         applyForce(){
+            this.acceleration.x=this.parent.sx*xscale*6;
+         }
+         display()
+            {            
+             if(!this.onScreen) return false;
+             ctx.save();
+             ctx.translate(this.position.x-gameManager.camera.position.x, 
+                           this.position.y-gameManager.camera.position.y);
+             ctx.rotate(d2r(this.rotAngle));
+             // ctx.scale(this.sx,this.sy);             
+             ctx.drawImage(this.imagex,-this.width/2,-this.height/2,this.width,this.height);             
+             ctx.restore();
+            }
+         update()
+            {
+             this.applyForce();
+             this.velocity.add(this.acceleration);
+             this.acceleration.set(0,0);
+             this.applyVelocity();
+             this.applyVelocityRestrictions();             
+             this.rotateself();
+             this.update_and_display_hitbox();  
+             this.checkLife();           
+            }
+        rotateself()
+            {
+             this.rotAngle+=this.rotSpeed;
+             if(this.rotAngle > 360) this.rotAngle=0;
+            }
+         checkLife()
+            {
+                if(gameManager.runningClock - this.birthTime > this.lifeTime)
+                {
+                    destroySelf(this.hit_box);
+                    destroySelf(this); 
+                }
+            }
+         applyVelocity()
+            {                    
+             this.hit_box.position.x+=this.velocity.x;          
+             for(let k in gameManager.collission_sprites)
+                { 
+                 let x=gameManager.collission_sprites[k];
+                 if(!x.onScreen) continue;
+                 if(x==this.hit_box || x==this.parent.hit_box) continue;               
+                 if(b_collision(this.hit_box,x)) 
+                    {            
+                     if(x.sprite_type=='huskhitbox') 
+                        x.parent.takeDamage(5);
+                    destroySelf(this.hit_box);
+                    destroySelf(this);  
+                    SpawnClouds(this.position,5); 
+                                 
+                    }
+                }
+
+             this.hit_box.position.y+=this.velocity.y;
+             for(let k in gameManager.collission_sprites)
+                {
+
+                 let x=gameManager.collission_sprites[k];
+                 if(!x.onScreen) continue;
+                 if(x==this.hit_box || x==this.parent.hit_box) continue;              
+                 if(b_collision(this.hit_box,x)) 
+                    {            
+                     if(x.sprite_type=='huskhitbox' || x.sprite_type=='lancehitbox') 
+                        x.parent.takeDamage(5);
+                     else
+                     document.querySelector('#retroJump').play();
+                    destroySelf(this.hit_box);
+                    destroySelf(this);  
+                    SpawnClouds(this.position,5); 
+                                   
+                    }
+                }
+            }
+         applyVelocityRestrictions()
+            {
+             let xdir=this.velocity.x/Math.abs(this.velocity.x);
+             let ydir=this.velocity.y/Math.abs(this.velocity.y);
+             if(Math.abs(this.velocity.y) > this.maxVelocity.y)
+                this.velocity.y=ydir*this.maxVelocity.y;
+             if(Math.abs(this.velocity.x) > this.maxVelocity.x)
+                this.velocity.x=xdir*this.maxVelocity.x;
+            }
+
+         update_and_display_hitbox()
+            {           
+            this.position.setVec(this.hit_box.position);
+            }
+
+
+        }
+    class flame extends GeneralSprite
+        {
+            constructor(x,y,width,height,spriteGroups)
+                {
+                    super(x,y,width,height,0,0,spriteGroups);
+                    this.enlargedHeight=4*height;
+                    this.sprite_type='flame';
+
+                    this.animations={
+                                     'small':{'imgsheet':LoadImagex('sprites/misc','fire1_64.png'),
+                                               'width':640,
+                                               'height':384,                        
+                                               'rows':6,
+                                               'cols':10,
+                                               'maxFrames':60,
+                                               'width_extend':1,
+                                               'height_extend':1,
+                                               'anim_speed':0.15
+                                              },
+                                    };  
+                    this.animation='small';
+                    this.animInQueue=null;
+                    this.animationFrame=0;
+                    this.startx=0;
+                    this.starty=0;
+                    this.imgWidth=0;
+                    this.imgHeight=0;
+                    this.startTime=gameManager.runningClock;
+                    this.flareTime=500;
+                    this.lifeTime=2000;
+                    this.heightGrow=false;
+                    this.sx=1;
+                    this.sy=1;
+                    this.flame_hitbox_spawned=false;
+                }
+        update()
+            {
+                if(this.heightGrow)
+                this.growFlame();
+
+                if(gameManager.runningClock - this.startTime >this.lifeTime){
+                    destroySelf(this);
+                }else if(gameManager.runningClock - this.startTime >this.flareTime){
+                    this.heightGrow=true;  
+                }
+            }
+        growFlame(){
+            if(this.height<this.enlargedHeight) 
+                {
+                    this.height+=40;
+                    this.position.y-=20;
+                }
+                else if(!this.flame_hitbox_spawned){
+                    this.flame_hitbox_spawned=true;
+                    new DamageHitBox(this.position.x,this.position.y, //x,y
+                                  20*xscale,this.height*2, //width,height
+                                  [gameManager.active_sprites,
+                                   gameManager.hitbox_sprites,
+                                   // gameManager.visible_sprites
+                                  ],
+                                 'enemy_hitbox',this,//hitboxName,parent
+                                 0*xscale,0*yscale,//xoffset,yoffset
+                                 10,0,//damage,damagehitback
+                                 1000//life
+                                 ); 
+                    // destroySelf(this);
+                }
+        }
+        display()
+            {
+                // super.display();
+                // return;
+             if(!this.onScreen) return false;
+
+             this.runAnimation();
+             // console.log('here at 2976');
+             ctx.save();
+             ctx.translate(this.position.x-gameManager.camera.position.x, 
+                           this.position.y-gameManager.camera.position.y);
+             ctx.rotate(d2r(this.angle));
+             // ctx.scale(this.sx,this.sy);
+             // if(this.flickerControl())
+             // ctx.drawImage(this.imagex,-this.width/2,-this.height/2,this.width,this.height);
+             ctx.drawImage(this.animations[this.animation]['imgsheet'],
+                            this.startx,this.starty,this.imgWidth,this.imgHeight,
+                           -this.width/2,
+                           -this.height/2,
+                           this.width*this.animations[this.animation]['width_extend'],
+                           this.height*this.animations[this.animation]['height_extend']
+                          );
+             
+             ctx.restore();
+             // w2screen(this.animation,this.position.x-gameManager.camera.position.x,this.position.y-50*yscale-gameManager.camera.position.y);
+            }
+        runAnimation()
+            {
+              this.animationFrame+=this.animations[this.animation]['anim_speed'];
+              if(this.animationFrame >= this.animations[this.animation]['maxFrames'])
+                {
+                this.animationFrame=0;
+                if(this.animInQueue) 
+                    {
+                    this.animation=this.animInQueue;
+                    //console.log('back to '+this.animation);
+                    this.animInQueue=null;
+                    }
+                }
+              let rowIndex=parseInt(parseInt(this.animationFrame)/this.animations[this.animation]['cols']);
+              let colIndex=parseInt(this.animationFrame)%this.animations[this.animation]['cols'];
+              this.startx=colIndex * this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
+              this.starty=rowIndex * this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
+              this.imgWidth = this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
+              this.imgHeight = this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
+            }
+        switchAnimation(animx)
+            {
+             if(this.animation != animx)
+                {                 
+                this.animationFrame=0;
+                this.animation=animx;
+                }
+            }
+        }
+        
    class WallGripper extends GeneralSprite
         {
 
@@ -1253,7 +1662,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
              
              super(x,y,width,height,0,0,spriteGroups);             
              this.sprite_type='WallGripper';
-             this.imagex= GATEIMAGE;
+             this.imagex= GRAYBOX;
             } 
         } 
 
@@ -1266,10 +1675,20 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			  this.imagex=FLOWERIMAGE;
 			  this.exp=exp;
 			  this.spriteId=spriteId;
+              this.hit_box=new HitBox(this.position.x+this.hitboxOffset.x,
+                                      this.position.y+this.hitboxOffset.y,
+                                      this.width*0.6,
+                                      this.height*0.9,
+                                        [ gameManager.collission_sprites,
+                                          // gameManager.visible_sprites
+                                        ],this,
+                                     'loothitbox');
 			}	
 		giveExp(objx)
 			{
+            SpawnClouds(this.position,10);
 			objx.giveExp(this.exp);
+            destroySelf(this.hit_box);
 			destroySelf(this);
 			gameManager.listOfDestroyedSprites.push(this.spriteId);
 			coinSound.play();			
@@ -1285,7 +1704,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
   		 	 this.hit_box=new HitBox(this.position.x,this.position.y,this.width*0.9,this.height*0.5,
                          [ gameManager.kill_plants,
                           // gameManager.visible_sprites
-                         ],
+                         ],this,
                          'thornhitbox');
   		 	 this.imagex= THORNIMAGE;
 		  	}
@@ -1310,7 +1729,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	                         [ 
 	                         gameManager.kill_plants,
 	                          // gameManager.visible_sprites
-	                         ],
+	                         ],this,
 	                         'thornhitbox');
 	  		 	 this.sprite_type='sawwheel';
 	  		 	 this.imagex= SAWWHEEL1;
@@ -1416,6 +1835,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 	this.velocity=new CreateVector(0,0);
 			 else		 
 			 	this.velocity=new CreateVector(parentx.sx*horiVel*xscale,0);
+             
 			 this.gravityScale=2*yscale;
 			 this.maxVelocity=new CreateVector(horiVel*xscale,12*yscale);
 			 this.spriteGroups=spriteGroups;
@@ -1425,7 +1845,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
  		 	 this.hit_box=new HitBox(this.position.x,this.position.y,this.width*0.5,this.height*0.5,
 		 	                         [ //gameManager.collission_sprites,
 		 	                          // gameManager.visible_sprites
-		 	                         ],
+		 	                         ],this,
 		 	                         'tballhitbox');
             this.birthTime=gameManager.runningClock;
             this.lifeTime=lifeTime;
@@ -1606,7 +2026,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.spriteGroups=spriteGroups;
 			 for(let grp of spriteGroups)
 			 	grp.push(this);
-			 this.hit_box=new HitBox(x,y,30*xscale,30*yscale,[],'spearhitbox');
+			 this.hit_box=new HitBox(x,y,30*xscale,30*yscale,[],this,'spearhitbox');
 			 // this.hit_box.angle=this.angle;
 			 this.hit_box_offset=new CreateVector(50*xscale,0);
 			 this.snapping=false;
@@ -1769,14 +2189,775 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	
 		}
 	//Spear ends
+    //Traitor starts
+	class TraitorLord
+		{
+			constructor(x,y,wid,hei,spriteGroups,spriteId='traitor0')
+			{
+				this.position=new CreateVector(x,y);
+				this.spriteGroups=spriteGroups;
+                this.traitorMusicStarted=false;
+				this.playerVisible=false;
+				if(gameManager.player && gameManager.player.isActive)
+					this.tgt=gameManager.player;
+				this.width=wid;
+				this.height=hei;
+                this.expVal=1000;
+				this.imgWidth=0;
+				this.imgHeight=0;
+				this.animInQueue=null;
+		 		this.startx=0;
+		 		this.starty=0;
+				this.sprite_type="TraitorLord";
+				this.spriteId=spriteId;
+				this.isBoss=this.spriteId.split("_")[0]=="boss";
+				this.isActive=!this.isBoss;
+				this.onScreen=!this.isBoss;
+				this.acceleration=new CreateVector(0,0);
+			 	this.velocity=new CreateVector(0,0);
+                this.traitor_normalVelocityx=20*xscale;
+                this.traitor_plungeVelocityx=50*xscale;
+			 	this.maxVelocity=new CreateVector(20*xscale,20*yscale);
+
+			 	this.gravityScale=2*yscale;
+			 	this.state='idle';
+			 	this.sx=1;
+    		 	this.sy=1;
+    		 	this.angle=0;
+    		 	this.animation='idle';
+    		 	this.animationFrame=0;
+    		 	this.invincibleState=false;
+ 	  			this.invin_count=0;
+ 	 			this.max_invin_time=500;
+ 	 			this.flickerCount=0;
+	 			this.maxFlickerTime=100;
+	 			this.traitorAttackInitiated=false;
+	 			this.attackStartTime=0;
+	 			this.traitorStrikeDist=100*xscale;
+			 	for(let grp of spriteGroups)
+			 		grp.push(this);	
+			 	this.hit_box=new HitBox(x,y,this.width*0.4,this.height*0.8,[
+                                                        gameManager.collission_sprites,
+                                                        // gameManager.visible_sprites
+                                                        // gameManager.active_sprites
+                                                        ],'traitorlordhitbox');
+			 	this.image_offset=new CreateVector(-30*xscale,-15*yscale);
+			 	this.health=10;
+		 		this.maxHealth=100;
+		 		this.uiBarTimer=0;
+		 		this.uiBarMaxTime=3000;
+		 		this.healthBarOffset=new CreateVector(-30*xscale,-150*yscale);
+		 		this.traitorHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,'#222222','#FF0000',[gameManager.visible_sprites],false,'traitorhealth');
+		 		this.traitorHealthBar.onScreen=false;
+		 		this.lastAttackTime=0;
+                this.rareAttackTime=gameManager.runningClock+4000;
+                this.rareAttackTimeGap=4000;
+		 		this.maxAttackGap=1000;
+		 		this.attacks=['traitorstrike','traitorHighThrow','traitor_teleport'];
+                this.rareAttacks=['shockwave'];
+                // this.attacks=['traitor_teleport'];
+		 		this.enemyClosed=false;
+		 		this.traitorAttackPrepTime=500;
+                this.traitorAttackCloseTime=4*this.traitorAttackPrepTime;
+		 		this.initPrepOver=false;
+                this.animRepeater=0;
+
+                this.traitor_moveBackStartedTime=0;
+                this.traitor_moveBackDirection=new CreateVector(-1,0);	 		
+                this.downCheckRaycast=130*yscale;
+
+			 	//setting up animations
+			 	let folderPath='sprites/TraitorLord';
+			 	this.animations={
+						 	'idle':{'imgsheet':LoadImagex(folderPath,'idle.png'),
+						  		    'width':859,
+						  		    'height':322,			  		    
+						  		    'rows':1,
+						  		    'cols':3,
+						  		    'maxFrames':3,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.05
+						  		     },
+				  'attackanticipate':{'imgsheet':LoadImagex(folderPath,'attackanticipate.png'),
+						  		    'width':2424,
+						  		    'height':291,			  		    
+						  		    'rows':1,
+						  		    'cols':6,
+						  		    'maxFrames':6,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.5
+						  		     },
+				 'attackpart1':{'imgsheet':LoadImagex(folderPath,'attackpart1.png'),
+						  		    'width':988,
+						  		    'height':358,			  		    
+						  		    'rows':1,
+						  		    'cols':2,
+						  		    'maxFrames':2,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.1
+						  		     },
+				 'attackpart2':{'imgsheet':LoadImagex(folderPath,'attackpart2.png'),
+						  		    'width':414,
+						  		    'height':298,			  		    
+						  		    'rows':1,
+						  		    'cols':1,
+						  		    'maxFrames':1,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.1
+						  		     },
+				 'attackrecover':{'imgsheet':LoadImagex(folderPath,'attackrecover.png'),
+						  		    'width':1545,
+						  		    'height':284,			  		    
+						  		    'rows':1,
+						  		    'cols':4,
+						  		    'maxFrames':4,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.1
+						  		     },
+				'jump':{'imgsheet':LoadImagex(folderPath,'jump.png'),
+						  		    'width':1464,
+						  		    'height':426,			  		    
+						  		    'rows':1,
+						  		    'cols':4,
+						  		    'maxFrames':4,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.15
+						  		     },
+				'jumpanticipate':{'imgsheet':LoadImagex(folderPath,'jumpanticipate.png'),
+						  		    'width':2016,
+						  		    'height':348,			  		    
+						  		    'rows':1,
+						  		    'cols':5,
+						  		    'maxFrames':5,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.15
+						  		     },
+				'jumpslash':{'imgsheet':LoadImagex(folderPath,'jumpslash.png'),
+						  		    'width':990,
+						  		    'height':361,			  		    
+						  		    'rows':1,
+						  		    'cols':2,
+						  		    'maxFrames':2,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.15
+						  		     },
+				'jumpslash_anticipate':{'imgsheet':LoadImagex(folderPath,'jumpslash_anticipate.png'),
+						  		    'width':990,
+						  		    'height':361,			  		    
+						  		    'rows':1,
+						  		    'cols':1,
+						  		    'maxFrames':1,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.15
+						  		     },
+				'shockwave':{'imgsheet':LoadImagex(folderPath,'shockwave.png'),
+						  		    'width':2913,
+						  		    'height':438,			  		    
+						  		    'rows':1,
+						  		    'cols':8,
+						  		    'maxFrames':8,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.05
+						  		     },
+				'shockwave_anticipate':{'imgsheet':LoadImagex(folderPath,'shockwave_anticipate.png'),
+						  		    'width':2142,
+						  		    'height':350,			  		    
+						  		    'rows':1,
+						  		    'cols':6,
+						  		    'maxFrames':6,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.15
+						  		     },
+				'shockwave_recover':{'imgsheet':LoadImagex(folderPath,'shockwave_recover.png'),
+						  		    'width':1026,
+						  		    'height':275,			  		    
+						  		    'rows':1,
+						  		    'cols':3,
+						  		    'maxFrames':3,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.15
+						  		     },
+				'walk':{'imgsheet':LoadImagex(folderPath,'walk.png'),
+						  		    'width':2874,
+						  		    'height':550,			  		    
+						  		    'rows':1,
+						  		    'cols':2,
+						  		    'maxFrames':9,
+						  		    'width_extend':1,
+						  		    'height_extend':1,
+						  		    'anim_speed':0.15
+						  		     },						  	 
+						  		 };
+                this.traitor_flame_gap=190*xscale;
+                this.throwPrepTime=1000;
+                this.teleport_appear_distance=200*xscale;                
+                this.agroStartTime=0;
+                this.onAir=false;
+			}
+		 applyVelocity()
+		 	{		 	
+             // if(this.state=='traitorstrike') console.log(this.velocity.x); 	 	 
+		 	 this.hit_box.position.x+=this.velocity.x;		 	
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(x==this.hit_box) continue;
+		 	 	 
+		 	 	 if(b_collision(this.hit_box,x)) 
+		 	 	 	{		 	 	 	
+		 	 	 	 if(this.velocity.x > 0)
+		 	 	 	 	this.hit_box.position.x=x.position.x-x.width/2-this.hit_box.width/2-2;
+		 	 	 	 else 
+		 	 	 	 	this.hit_box.position.x=x.position.x+x.width/2+this.hit_box.width/2+2;
+		 	 	 	}
+		 	 	 		 	 	
+		 	 	}
+
+		 	 this.hit_box.position.y+=this.velocity.y;
+		 	 for(let x of gameManager.collission_sprites)
+		 	 	{
+		 	 	 if(!x.onScreen) continue;
+		 	 	 if(x==this.hit_box) continue;
+		 	 	 if(b_collision(this.hit_box,x)) 
+		 	 	 	{
+		 	 	 	
+		 	 	 	if(this.velocity.y > 0)
+		 	 	 		this.hit_box.position.y=x.position.y-x.height/2-this.hit_box.height/2-2;
+		 	 	 	else
+		 	 	 		this.hit_box.position.y=x.position.y+x.height/2+this.hit_box.height/2+2;	
+		 	 	 	}
+		 	 	}
+		 	}
+		applyVelocityRestrictions()
+		 	{
+		 	 let xdir=this.velocity.x/Math.abs(this.velocity.x);
+		 	 let ydir=this.velocity.y/Math.abs(this.velocity.y);
+		 	 if(Math.abs(this.velocity.y) > this.maxVelocity.y)
+		 	 	this.velocity.y=ydir*this.maxVelocity.y;
+		 	 if(Math.abs(this.velocity.x) > this.maxVelocity.x)
+		 	 	this.velocity.x=xdir*this.maxVelocity.x;
+		 	}
+		applyGravity()
+		 	{
+		 	 this.acceleration.y+=this.gravityScale;
+		 	}
+		 move()
+		 	{		 		 
+		 	 this.velocity.add(this.acceleration);
+		 	 // console.log(this.acceleration.show('acceleration'));
+		 	 // console.log(`${this.velocity.x},${this.velocity.y}`);
+		 	 this.acceleration.set(0,0);		 	 		 	
+		 	 this.applyVelocity();
+		 	 this.applyVelocityRestrictions();
+		 	 this.update_and_display_hitbox(); 
+		 	}
+		 update_and_display_hitbox()
+		 	{	 		
+	 		this.position.setVec(this.hit_box.position.copy().add(this.image_offset));
+		 	}
+        removeBars()
+            {
+             for(let go of gameManager.active_sprites)
+                {
+                 if(go.spriteId && go.spriteId=="BossFightTriggGO")
+                    go.bossHasDiedRemoveBars();
+                }
+            }
+		 takeDamage(dmg,dir=0)
+		 	{
+		 	//this.acceleration.add(new CreateVector(dir,0));
+		 	if(this.invincibleState) return false;	
+		 	this.invincibleState=true;	
+	 		this.health-=dmg;
+	 		this.traitorHealthBar.updateValue(this.health);
+	 		this.traitorHealthBar.onScreen=true;
+	 		if(this.health<0)
+	 			{
+	 			if(this.tgt && this.tgt.isActive)
+	 				this.tgt.giveExp(this.expVal);
+	 			SpawnClouds(this.position);
+                
+                pauseBossMusic();
+                pauseMusic();
+                startMusic();                
+               
+                fogGateSound.play();
+                this.removeBars();
+	 			destroySelf(this);
+	 			destroySelf(this.hit_box);
+	 			destroySelf(this.traitorHealthBar);
+
+	 			if(this.isBoss){
+	 			gameManager.listOfDestroyedSprites.push(this.spriteId);
+                //saving the game will cause this enemy to not appear
+                }
+	 			this.isActive=false;
+	 			}	
+		 	}
+
+    	runAnimation()
+    		{
+			  this.animationFrame+=this.animations[this.animation]['anim_speed'];
+			  if(this.animationFrame >= this.animations[this.animation]['maxFrames'])
+			  	{
+		  		this.animationFrame=0;
+		  		if(this.animInQueue) 
+		  			{
+		  			this.animation=this.animInQueue;
+		  			//console.log('back to '+this.animation);
+		  			this.animInQueue=null;
+		  			}
+			  	}
+			  let rowIndex=parseInt(parseInt(this.animationFrame)/this.animations[this.animation]['cols']);
+			  let colIndex=parseInt(this.animationFrame)%this.animations[this.animation]['cols'];
+			  this.startx=colIndex * this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
+			  this.starty=rowIndex * this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
+			  this.imgWidth = this.animations[this.animation]['width']/this.animations[this.animation]['cols'];
+			  this.imgHeight = this.animations[this.animation]['height']/this.animations[this.animation]['rows'];
+			}
+		switchAnimation(animx)
+			{
+			 if(this.animation != animx)
+			 	{
+			 	this.animationFrame=0;
+			 	this.animation=animx;			 	
+			 	}
+			}
+		 stateMachine()
+		 	{
+		 	 switch(this.state)
+		 	 	{
+		 	 	 case 'idle':
+		 	 	 	this.idleTraitor();
+		 	 	 	break;	
+		 	 	 case 'agro':
+		 	 	 	this.agroTraitor();
+		 	 	 	break;
+		 	 	 case 'traitorstrike':
+		 	 	 	this.traitorStrike();
+		 	 	 	break;	
+                 case 'traitorMovingBack':
+                    this.traitorMovingBack();
+                    break; 	
+                 case 'shockwave':
+                    this.traitorShockwave();
+                    break; 
+                 case 'traitorHighThrow':
+                    this.traitorHighThrow();
+                    break;	 
+                case 'traitor_teleport':
+                    this.traitor_teleport();
+                    break;
+		 	 	 default:
+		 	 	 	break;
+		 	 	}
+		 	}
+		 idleTraitor(){
+		 	this.switchAnimation('idle');
+           
+		 	this.turnTowardsPlayer();		 	
+		 }
+
+		 agroTraitor(){
+            if(!gameManager.player || !gameManager.player.isActive) return false;
+            if(this.agroStartTime==0){            	
+            	document.querySelector('#mawlekscream').play();
+            	this.agroStartTime=gameManager.runningClock;
+            }
+		 	this.turnTowardsPlayer();
+            
+            if(!this.traitorMusicStarted && gameManager.runningClock-this.agroStartTime>1000)
+                    {
+                     this.traitorMusicStarted= true;
+                     // this.lookForBFightTrigger();
+                     pauseMusic();
+                     capraMusic.src="./sounds/Capra.mp3";
+                     capraMusic.play();
+                    }
+            
+            if(gameManager.runningClock - this.rareAttackTime > this.rareAttackTimeGap)
+                {
+
+                this.state=this.rareAttacks[Math.floor(Math.random()*this.rareAttacks.length)];            
+                }
+		 	else if(gameManager.runningClock - this.lastAttackTime > this.maxAttackGap)
+		 		this.state=this.attacks[Math.floor(Math.random()*this.attacks.length)];
+		 	
+		 }
+		 traitor_teleport(){
+            if(!this.initPrepOver)
+            {
+                this.initPrepOver=true;
+                this.turnTowardsPlayer();
+                if(!this.playerVisible)
+                {
+                    console.log('player is not visible');
+                    this.state='agro';
+                    this.initPrepOver=false;
+                    return;
+                }
+                //x,y,wid,hei,spriteGroups,parent,hitboxName="unknown hitbox")
+                let testBox=new HitBox(gameManager.player.position.x + 
+                                       this.sx * this.teleport_appear_distance,
+                                       gameManager.player.position.y -  150*yscale,
+                                       100*xscale,100*yscale,[],this,"testBox"
+                                      );
+                
+                for(let x of gameManager.collission_sprites)
+                {
+                    if(b_collision(testBox,x))
+                    {
+                        testBox.position.x=gameManager.player.position.x - this.sx * 100*xscale;
+                        break;
+                    }
+                }
+                this.hit_box.position.setVec(testBox.position);
+                SpawnClouds(this.hit_box.position,60,'black');
+                this.state='agro';
+                this.initPrepOver=false;
+                this.rareAttackTime=gameManager.runningClock;
+                this.lastAttackTime=gameManager.runningClock;
+            }
+         }
+         
+         traitorOnAir(){
+         	if(this.checkIfOnGround() && this.onAir){
+         		this.onAir=false;
+         		gameManager.screenShakeTimer=gameManager.runningClock;
+         	}else if(!this.checkIfOnGround() && !this.onAir){
+         		this.onAir=true;
+         	}
+         }
+		 traitorStrike(){
+            if(!gameManager.player || !gameManager.player.isActive) return false;
+		 	if(!this.traitorAttackInitiated){
+		 		this.traitorAttackInitiated=true;
+		 		this.attackStartTime=gameManager.runningClock;
+                
+		 	}
+		 	if(!this.initPrepOver){
+                if(Math.abs(gameManager.player.position.x - this.position.x) < 
+                    this.traitorStrikeDist*1.5)
+                    {
+                        this.initPrepOver=true;
+                        this.velocity.y=0;
+                        return false;
+                    }
+		 		if(gameManager.runningClock - this.attackStartTime < this.traitorAttackPrepTime)
+		 			this.acceleration.add(new CreateVector(0,-4*yscale));
+		 		else{
+		 			this.initPrepOver=true;
+		 			this.velocity.y=0;
+		 			}
+		 		return false;
+		 	}
+		 	if(!this.enemyClosed){
+		 		let plungeForce=new CreateVector(this.sx,0);
+                if(this.checkIfOnGround() && this.maxVelocity.x!=this.traitor_plungeVelocityx) {
+                    this.maxVelocity.x=this.traitor_plungeVelocityx;
+                    // plungeForce.x*=50;
+                    
+                }
+		 		this.acceleration.add(plungeForce);
+
+		 		let timedOut=gameManager.runningClock- this.attackStartTime > this.traitorAttackCloseTime;
+		 		if(timedOut ||
+		 			Math.abs(gameManager.player.position.x - this.position.x) < this.traitorStrikeDist)
+		 		{
+		 			this.enemyClosed=true;
+                    this.velocity.x=0;
+                    this.maxVelocity.x=this.traitor_normalVelocityx;
+                    this.acceleration.set(0,0);
+		 			this.switchAnimation('attackanticipate');
+		 		}
+		 		return false;
+		 	}
+		 	
+		 	if(this.animation=='attackanticipate' && this.animInQueue!='attackpart1'){
+		 		this.animInQueue='attackpart1';
+		 	}else if(this.animation=='attackpart1' && this.animInQueue!='attackpart2'){
+		 		this.animInQueue='attackpart2';
+		 	}else if(this.animation=='attackpart2' && this.animInQueue!='attackrecover'){
+		 		this.animInQueue='attackrecover';
+		 	}else if(this.animation=='attackrecover' && this.animInQueue!='idle'){
+		 		this.animInQueue='idle';
+		 	}		 	
+		 	if(this.enemyClosed && this.animation=='idle'){
+		 		this.enemyClosed=false;
+		 		this.lastAttackTime=gameManager.runningClock;
+		 		this.state='agro';
+		 		this.traitorAttackInitiated=false;
+		 		this.initPrepOver=false;
+                this.traitorStruck=false;
+                if(!(!gameManager.player || !gameManager.player.isActive))
+                if(Math.abs(this.position.x - gameManager.player.position.x)<100*xscale)
+                    this.sideWaysPush();
+		 	}
+            if(this.animation=='attackpart2' && !this.traitorStruck){
+                this.traitorStruck=true;
+                new DamageHitBox(this.position.x,this.position.y, //x,y
+                                  150*xscale,100*yscale, //width,height
+                                  [gameManager.active_sprites,
+                                   gameManager.hitbox_sprites,
+                                   // gameManager.visible_sprites
+                                  ],
+                                 'enemy_hitbox',this,//hitboxName,parent
+                                 90*xscale,10*yscale,//xoffset,yoffset
+                                 10,this.sx*30*xscale,//damage,damagehitback
+                                 10//life
+                                 ); 
+            }
+		 }
+         sideWaysPush(){            
+            this.state='traitorMovingBack';
+         }
+         
+         traitorHighThrow(){
+            if(!this.traitorAttackInitiated){
+                this.traitorAttackInitiated=true;
+                SpawnClouds(this.position,60,"black");
+                this.attackStartTime=gameManager.runningClock;
+            }
+            if(!this.initPrepOver){
+                if(gameManager.runningClock - this.attackStartTime < this.throwPrepTime)
+                    return;
+                this.initPrepOver=true;
+                this.switchAnimation('attackanticipate');
+            }
+            if(this.animation=='attackanticipate' && this.animInQueue!='attackpart1'){
+                this.animInQueue='attackpart1';
+            }else if(this.animation=='attackpart1' && this.animInQueue!='attackpart2'){
+                this.animInQueue='attackpart2';
+            }else if(this.animation=='attackpart2' && this.animInQueue!='attackrecover'){
+                this.animInQueue='attackrecover';
+            }else if(this.animation=='attackrecover' && this.animInQueue!='idle'){
+                this.animInQueue='idle';
+            }
+            if(this.animation=='attackpart2' && !this.traitorStruck){
+                this.traitorStruck=true;
+                new ThornyBall(this.position.x,
+                           this.position.y,
+                           50*xscale,
+                           50*yscale,
+                           this,200*xscale,0,
+                           [gameManager.visible_sprites,gameManager.active_sprites],40,800
+                                  ); 
+            }
+            if(this.animation=='idle' && this.initPrepOver){                
+                this.lastAttackTime=gameManager.runningClock;
+                this.state='agro';
+                this.traitorAttackInitiated=false;
+                this.initPrepOver=false;
+                this.traitorStruck=false;
+            }   
+         }
+         traitorShockwave(){
+            if(!this.traitorAttackInitiated){
+                this.traitorAttackInitiated=true;
+                for(let i=1;i<=5;i++)
+                {
+                new flame(this.position.x-this.traitor_flame_gap*i*xscale,
+                          this.position.y+50*yscale,100*xscale,200*yscale,
+                          [gameManager.visible_sprites,gameManager.active_sprites]
+                    );
+                new flame(this.position.x+this.traitor_flame_gap*i*xscale,
+                          this.position.y+50*yscale,100*xscale,200*yscale,
+                          [gameManager.visible_sprites,gameManager.active_sprites]
+                    );
+                }
+                this.switchAnimation('shockwave_anticipate');
+                this.animInQueue='shockwave';
+                return true;
+            }
+            if(this.animation=='shockwave' && this.animInQueue!='shockwave_recover')
+                this.animInQueue='shockwave_recover';
+            else if(this.animation=='shockwave_recover' && 
+                    this.animRepeater<2 &&  
+                    this.animInQueue!='shockwave'){
+                this.animInQueue='shockwave';
+                this.animRepeater+=1;
+                }
+            else if(this.animation=='shockwave_recover' && 
+                    this.animRepeater==2 &&
+                    this.animInQueue!='idle')
+                this.animInQueue='idle';
+            if(this.traitorAttackInitiated && this.animation=='idle'){
+                this.state='agro';  
+                this.lastAttackTime=gameManager.runningClock;
+                this.rareAttackTime=gameManager.runningClock;
+                this.traitorAttackInitiated=false; 
+                this.animRepeater=0; 
+
+            }
+
+         }
+
+        checkIfOnGround()
+        {
+        for(let x of gameManager.collission_sprites)
+            {
+             if(!x.onScreen || x==this.hit_box) continue;
+             
+             if(Raycast(this.position.copy(),new CreateVector(0,1),this.downCheckRaycast,x) )
+                {
+                return true;
+                }
+            }
+        return false;
+        }
+
+         
+         traitorMovingBack(){
+            if(this.traitor_moveBackStartedTime==0){
+                this.traitor_moveBackStartedTime=gameManager.runningClock;
+                this.traitor_moveBackDirection.x=-this.sx;}
+            if(gameManager.runningClock-this.traitor_moveBackStartedTime> 500){
+                this.traitor_moveBackStartedTime=gameManager.runningClock;
+                this.traitor_moveBackDirection.x*=-1;
+            }
+            if(Math.abs(this.position.x - gameManager.player.position.x)<100*xscale){
+                this.acceleration.add(this.traitor_moveBackDirection);
+
+            }else{
+                this.velocity.x=0;
+                this.acceleration.set(0,0);
+                this.state='agro';
+                this.traitor_moveBackStartedTime=0;
+
+            }
+         }
+		 turnTowardsPlayer(){
+		 	if (this.playerInFront())
+		 		{
+		 		this.sx=1;
+		 		this.playerVisible=true;
+		 		if(this.state!='agro') this.state='agro';
+		 		}
+		 	else if(this.playerInFront(-1))
+		 		{
+		 		this.sx=-1;
+		 		this.playerVisible=true;
+		 		if(this.state!='agro') this.state='agro';
+		 		}
+            else 
+		 	this.playerVisible=false;
+		 }
+		 playerInFront(n=1){
+		 	if(!gameManager.player || !gameManager.player.isActive) 
+		 		return true;		 	
+		 	let offsets=[-40*yscale,0,40*yscale];
+		 	let dist=1000*xscale;
+		 	for(let offset of offsets)
+                {
+                let yoffset=new CreateVector(0,offset);
+                if(Raycast(this.position.copy().add(yoffset),new CreateVector(n,0),dist,gameManager.player))
+                    return true;
+                }
+            return false;
+		 }
+
+
+		flickerControl()
+			{
+			  if(!this.invincibleState) return true;
+			  this.flickerCount+=deltaTime;
+			  if(this.flickerCount > this.maxFlickerTime)
+			  	{
+			  	 this.flickerCount=0;
+			  	 return true;
+			  	}
+			  return false;
+			}
+
+		updateHealthBarPos()
+			{
+				if(this.traitorHealthBar.onScreen)
+					{	
+					this.uiBarTimer+=deltaTime;
+					if(this.uiBarTimer > this.uiBarMaxTime)
+					{
+					 this.uiBarTimer=0;
+					 this.traitorHealthBar.onScreen=false;
+					}
+					}
+				this.traitorHealthBar.position.setVec(this.position.copy().add(this.healthBarOffset));
+			}
+		manageInvincibility()
+			{
+			if(!this.invincibleState) return false;
+			this.invin_count+= deltaTime;
+			if(this.invin_count > this.max_invin_time)
+				{
+				 this.invin_count=0;
+				 this.invincibleState=false;
+				} 
+			}
+    	display()
+		 	{		 	 
+		 	 if(!this.onScreen) return false;             
+		 	 this.runAnimation();
+		 	 ctx.save();
+		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
+		 	 	 		   this.position.y-gameManager.camera.position.y);
+		 	 ctx.rotate(d2r(this.angle));
+		 	 ctx.scale(this.sx,this.sy);
+		 	 if(this.flickerControl())
+		 	 ctx.drawImage(this.animations[this.animation]['imgsheet'],
+		 	 				this.startx,this.starty,this.imgWidth,this.imgHeight,
+		 	 			   -this.width/2,
+		 	 			   -this.height/2,
+		 	 			   this.width*this.animations[this.animation]['width_extend'],
+		 	 			   this.height*this.animations[this.animation]['height_extend']
+		 	 			  );
+		 	 // context.drawImage(img,sx,sy,swidth,sheight,x,y,width,height);
+		 	 ctx.restore();
+		 	 // w2screen(this.state,this.position.x-gameManager.camera.position.x,this.position.y-50*yscale-gameManager.camera.position.y);
+		 	}
+          usercontrol(){
+             if(ipress && !this.clickDetector){
+                this.traitor_flame_gap+=3;
+                console.log((this.traitor_flame_gap/xscale).toFixed(2));
+                this.clickDetector=true;
+            }else if(!ipress) this.clickDetector=false;
+            // this.checkIfOnGround();
+          }
+		  update()
+		  	{
+		  	  if(!this.isActive) return false;
+              // this.usercontrol();
+              this.traitorOnAir();
+		 	  this.runAnimation();
+		 	  this.stateMachine();
+		 	  this.update_and_display_hitbox();
+		 	  this.applyGravity();
+		 	  this.move();
+		 	  this.updateHealthBarPos();
+		 	  this.manageInvincibility();
+		 	  // w2screen(this.state,this.position.x-gameManager.camera.position.x,this.position.y-50*yscale-gameManager.camera.position.y);
+		  	}
+		}
+        //traitor ends
 	//Lance starts
 	class Lance
 		{
 		 constructor(x,y,wid,hei,spriteGroups,spriteId='lance0')
 		    {
 		     this.position=new CreateVector(x,y);
-		     this.width = wid * xscale;
-		     this.height = hei * yscale;
+             this.initPosition=new CreateVector(x,y);
+		     this.width = wid;
+		     this.height = hei;
 		     this.spriteId=spriteId;
 		     let folderPath='sprites/lanceSentry/';
 		     this.onScreen= true;
@@ -1871,12 +3052,13 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 	                                                        gameManager.collission_sprites
 			 	                                                        // gameManager.visible_sprites
 			 	                                                        // gameManager.active_sprites
-			 	                                                        ],'lancehitbox');
+			 	                                                        ],this,
+                                                                        'lancehitbox');
 			 this.image_offset=new CreateVector(0,0*xscale);
 
 			 this.invincibleState=false;
 		 	 this.invin_count=0;
-		 	 this.max_invin_time=2000;
+		 	 this.max_invin_time=500;
 		 	 this.flickerCount=0;
 			 this.maxFlickerTime=100;
 			 // this.longRangeAttacks=['throw','rush'];
@@ -1892,7 +3074,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 			 this.phase1Rush=false;
 			 this.rushVarsSet=false;
-			 this.rushForce=new CreateVector(0,2*yscale);
+			 this.rushForce=new CreateVector(0,5*yscale);
+             this.riseup_start_time=0;
 			 this.probeDir=new CreateVector(0,1);
 			 this.rushProbeDist=100*yscale;
 			 this.movementHalted=false;
@@ -1914,6 +3097,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	this.ballTimer=0;
 		 	this.ballGapMax=1000;
 		 	this.expVal=50;
+            this.spotToCheckT=null;
+
+            
+            this.waitLimbo=0;
 			 //lance constructor ends
 		    }
 		manageInvincibility()
@@ -1931,7 +3118,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	{
 		 	//this.acceleration.add(new CreateVector(dir,0));
 		 	if(this.invincibleState) return false;	
-		 	this.invincibleState=true;	
+		 	this.invincibleState=true;
+            document.querySelector('#retroJump').play();	
 	 		this.health-=dmg;
 	 		this.lanceHealthBar.updateValue(this.health);
 	 		this.lanceHealthBar.onScreen=true;
@@ -1942,8 +3130,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 			destroySelf(this);
 	 			destroySelf(this.hit_box);
 	 			destroySelf(this.lanceHealthBar);
+                fogGateSound.play();
 	 			gameManager.listOfDestroyedSprites.push(this.spriteId);
 	 			this.isActive=false;
+                DestroyAllBarriersInScene();
 	 			}	
 		 	}
 
@@ -2027,10 +3217,48 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 case 'quickThrow':
 		 	 	 	this.quickThrow();
 		 	 	 	break;
+                 case 'waitLimbo':
+                    this.WaitLimbo();
+                    break;
 		 	 	 default:
 		 	 	 	break;
 		 	 	}
 		 	}
+        CheckIfPlayerWentOutOfScope()
+            {  
+              if(!this.spotToCheckT){
+                for(let x of gameManager.markedSpots)
+                {                
+                if(x.sprite_type=="enemystoptop")
+                    this.spotToCheckT=x;
+                }
+              }
+
+              if(!this.spotToCheckT || !gameManager.player.isActive){
+                // console.log('no spot');
+                return;
+              }    
+                       
+              if(this.spotToCheckT.position.y > gameManager.player.position.y)
+                {                  
+                  this.state='waitLimbo';
+                  this.switchAnimation('idle');
+                  this.limboStart=gameManager.runningClock;
+                }  
+
+            }
+        WaitLimbo(){
+            if(gameManager.player.position.y >= this.spotToCheckT.position.y){
+                this.state="agro";
+            }
+            if(gameManager.runningClock- this.limboStart> 2000){                
+                SpawnClouds(this.position);
+                this.hit_box.position.setVec(this.initPosition);
+                // this.position.x=0;
+                // this.position.y=0;
+                this.state='idle';
+            }
+        }
 		PlayerDetected(dist=this.raycastLength)
 			{
 			  if(!this.tgt) return false;
@@ -2075,24 +3303,35 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	this.angle=AngleLerp(this.angle,0,30);
 		 	 if(this.enemysx==0)
 		 	 	{
-		 	 	 this.enemysx=Math.sign(this.position.x - this.tgt.position.x);			 	 	 	 	 	 
-		 	 	}		 	 
+		 	 	 this.enemysx=Math.sign(this.position.x - this.tgt.position.x);			 	 	 	 	
+                 this.maxVelocity.x=20*xscale;    	 
+		 	 	}	
+
 		 	 this.acceleration.add(this.horiForce.copy().mult(this.sx*-1));
-		 	 if(Math.abs(this.position.x - this.tgt.position.x) < this.playerGap*0.5 || this.enemysx != this.sx)
+		 	 if(Math.abs(this.position.x - this.tgt.position.x) < this.playerGap*0.5 || 
+                this.enemysx != this.sx)
 		 	 	{
 		 	 	this.state='agro';
+                this.lastAttackTime=0;
 		 	 	this.enemysx=0;
+                this.maxVelocity.x=this.normalvx;
 		 	 	}
 		 	}
 		 
 		 agroActions()
 		 	{
+              if(!gameManager.player || !gameManager.player.isActive)
+              {
+                this.state='idle';
+                return;
+              }
+              this.CheckIfPlayerWentOutOfScope();
 		 	  this.sx=Math.sign(this.position.x-this.tgt.position.x);
 		 	  if(Math.abs(this.angle) > 1)
 		 	 	this.angle=AngleLerp(this.angle,0,30);
 		 	  let enemyGap=this.position.x - this.tgt.position.x;
 		 	  this.velocity.x=Lerp(this.velocity.x,0,2*xscale);
-		      if(!this.tgt || Math.abs(enemyGap) > this.playerOutDistance)
+		      if(gameManager.playerDied || !this.tgt || Math.abs(enemyGap) > this.playerOutDistance)
 				{				 			 
 				 this.state='idle';				
 				}	
@@ -2373,15 +3612,20 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	  	}
 		 	 	}
 		 	}
+         
 		 riseup()
 		 	{
-             
-		 	 if(this.tgt.position.y - this.position.y < 200*yscale)
+             if(!this.riseup_start_time)
+                this.riseup_start_time=gameManager.runningClock;
+
+             let cant_keep_rising= gameManager.runningClock- this.riseup_start_time > 3000;
+		 	 if(this.tgt.position.y - this.position.y < 200*yscale && !cant_keep_rising)
 		 	 	 this.acceleration.add(this.rushForce.copy().mult(-1));
 		 	 else
 		 	 	{
 		 	 	 this.velocity.y=0;
 		 	 	 this.state='agro';
+                 this.riseup_start_time=0;
 		 	 	}
 		 	}
 		 
@@ -2642,7 +3886,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			    this.hit_box=new HitBox(x,y,this.width*0.4,this.height*0.8,[
                                                         gameManager.collission_sprites
                                                         // gameManager.active_sprites
-                                                        ],'falseknighthitbox');
+                                                        ],this,'falseknighthitbox');
 			 this.image_offset=new CreateVector(-30*xscale,-15*yscale);
 			 this.image_offset_fixed=this.image_offset.copy();
 			 this.fkHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,'#222222','#FF0000',[gameManager.visible_sprites],false,'fkhealth');
@@ -2656,7 +3900,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 			 this.invincibleState=false;
 		 	 this.invin_count=0;
-		 	 this.max_invin_time=1000;
+		 	 this.max_invin_time=500;
 		 	 this.flickerCount=0;
 			 this.maxFlickerTime=100;
 
@@ -2713,6 +3957,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	//this.acceleration.add(new CreateVector(dir,0));
 		 	if(this.invincibleState) return false;	
 		 	this.invincibleState=true;	
+            document.querySelector('#retroJump').play();
 	 		this.health-=dmg;
 	 		this.fkHealthBar.updateValue(this.health);
 	 		this.fkHealthBar.onScreen=true;
@@ -3094,7 +4339,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     	spawnHitBoxOnHit_fknight()
     		{
     		 let hbWidthRatio=0.2;
-    		 let hbHeightRatio=0.3;    		 
+    		 let hbHeightRatio=0.9;    		 
     		 if(this.animation=="attack" && parseInt(this.animationFrame)==2 && !this.hitBoxSpawned)
     		 	{    
     		 	hbWidthRatio=0.4;
@@ -3103,7 +4348,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 								 this.position.y,
 								 this.width*hbWidthRatio,
 								 this.height*hbHeightRatio,
-								 [gameManager.active_sprites,gameManager.hitbox_sprites],
+								 [gameManager.active_sprites,gameManager.hitbox_sprites,gameManager.visible_sprites],
 								 'enemy_hitbox',
 								 this,
 								 150*xscale,50*yscale,10,this.sx*1.5,50); //xoffset,yoffset,dmg=10,dmghitback=0,life=50
@@ -3175,7 +4420,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	    	 	 SpawnClouds(this.position);
 	 	 	 	 destroySelf(this.hit_box);
 		 	  	 destroySelf(this);
-		 	  	 console.log('collision with '+this.collidedObj);
+		 	  	 // console.log('collision with '+this.collidedObj);
 	 	 	 	 if(this.collidedObj=='playerhitbox')	    	 	 	 	 			 	  	 	 
 		 	  	 	 gameManager.player.takeDamage(10,this.parentx.sx);
 		 	  	 this.collidedObj='none';
@@ -3325,14 +4570,14 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 if(this.hasCutScene) this.state= 'miner_idle';
 			 else this.state='miner_agro';
 			 this.maxHealth= 100;
-			 this.health= 10;
+			 this.health= 100;
 			 this.spriteGroups= spriteGroups;
 			 for(let grp of spriteGroups)
 			 	grp.push(this);
 			 this.hit_box=new HitBox(x,y,this.width*0.4,this.height*0.8,[
                                                         gameManager.collission_sprites,
                                                         // gameManager.visible_sprites
-                                                        ],'huskminerhitbox');
+                                                        ],this,'huskminerhitbox');
 			 this.image_offset=new CreateVector(-1*xscale,-15*yscale);
 			 this.image_offset_fixed=this.image_offset.copy();
  			 this.minerHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,
@@ -3349,7 +4594,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 			 this.invincibleState=false;
 		 	 this.invin_count=0;
-		 	 this.max_invin_time=2000;
+		 	 this.max_invin_time=500;
 		 	 this.flickerCount=0;
 			 this.maxFlickerTime=100;
 			 
@@ -3773,6 +5018,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 takeDamage(dmg,dir=0)
 		 	{
 		 	//this.acceleration.add(new CreateVector(dir,0));
+            document.querySelector('#retroJump').play();
 		 	if(this.invincibleState) return false;	
 		 	this.invincibleState=true;	
 	 		this.health-=dmg;
@@ -3797,13 +5043,108 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	} 
 
     	}
+
+    //messagebox starts
+    class MessageBox 
+        {
+           constructor(parentgo,dialogue,promptMessage="press down arrow")
+            {
+                this.position=new CreateVector(parentgo.position.x+20*xscale,
+                                               parentgo.position.y-70*yscale
+                                               );                
+                this.sprite_type="messagebox";
+                this.dialogue=dialogue;
+                this.width=240*xscale;
+                this.height=120*yscale;
+                this.di=0;
+                this.coolDownTimer=0;
+                this.dialogueStarted=false;
+                this.promptMessage=promptMessage;
+            } 
+            displayPrompt(){
+                w2screen(this.promptMessage,
+                         this.position.x-gameManager.camera.position.x-110*xscale,
+                         this.position.y-gameManager.camera.position.y-80*yscale,
+                        );
+            }
+            displayDialogue(){
+                for(let i=0;i<this.dialogue[this.di].length;i++)
+                w2screen(this.dialogue[this.di][i],
+                         this.position.x-gameManager.camera.position.x-110*xscale,
+                         this.position.y-gameManager.camera.position.y+i*30*yscale,
+                         '#FFFFFF',20
+                         );
+            }
+            runCoolDown(){
+                if(this.coolDownTimer==0) return;
+                this.coolDownTimer+=deltaTime;
+                // console.log(this.coolDownTimer);
+                if(this.coolDownTimer > 1000){
+                    this.coolDownTimer=0;                            
+                }
+            }
+            listenForKeys()
+             {
+                if(this.coolDownTimer==0 && downArrow){
+                    this.coolDownTimer=1;
+                    if(!this.dialogueStarted){
+                        this.dialogueStarted=true;
+                        return;
+                    }
+
+                    this.di+=1;                    
+                    if(this.di >= this.dialogue.length)
+                        this.di=0;
+                }
+             }
+             disable()
+                {
+                    this.dialogueStarted=false;
+                    this.di=0;
+                    this.coolDownTimer=0;
+                    console.log('disabled');
+                }
+            update()
+             {
+                this.runCoolDown();
+                this.listenForKeys();
+                return false;
+             }
+            display()
+             {    
+             if(!this.dialogueStarted)
+                {
+                 this.displayPrompt();
+                 return;
+                }         
+             ctx.save();
+             ctx.translate(this.position.x- gameManager.camera.position.x,
+                           this.position.y- gameManager.camera.position.y);
+             ctx.fillStyle="#604020";
+             ctx.strokeStyle="#604020";
+             ctx.beginPath();
+             ctx.rect(-this.width/2,-this.height/2,this.width,this.height);          
+             ctx.stroke();
+             ctx.fill();
+             
+             ctx.restore();
+             this.displayDialogue();
+             }
+        }
+    //messagebox ends
     //husk miner ends
-    
+ 
+   
 	class Husk
 		{
-		constructor(x,y,wid,hei,spriteGroups,spriteId='husk0')
+		constructor(x,y,wid,hei,spriteGroups,dialogue,spriteId='husk0')
 			{
 			 this.position= new CreateVector(x,y);
+             this.dialogue=dialogue;
+             this.npc=dialogue.length!=0;
+             this.messagebox=false;
+             if(this.npc)
+                this.messageBox=new MessageBox(this,this.dialogue);
 			 this.permPosition= this.position.copy();
 			 this.width = wid * xscale;
 			 this.height= hei * yscale;
@@ -3885,14 +5226,14 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.animInQueue=null;
 			 this.animationFrame=0;			 
 			 this.sprite_type='husk_sentry';
-			 this.state='idle';
+			 this.state=this.npc?'friendly':'idle';
 			 this.raycastLength=320*xscale;
-			 this.attackProxim=150*xscale;
+			 this.attackProxim=75*xscale;
 			 this.playerOutDistance=500*xscale;
 			 this.startled=false;
 			 this.lastAttackTime=0;
-			 this.maxAttackGap=1000;
-			 this.maxHealth=20;
+			 this.maxAttackGap=500;
+			 this.maxHealth=100;
 			 this.health=this.maxHealth;
 			 this.spriteGroups=spriteGroups;
 			 for(let grp of spriteGroups)
@@ -3900,7 +5241,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.hit_box=new HitBox(x,y,this.width*0.5,this.height*0.5,[
 			 	                                                        gameManager.collission_sprites
 			 	                                                        // gameManager.active_sprites
-			 	                                                        ],'huskhitbox');
+			 	                                                        ],this,'huskhitbox');
 			 this.image_offset=new CreateVector(0,-45*xscale);
 			 this.huskHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,'#222222','#FF0000',[gameManager.visible_sprites],false,'huskhealth');
 			 this.huskHealthBar.onScreen=false;
@@ -3913,19 +5254,21 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 			 this.invincibleState=false;
 		 	 this.invin_count=0;
-		 	 this.max_invin_time=2000;
+		 	 this.max_invin_time=500;
 		 	 this.flickerCount=0;
 			 this.maxFlickerTime=100;
 
 			 this.longAttackCount=0;
-			 this.maxLongAttackCount=2000;		
+			 this.maxLongAttackCount=1500;		
 			 this.meleeOver=false;
 			 this.waitTimerMeleeEnd=0;
-			 this.maxWaitTimeAfterMelee=2000; 
+			 this.maxWaitTimeAfterMelee=500; 
 
 			 this.initSetupDone=false;
 		 	 this.maxRushTime=1500;
 		 	 this.retreatDirSet=false;
+             this.foundTime=0;
+             this.playerInView=false;
 			}
 
 		manageInvincibility()
@@ -3980,10 +5323,11 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 takeDamage(dmg,dir=0)
 		 	{
 		 	//this.acceleration.add(new CreateVector(dir,0));
-
+            if(this.state=="friendly") this.state="idle";
 		 	if(this.invincibleState) return false;	
 		 	this.invincibleState=true;	
 	 		this.health-=dmg;
+            document.querySelector('#retroJump').play();
 	 		this.huskHealthBar.updateValue(this.health);
 	 		this.huskHealthBar.onScreen=true;
 	 		if(this.health<=0)
@@ -4054,6 +5398,9 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                	case 'idle':
                		this.IdleBehav();
                		break;
+                case 'friendly':
+                    this.FriendlyBehav();
+                    break;
                	case 'agro':
                		this.AgroBehav();
                		break;
@@ -4199,6 +5546,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			{
 			  this.velocity.x=Lerp(this.velocity.x,0,2);	
 			  this.switchAnimation('idle');
+
 			  if(this.PlayerDetected(1))
 			  	{
 		  		this.state='agro';
@@ -4210,6 +5558,45 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		  		this.sx=-1;
 			  	}
 			}
+			
+			
+			
+        FriendlyBehav()
+            {
+             this.velocity.x=Lerp(this.velocity.x,0,2);
+             this.switchAnimation('idle');
+             if(gameManager.runningClock - this.foundTime < 2000){
+                this.messageBox.update();
+                this.messageBox.display();
+             }             
+             if(this.PlayerDetected(1,this.raycastLength*0.5))
+                {  
+                this.foundTime=gameManager.runningClock;              
+                this.sx=1;                
+                if(!this.playerInView)
+                	{
+                	  // document.querySelector('#cornifer').play();
+                	  playRandomCornifer();
+                	  this.playerInView=true;                	  
+                	}                
+                }
+              else if(this.PlayerDetected(-1,this.raycastLength*0.5))
+                {  
+                this.foundTime=gameManager.runningClock;              
+                this.sx=-1;                
+                if(!this.playerInView)
+                	{
+                	  // document.querySelector('#cornifer').play();
+                	  playRandomCornifer();
+                	  this.playerInView=true;                	  
+                	} 
+                }
+              else if(this.messageBox.dialogueStarted &&  gameManager.runningClock - this.foundTime> 2000)
+              	{
+                this.messageBox.disable();
+                this.playerInView=false;                
+              	}
+            }
 		
 		RetreatBehav()
 			{
@@ -4252,7 +5639,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 				if(this.longAttackCount!=0) this.longAttackCount=0;
 				}
 			else if(this.animation!='startle')
-				{				
+				{		
+                 // this.lastAttackTime=gameManager.runningClock;		
 				 this.switchAnimation('walking');
  				 this.acceleration.add(this.horiForce.copy().mult(this.sx));
  				 this.checkJumpPos();
@@ -4559,6 +5947,16 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 return false;
 		 	}
 		}
+    function DestroyAllBarriersInScene(){
+        let arr=[];
+        for(let x of gameManager.visible_sprites)        
+            if(x.sprite_type=="barrierTree")
+                arr.push(x);
+        for(let elem of arr){
+            elem.burn();
+        }
+        
+    }
 	class BarrierTree
 		{
 		 constructor(x,y,wid,hei,spriteGroups)
@@ -4575,13 +5973,14 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.sprite_type='barrierTree';
 			 this.hit_box=new HitBox(x,y,this.width*0.3,this.height*0.9,[gameManager.collission_sprites,
 			 														     // gameManager.visible_sprites                                                
-			 	                                                        ],'treehitbox');
+			 	                                                        ],this,'treehitbox');
 		 	}
 		 burn()
 		 	{
 		 		destroySelf(this.hit_box);
 		 		destroySelf(this);
-                for(let i=0;i<5;i++)
+
+                for(let i=0;i<1;i++)
                     SpawnClouds(this.position);
 		 	}
 		 display()
@@ -4629,6 +6028,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
     	 	}
          spawnTrees()
             {
+              SpawnClouds(this.br1pos.x+this.position.x,this.br1pos.y+this.position.y);
+              SpawnClouds(this.br2pos.x+this.position.x,this.br2pos.y+this.position.y);
               this.tree1= new BarrierTree(this.br1pos.x+this.position.x,
                                this.br1pos.y+this.position.y,
                                630*xscale,955*yscale,
@@ -4680,7 +6081,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                     return true;
                     }
                }
-             return false;  
+             return true;  
             }
     	 display()
     	 	{
@@ -4710,6 +6111,9 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.width=wid*xscale;
 			 this.height=hei*yscale;
 			 this.numJumps=0;
+             this.casting=false;
+             this.lastSlash=1;
+             /*
 			 let idle_images=Array(10).fill(0).map((x,i)=>'E_E_Sword__Idle_00'+i+'.png');
 			 let run_images= Array(10).fill(0).map((x,i)=>'E_E_Sword__Run_00'+i+'.png');
 			 let slash_images=Array(10).fill(0).map((x,i)=>'E_E_Sword__Attack_00'+i+'.png');
@@ -4718,8 +6122,21 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 				  'run' :LoadImages(folderPath+'Run',run_images),
 			 				  'slash':LoadImages(folderPath+'Slash',slash_images)
 							 };
+             */
+             let idle_images=Array(5).fill(0).map((x,i)=>'Idle'+(i+1)+'.png');
+             let run_images= Array(6).fill(0).map((x,i)=>'Run'+(i+1)+'.png');
+             let slash_images=Array(8).fill(0).map((x,i)=>'Attack'+(i+1)+'.png');
+             let slash_images2=Array(11).fill(0).map((x,i)=>i+'.png');
+             let death_images=Array(6).fill(0).map((x,i)=>i+'.png');
+             let folderPath='sprites/sturdyFool/';
+             this.animations={'idle':LoadImages(folderPath+'Idle',idle_images),
+                              'run' :LoadImages(folderPath+'Run',run_images),
+                              'slash':LoadImages(folderPath+'Attack',slash_images),
+                              'slash2':LoadImages(folderPath+'Attack2',slash_images2),
+                              'death':LoadImages(folderPath+'Death',death_images)
+                             };
 			 this.healFlash= LoadImages('sprites/protagonist',['drinkup.png'])[0];
-			 this.animationFractions={'idle':0.8,'run':0.4,'slash':0.2};
+			 this.animationFractions={'idle':0.4,'run':0.4,'slash':0.3,'slash2':0.2,'death':0.2};
 			 this.animation='idle';
 			 this.animationFrame=0;
 			 this.animInQueue=null;
@@ -4734,20 +6151,28 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.velocity=new CreateVector(0,0);
 			 this.maxHoriVel_player=6*xscale;
              this.maxVertVel_player=20*yscale;
-             this.maxVertVel_player_sliding=10*yscale;
+             this.maxVertVel_player_sliding=6*yscale;
              this.IsInContactWithWallVar=0;
 			 this.maxVelocity=new CreateVector(this.maxHoriVel_player,this.maxVertVel_player);
+             this.gravityScale=1*yscale;
+            //vars introduced on 07-05-2023 cntrl-F date to see details
+             this.jumpingForce_onfirst_jump=3*this.gravityScale;
+             this.jumpingForce_onsecond_jump=3*this.gravityScale;
+             this.maxJumpTime_onfirst_jump=300;
+             this.maxJumpTime_onsecond_jump=200;
+             //vars introduced on 07-05-2023 cntrl-F date to see details ends
 			 this.horiForce=new CreateVector(0.8*xscale,0);
+             /*
+             this.manual_velocity=new CreateVector(0,0);
+             this.manual_horizontal_velocity=5*xscale;
+             //defunct for the moment
+             */
              this.wallForceWhileJumping=new CreateVector(2*xscale,0);
-			 this.gravityScale=1*yscale;
+			 
+             this.isOnContactWithGround=true;
 			 this.sx=1;
 			 this.sy=1;
-             //vars introduced on 07-05-2023 cntrl-F date to see details
-			 this.jumpingForce_onfirst_jump=3.5*this.gravityScale;
-			 this.jumpingForce_onsecond_jump=2*this.gravityScale;
-			 this.maxJumpTime_onfirst_jump=250;
-			 this.maxJumpTime_onsecond_jump=250;
-			 //vars introduced on 07-05-2023 cntrl-F date to see details ends
+
 			 this.jumpingForce=3.5*this.gravityScale;
 			 this.spaceTrigger=true;
 			 this.jumping=false;
@@ -4758,25 +6183,28 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.sideWaysShift=40*xscale;
 		 	 this.downCheckRaycast=80*yscale;
 		 	 this.slashTrigger=true;
+             this.slashTrigger2=true;
 		 	 // gameManager.camera.tgt=this;
 
 		 	 this.health=100;
 		 	 this.maxHealth=100;
 		 	 this.hitBoxSpawned=false;
 		 	 this.weaponDamage=10;
-		 	 this.energy = 50;
-		 	 this.maxEnergy=100;
+		 	 this.energy = 100;
+		 	 this.maxEnergy=100;             
 		 	 this.energyRefillRate=0.25
 		 	 this.energyDepleteRate=10;
-		 	 this.energyCosts={"slash":50,"jump":0};
+             this.hitCredit=100;
+             this.maxHitCredit=100;
+		 	 this.energyCosts={"slash":5,"jump":0};
 
 		 	 gameManager.playerHealthBar.setValues(this.health,this.maxHealth);
-		 	 gameManager.playerEnergyBar.setValues(this.energy,this.maxEnergy);
+		 	 gameManager.playerEnergyBar.setValues(this.hitCredit,this.maxHitCredit);
 
 		 	 this.hit_box=new HitBox(x,y,this.width*0.5,
 		 	 	                         this.height,
 		 	 	                         [gameManager.collission_sprites		 	 	                          
-		 	 	                         ],
+		 	 	                         ],this,
 		 	 	                         'playerhitbox');
 		 	 this.invincibleState=false;
 		 	 this.invin_count=0;
@@ -4802,24 +6230,65 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.dashStarted=false;	
 		 	 this.reverseDashing=false;	 
 
-		 	 this.inEnemyRadar=false;	 
+		 	 this.inEnemyRadar=false;
+             this.gravitySwitchedOff=false;
+             this.gravityPauseTime=0;
+
+             this.maxParamChangeTime=2000;
+             this.parameterChangedClock=0;	
+             // this.wallContacted=false;
+             this.firstStruck=false;
+             this.struckTime=0;
+             this.slashQueue=[];
+             this.slashQueueFull=false;
+             this.onAir=false;
+             // this.startExhausting=false;
 			}
-		
+        //delete this block after implementing chaining    
+		ResetFirstStruck(){
+            if(this.lastSlash==1) return;
+            if(gameManager.runningClock-this.struckTime > 1000) this.lastSlash=1;            
+        }
+        RecordFirstStrike(){
+            this.struckTime=gameManager.runningClock;
+            this.lastSlash=0;
+        }
+        //delete this block ends
         CheckIfIsInContactWithWall()
             {
                 for(let x of gameManager.wall_grippers)
                     {
-                     if(b_collision(this,x))
-                        {                         
-                         this.IsInContactWithWallVar=Math.sign(x.position.x-this.position.x);
-                         this.maxVelocity.y=this.maxVertVel_player_sliding/4;                         
+                     if(b_collision(this.hit_box,x))
+                        {    
+                         if(this.IsInContactWithWallVar==0)
+                            {                               
+                            this.IsInContactWithWallVar=Math.sign(x.position.x-this.position.x);
+                            this.velocity.y=0;
+                            this.maxVelocity.y=this.maxVertVel_player_sliding;	
+                            
+                            }                                              
                          return true;   
                         } 
                     }
+
                 this.IsInContactWithWallVar=0;
                 this.maxVelocity.y=this.maxVertVel_player;               
                 return false;
             }
+
+        fillHitCredits(){
+            if(this.hitCredit >= this.maxHitCredit) 
+                return;
+            this.hitCredit+=30;
+            if(this.hitCredit > this.maxHitCredit) this.hitCredit=this.maxHitCredit;
+            gameManager.playerEnergyBar.updateValue(this.hitCredit);
+        }
+        hasEnoughCredits(){
+            if(this.hitCredit < 20) return false;
+            this.hitCredit-=15;
+            if(this.hitCredit<0) this.hitCredit=0;
+            return true;
+        }
 		handleHealing()
 			{
 			 if(gameManager.runningClock - this.lastHealTime < this.healCoolDown)
@@ -4851,9 +6320,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			this.maxEnergy = maxEnergy;
 			this.weaponDamage = weaponDamage;
 			this.experience = experience;
-			this.health = health;
+			this.health = health; 
 			gameManager.playerHealthBar.setValues(this.health,this.maxHealth);
-		 	gameManager.playerEnergyBar.setValues(this.energy,this.maxEnergy);	
+		 	// gameManager.playerEnergyBar.setValues(this.energy,this.maxEnergy);	
+            gameManager.playerEnergyBar.setValues(this.hitCredit,this.maxHitCredit);
 			}
 
 		 updateParams(maxHealth,maxEnergy,weaponDamage)
@@ -4862,7 +6332,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.maxEnergy=maxEnergy;
 		 	 this.weaponDamage=weaponDamage;
 		 	 gameManager.playerHealthBar.setValues(this.health,this.maxHealth);
-		 	 gameManager.playerEnergyBar.setValues(this.energy,this.maxEnergy);
+		 	 // gameManager.playerEnergyBar.setValues(this.energy,this.maxEnergy);
 		 	}
 		 update_and_display_hitbox()
 		 	{
@@ -4903,17 +6373,33 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			  			  
 			  	}
 			}
-
-
+         
+        fixChangedParameters(){
+            if(this.parameterChangedClock==0) return;
+            if(gameManager.runningClock - this.parameterChangedClock > this.maxParamChangeTime)
+            {
+                this.parameterChangedClock=0;
+                this.maxVelocity.x=this.maxHoriVel_player;
+                
+            }
+        }
 		takeDamage(dmg,dir=0)
 		 	{	
-		 	this.acceleration.add(new CreateVector(dir,0));	 	
+            // console.log(`player takes damage, acceleration added:${dir}`);
+		 	 	
 		 	// return false;
 		 	if(this.invincibleState && !gameManager.playerDied) return false;
 		 	if(!gameManager.playerDied)
 		 	document.querySelector('#LossBuzz').play();	
-		 	this.invincibleState=true;	 	
+		 	this.invincibleState=true;
+            if(Math.abs(dir)>0){	 	
+            if(Math.abs(dir) > this.maxVelocity.x){
+                this.maxVelocity.x=Math.abs(dir);
+                
+                this.parameterChangedClock=gameManager.runningClock;
+            }
 		 	this.acceleration.add(new CreateVector(dir,0));
+            }
 	 		this.health-=dmg;
 	 		gameManager.playerHealthBar.updateValue(this.health);	 		
 	 		if(this.health<=0)
@@ -4934,12 +6420,12 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			{
 			 if(this.energy >= this.maxEnergy) return false;
 			 this.energy+=this.energyRefillRate;
-			 gameManager.playerEnergyBar.updateValue(this.energy);
+			 // gameManager.playerEnergyBar.updateValue(this.energy);
 			}
 		 	
 		 runAnimation()
 		 	{
-	 		this.animationFrame+=this.animationFractions[this.animation];	 		
+	 		this.animationFrame+=this.animationFractions[this.animation];            	
 	 		if(this.animationFrame >= this.animations[this.animation].length)
 	 			{
 	 			 this.animationFrame=0;
@@ -4954,21 +6440,39 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 spawnHitBoxOnSlash()
 		 	{
 		 	
-	 		if(this.animation=="slash" && parseInt(this.animationFrame)==6 && !this.hitBoxSpawned)
+	 		if((this.animation=="slash" || this.animation=="slash2") && parseInt(this.animationFrame)==6 && !this.hitBoxSpawned)
 	 			{
-	 			document.querySelector('#RockSmash').play();
+	 			
 	 			this.hitBoxSpawned=true;
+                if(!this.casting)
 	 			new DamageHitBox(this.position.x,
 	 							 this.position.y,
-	 							 this.width*0.2,
-	 							 this.height*0.2,
-	 							 [//gameManager.visible_sprites,
+	 							 this.width*0.4,
+	 							 this.height*0.8,
+	 							 [gameManager.visible_sprites,
 	 							 	gameManager.hitbox_sprites,
 	 							 	gameManager.active_sprites],
 	 							 'player_hitbox',
 	 							 this,
-	 							 40,0,this.weaponDamage,this.sx*1.5);
-	 			/*
+	 							 40,0,this.weaponDamage,this.sx*1.5,50);
+                else{
+                this.casting=false;
+                if(this.hitCredit > 20)
+                    {
+                    this.hitCredit-=5;
+                    gameManager.playerEnergyBar.updateValue(this.hitCredit);
+                    new Bullet(this.position.x+this.sx*20*xscale,
+                               this.position.y,
+                               160*xscale,
+                               160*yscale,
+                               this,[gameManager.visible_sprites,gameManager.active_sprites]
+                              );
+                    this.switchOffGravity();
+
+                    }
+                    
+                }
+                /*
 	 			new ThornyBall(this.position.x,
 							   this.position.y,
 							   30*xscale,
@@ -4994,10 +6498,20 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 		}
 		 	return false;
 		 	}
+		 
+		 recordOnAir(){
 
-
+		 	if(this.checkIfOnGround() && this.onAir) 
+		 		{
+		 		this.onAir=false;
+		 		gameManager.screenShakeTimer=gameManager.runningClock;
+		 		}
+		 	else if(!this.checkIfOnGround() && !this.onAir) this.onAir=true;
+		 }
 		 jumpingContols()
 		 	{
+		 	 // this.recordOnAir(); #can be used for screenshaking
+
 		 	/*
 		 	 if(this.checkIfOnGround())
 		 		DisplayInGaps("player is on ground");
@@ -5009,22 +6523,23 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	{
 		 	 	 if(this.spaceTrigger  && !this.jumping && this.numJumps<2)
 		 	 	 	{ 
-                    if(Math.abs(this.IsInContactWithWallVar)==1)	 
-                        {
-                        this.reverseDashing=true;
-                        // this.HoriForceBanned=true;        
-                        // this.fixedWallForce.setVec(this.wallForceWhileJumping.copy().mult(-1*this.sx));  
-                        }
+                   
+                    // this.velocity.y=-this.maxVelocity.y;
+                    this.velocity.y=0;
+  					if(Math.abs(this.IsInContactWithWallVar)==1)                      
+                        this.reverseDashing=true; 
                     //snippet added on 07-05-2023 to implement different jumping parameters starts    
                     if(this.numJumps==0)
                     	{
                     	this.maxJumpTime=this.maxJumpTime_onfirst_jump;
                     	this.jumpingForce=this.jumpingForce_onfirst_jump;
+
                     	}
                     else
                     	{
 						this.maxJumpTime=this.maxJumpTime_onsecond_jump;
                     	this.jumpingForce=this.jumpingForce_onsecond_jump;
+                        
                     	}
                     //snippet added on 07-05-2023 to implement different jumping parameters ends
 		 	 	 	this.spaceTrigger=false;
@@ -5043,8 +6558,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 	this.jumpTimer=0;
 		 	 	 	}
 		 	 	 else if(this.jumping)
-		 	 	 	{
-		 	 	 	 this.acceleration.y-=this.jumpingForce;
+		 	 	 	{                     
+		 	 	 	 this.acceleration.y-=this.jumpingForce;                     
 		 	 	 	 this.jumpTimer+=deltaTime;		 	 	 	 
 		 	 	 	 if(this.jumpTimer > this.maxJumpTime)
 		 	 	 	 	{		 	 	 	 	 
@@ -5052,23 +6567,43 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 	 	}
 		 	 	 	}
 		 	 	}
-		 	 else if(!this.spaceTrigger && this.numJumps<2 ) 
+		 	 else if(!this.spaceTrigger && this.numJumps<2) //
 		 	 	this.spaceTrigger=true;
 		 	 if(!GetKeyPressedx(gameManager.jumpKey) && this.jumping) this.jumping=false;
+             
+             
 		 	 if(!GetKeyPressedx(gameManager.jumpKey) && this.numJumps>0 && 
                 (this.checkIfOnGround()|| Math.abs(this.IsInContactWithWallVar) ) ) 
 		 	 	this.numJumps=0;
 		 	}
 		 applyGravity()
 		 	{
-		 	 if(this.dashing)
+             // if(this.isOnContactWithGround){
+             //    this.velocity.y=Math.max(this.velocity.y,0);
+             //    return;
+             // }
+             this.checkGravity();
+		 	 if(this.dashing || this.gravitySwitchedOff)
 		 	 	return false;
 		 	 this.acceleration.y+=this.gravityScale;
 		 	}
+        
+         switchOffGravity()
+            {
+             this.gravitySwitchedOff=true;
+             this.velocity.y=0;
+             this.gravityPauseTime=gameManager.runningClock;
+            }
+         checkGravity()
+            {
+                if(!this.gravitySwitchedOff) return;
+                if(gameManager.runningClock - this.gravityPauseTime > 200)
+                    this.gravitySwitchedOff=false;
+            }
 		 changeAnimation(anim)
 		 	{
-		 	if(this.animation=="slash") return false;
-	 		
+		 	if(this.animation=="slash" && anim!="slash2") return false;
+	 		if(this.animation=="slash2" && anim!="slash") return false;
 	 		if(this.animation == anim) return false;
 	 		else
 	 			{
@@ -5104,6 +6639,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 	  this.maxVelocity.x= this.dashSpeed*0.5;			 	  
 			 	  document.querySelector('#HitPaddleBloop').play();
 			 	 }
+			 
 		 	 this.acceleration.add(this.horiForce.copy().mult(-this.IsInContactWithWallVar*3));
 		 	 if(gameManager.runningClock - this.dashStartTime > this.maxDashTime*0.6)
 		 	 	 {
@@ -5117,30 +6653,80 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	{
 		 	 if(this.dashStartTime==0)
 			 	 {
-			 	  this.dashStarted=true;
+			 	  this.dashStarted=true;                  
 			 	  this.dashStartTime= gameManager.runningClock;
 			 	  this.maxVelocity.x= this.dashSpeed;
 			 	  this.velocity.y=0;
-			 	  SpawnClouds(this.position);
+			 	  // SpawnClouds(this.position);
 			 	  document.querySelector('#HitPaddleBloop').play();
 			 	 }
+             SpawnClouds(this.position,4);
 		 	 this.acceleration.add(this.horiForce.copy().mult(this.sx*3));
 		 	 if(gameManager.runningClock - this.dashStartTime > this.maxDashTime)
-		 	 	 {
+		 	 	 {                  
 		 	 	  this.dashing=false;
 		 	 	  this.dashStartTime=0;
 		 	 	  this.maxVelocity.x= this.maxHoriVel_player;
 		 	 	 }
 		 	}
+         //
+         exhaustSlashQueue()
+            {
+                // if(!this.startExhausting) return false;
+                if(this.slashQueue.length==0) 
+                    {
+                        if(this.slashQueueFull) this.slashQueueFull=false;
+                        return false;
+                    }
+                // console.log(`present running animation:${this.animation} here`)
+                // console.log(this.animationFrame)
+                // console.log(this.animations[this.animation].length)
+                if((this.animation=='slash' || this.animation=='slash2') &&
+                    (this.animationFrame< this.animations[this.animation].length-1) )
+                    {
+                     // console.log(`present running animation:${this.animation}`)
+                     if(this.slashQueue.length==1 && this.animInQueue!='idle') 
+                        {
+                        // console.log(`xanimation is ${this.animation}`)
+                        // console.log(`xsize is ${this.animations[this.animation].length}`)
+                        // console.log(`xpresent frame:${this.animationFrame}`)
+                        this.animInQueue='idle';
+                        }
+                     else if(this.slashQueue.length>1 && this.animInQueue!=this.slashQueue[1])
+                        {
+                        // console.log(`animation is ${this.animation}`)
+                        // console.log(`size is ${this.animations[this.animation].length}`)
+                        // console.log(`present frame:${this.animationFrame}`)
+                        // console.log("length of slash q:"+this.slashQueue.length);
+                        this.animInQueue=this.slashQueue[1];   
+                        // console.log(`next animation changed to ${this.animInQueue}`);
+                        }                
+                    }   
+                else if(this.animation=='slash' || this.animation=='slash2')
+                {
+                    if(this.slashQueue.length!=0 && this.slashQueue[0]!=this.animInQueue)
+                    {
+                    // console.log(`${this.slashQueue[0]} shifted out`);
+                    this.slashQueue.shift();
+                    }
+                }
+                else 
+                    this.changeAnimation(this.slashQueue[0]);
+
+            }
 		 manualControls()
 		 	{
+            // if(GetKeyPressedx("b")) this.startExhausting=true;
             if(this.reverseDashing)
             	{
             	 this.reverseDashFns();
             	 return;
             	}
-		 	if(this.invincibleState && this.invin_count < 0.5*this.max_invin_time)
+		 	if(this.invincibleState && this.invin_count < 0.5*this.max_invin_time){
+                
+                this.velocity.x=Lerp(this.velocity.x,0,4); 
 		 		return false; 
+            }
 		 	if(this.dashing)
 		 		{
 		 		 this.dashStateFns();
@@ -5163,38 +6749,93 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 			if(this.sx!=-1) this.sx=-1;
 		 			this.changeAnimation('run');
 		 			this.acceleration.sub(this.horiForce);
+                    // this.manual_velocity.x=-this.manual_horizontal_velocity;
 		 			}
 		 		else if(rightPress || rightArrow)
 		 			{
 		 			if(this.sx!=1) this.sx=1;
 		 			this.changeAnimation('run');
 		 			this.acceleration.add(this.horiForce);
+                    // this.manual_velocity.x=this.manual_horizontal_velocity;
 		 			}		 		
 		 		else
 		 			{
 		 			this.changeAnimation('idle');
-		 			this.velocity.x=Lerp(this.velocity.x,0,16);	 					 		
+		 			this.velocity.x=Lerp(this.velocity.x,0,4);	 
+                    // this.manual_velocity.x=0;					 		
 		 			}
 		 		}
 	 		else
 		 		{
-		 		this.velocity.x=Lerp(this.velocity.x,0,32);	 	
+		 		this.velocity.x=Lerp(this.velocity.x,0,32);	
+                // this.manual_velocity.x=0;   	
 		 		}
-
+            
 	 		if(GetKeyPressedx(gameManager.strikeKey) && this.slashTrigger)
 	 			{
-	 			 if(this.energy < this.energyCosts["slash"])
+	 			 if(this.energy < this.energyCosts["slash"] || this.slashQueueFull
+                    )
 	 			 	return false;
 	 			 this.energy-=this.energyCosts["slash"]; 
 	 			 this.slashTrigger=false;
-	 			 this.animInQueue="idle";
-	 			 this.changeAnimation("slash");	
-	 			 
-	 			}
-	 		else if(!GetKeyPressedx("z")&& !this.slashTrigger)
+	 			 // this.animInQueue="idle";
+                 if(this.slashQueue.length==0)                    
+                 this.slashQueue.push("slash");
+                 else{
+                    let last=this.slashQueue[this.slashQueue.length-1];
+                    if(last=='slash') this.slashQueue.push('slash2');
+                    else this.slashQueue.push('slash');
+                    if(this.slashQueue.length==4) this.slashQueueFull=true;
+                 }
+                 // console.log(JSON.stringify(this.slashQueue));
+                }
+            /*
+            //old strike code before slash chaining, delete after new
+            if(GetKeyPressedx(gameManager.strikeKey) && this.slashTrigger)
+                {
+                 if(this.energy < this.energyCosts["slash"] || 
+                    this.animation=="slash" || this.animation=="slash2"
+                    )
+                    return false;
+                 this.energy-=this.energyCosts["slash"]; 
+                 this.slashTrigger=false;
+                 this.animInQueue="idle";
+                 if(this.lastSlash==1)
+                    {
+                   this.changeAnimation("slash");   
+                    this.RecordFirstStrike();
+                    
+                    }
+                    else
+                    {                         
+                    this.changeAnimation("slash2");
+                    this.lastSlash=1;                
+                    }
+                }
+            */
+	 		else if(!GetKeyPressedx(gameManager.strikeKey)&& !this.slashTrigger)
 	 			{
+                
 	 			 this.slashTrigger=true;
 	 			}
+
+            if(GetKeyPressedx(gameManager.castKey) && this.slashTrigger2)
+                {
+                 // if(this.energy < this.energyCosts["slash"])
+                 //    return false;
+                 this.energy-=this.energyCosts["slash"]; 
+                 this.slashTrigger2=false;
+                 this.casting=true;
+                 this.animInQueue="idle";
+                 this.changeAnimation("slash"); 
+                 
+                }
+            else if(!GetKeyPressedx(gameManager.castKey)&& !this.slashTrigger2)
+                {
+                 this.slashTrigger2=true;
+                 
+                }
+
 	 			
 		 	}
 
@@ -5234,6 +6875,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 		 testCollisionWithLoot()
 		 	{
+            return false;//revisit
 		 	for(let x of gameManager.loot)
 	 			{
 	 			if(b_collision(this.hit_box,x))
@@ -5246,7 +6888,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 applyVelocity()
 		 	{		 	 	 	 
 		 	 this.hit_box.position.x+=this.velocity.x;
-		 	 
+		 	 // this.hit_box.position.x+=this.manual_velocity.x;
 		 	 for(let k in gameManager.collission_sprites)
 		 	 	{ 
 		 	 	 let x=gameManager.collission_sprites[k];
@@ -5318,15 +6960,16 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 update()
 		 	{
 		 	 if(!this.onScreen) return false;
+             this.fixChangedParameters();
 		 	 this.runAnimation();
 		 	 this.move();
 		 	 this.fallDamage();
-		 	 //this.testCollisionWithKillPlants();
-		 	 this.testCollisionWithLoot();
+             this.exhaustSlashQueue();
+             //this.ResetFirstStruck();	//used prior to slash chaining delete	
 		 	}
 		 display()
 		 	{		 	 
-		 	 if(!this.onScreen || !this.flickerControl()) return false;
+		 	 if(!this.onScreen || this.dashing || !this.flickerControl()) return false;
 
 		 	 ctx.save();
 		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
@@ -5361,6 +7004,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		  	 this.mouseLockY=0;	
 		  	 this.tgt=null;	  
 		  	 this.lerpFactor=4;	 
+		  	 this.shakeVals=[0,0];
 		  	}
 		  runWithMouse()
 		  	{
@@ -5392,9 +7036,120 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		  	 	this.position.x=Lerp(this.position.x,this.tgt.position.x-canvas.width/2,this.lerpFactor);
 		  	 if(followV)
 		  	 	this.position.y=Lerp(this.position.y,this.tgt.position.y-canvas.height/2,this.lerpFactor);
+		  	 this.shakeCamera();
 		  	}
+		   shakeCamera()
+		    {
+		    	this.position.x+=this.shakeVals[0];
+		    	this.position.y+=this.shakeVals[1];
+		    }
 
 		}
+//generic button starts
+	class GenericButton
+    	{
+        constructor(x,y,wid,hei,tex,btnType,btnGroups,btnName,parentPanel)      
+          {
+           this.position=new CreateVector(x,y);
+           this.parentPanel=parentPanel;
+           this.tex=tex;
+           this.sprite_type="generic button";
+           this.btnName=btnName;
+           this.btnType=btnType;
+           this.onScreen=true;
+           this.width=wid;
+           this.height=hei;
+           this.arrowCornerPoints=[[-0.5,-0.5],[0.5,0],[-0.5,0.5]];
+           this.mouseOverMe=false;
+           this.x_text_offset=-40;
+           this.y_text_offset=10;           
+           if(this.btnType=='rightArrow')             
+              this.tex='';
+           else if (this.btnType=='leftArrow')
+             {
+              this.tex='';
+              this.arrowCornerPoints=[[0.5,-0.5],[-0.5,0],[0.5,0.5]];
+             } 
+           this.arrowCornerPoints=this.arrowCornerPoints.map(x=>[x[0]*this.width,x[1]*this.height]);  
+           this.fillColor='#a3a375';
+           this.clickColor='#ccccb3';
+           this.btnGroups=btnGroups;
+           for(let grp of this.btnGroups)
+              {
+               grp.push(this);
+              }
+           this.mouseTrigger=false;
+           }
+        colorSwitch()
+            {           
+            let leftx=this.position.x - this.width/2;
+            let rightx = this.position.x + this.width/2;
+            let lefty=this.position.y - this.height/2;
+            let righty = this.position.y + this.height/2;        
+            if(mouseX > leftx && mouseX <rightx && mouseY > lefty && mouseY < righty )
+                { 
+                this.mouseOverMe=true;
+                if(mousePressed)
+                this.presentColor = this.fillColor;
+                else
+                this.presentColor=this.clickColor;  
+                }
+            else
+                {    
+                this.mouseOverMe=false;           
+                this.presentColor=this.fillColor;
+                }
+            }
+        update()
+            {
+             this.colorSwitch();  
+             if(mousePressed && !this.mouseTrigger)
+               {
+                this.mouseTrigger=true;
+                if(this.mouseOverMe)
+                    {
+                      this.specialButtonTask();
+                    }
+               }
+             else if(!mousePressed && this.mouseTrigger)
+                {
+                 this.mouseTrigger=false;                
+                }           
+            }
+        display()
+            {              
+             ctx.save();
+             ctx.translate(this.position.x,this.position.y);
+             ctx.fillStyle=this.presentColor;//#ccccb3
+             ctx.strokeStyle='#000000';
+             ctx.beginPath();
+             // ctx.rect(-this.width/2,-this.height/2,this.width,this.height);
+             if(this.btnType=='leftArrow' || this.btnType=='rightArrow')
+                this.draw_arrow_button();
+             else
+                ctx.ellipse(0,0,this.width/2,this.height/2,0,0,2*Math.PI);
+             ctx.stroke();
+             ctx.fill();             
+             ctx.restore();
+             w2screen(this.tex,this.position.x+this.x_text_offset,
+                               this.position.y+this.y_text_offset);
+            }
+
+        draw_arrow_button()
+            {                
+               ctx.moveTo(this.arrowCornerPoints[0][0],this.arrowCornerPoints[0][1]);
+               ctx.lineTo(this.arrowCornerPoints[1][0],this.arrowCornerPoints[1][1]);
+               ctx.lineTo(this.arrowCornerPoints[2][0],this.arrowCornerPoints[2][1]);
+               ctx.closePath();
+            }
+        specialButtonTask()
+            {
+                // console.log(`${this.btnType}`);
+                gameManager.performButtonPressFn(this.btnName);
+            }
+
+    	}
+//generic button ends
 	class Button
 		{
 		constructor(x,y,tex,btnGroups,enclosingPanel)
@@ -5516,7 +7271,33 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	  this.lboxFlickerMaxTime=200;
 		 	  this.pressedKeyCode=-2;
 		 	  this.mouseTrigger=true;
+              this.disappearingMessageStartTime=0;
+              this.disappearingMessage="";              
+              this.maxDisap=2000;
+              this.disFlickerGap=this.maxDisap/20;
+              this.disFlickTimer=0;
+              this.disFlickBool=true;
 		 	}
+         disFlickerControl(){
+            this.disFlickTimer+=deltaTime;
+            if(this.disFlickTimer > this.disFlickerGap){
+                this.disFlickTimer=0;
+                this.disFlickBool=!this.disFlickBool;
+            }
+            return this.disFlickBool;
+         }
+         displayTempMessage(){
+            if(this.disappearingMessageStartTime==0) return;
+            if(gameManager.runningClock - this.disappearingMessageStartTime>this.maxDisap){
+                this.disappearingMessageStartTime=0;
+            }    
+            if(this.disFlickerControl())        
+            w2screen(this.disappearingMessage,canvas.width/2,canvas.height/2,'#00FFFF');
+         }
+         showDisappearingMessage(msg){
+            this.disappearingMessageStartTime=gameManager.runningClock;
+            this.disappearingMessage=msg;
+         }
 
 		 clickedOutside()
 		 	{
@@ -5557,7 +7338,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 else
 			 	 {
 			 	  this.showSecondScreen= true;
-			 	  this.maxEntries=4;
+			 	  this.maxEntries=5;
 			 	 }
 		 	}
 		 update()
@@ -5565,6 +7346,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 
 		 	 if(!gameManager.gamePaused || !gameManager.player) 
 		 	 	{
+                this.focussed=1;
 		 	 	if(this.showSecondScreen) this.switchScreen();
 		 	 	return false;	
 		 	 	}	 	
@@ -5618,13 +7400,16 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	}
 		 checkForKeyPress()
 		 	{
-		 	 if(downArrow && this.coolDownTimer==0)
+             let freeToMove=true;
+             // freeToMove= !this.showSecondScreen || (this.showSecondScreen && this.keyFocussed==-1 );
+             freeToMove=this.keyFocussed==-1;
+		 	 if(downArrow && this.coolDownTimer==0 && freeToMove)
 		 	 	{
 		 	 	 this.focussed+=1;
 		 	 	 if(this.focussed > this.maxEntries) this.focussed=1;
 		 	 	 this.coolDownTimer=1;
 		 	 	}
-		 	 else if(upArrow && this.coolDownTimer==0)
+		 	 else if(upArrow && this.coolDownTimer==0 && freeToMove)
 		 	 	{
 		 	 	 this.focussed-=1;
 		 	 	 if(this.focussed < 1) this.focussed=this.maxEntries;
@@ -5633,11 +7418,13 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 else if(rightArrow && this.coolDownTimer==0)
 		 	 	{
 		 	 	  this.coolDownTimer=1;
+                  if(!this.showSecondScreen)
 		 	 	  this.changeParam();
 		 	 	}
 		 	 else if(leftArrow && this.coolDownTimer==0)
 		 	 	{
 		 	 	  this.coolDownTimer=1;
+                  if(!this.showSecondScreen)
 		 	 	  this.changeParam(-1);
 		 	 	}
 
@@ -5645,6 +7432,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 display()
 		 	{
 		 	 if(!gameManager.gamePaused) return false;
+             
 		 	 ctx.save();
 		 	 ctx.translate(this.position.x,this.position.y);
 		 	 ctx.fillStyle="#604020";
@@ -5657,6 +7445,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 if(this.showSecondScreen) this.showKeyReAssignDetails();
 		 	 else this.showStats();
 		 	 this.displayAndUpdateButtons();
+             this.displayTempMessage();
 		 	}
 
 		 showKeyReAssignDetails()
@@ -5675,12 +7464,13 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	this.enterTrigger=true;
 		 	 let startx=this.position.x -this.width*0.4;
 		 	 let starty=this.position.y - this.height*0.4;
-		 	 let shifts=[[100,0],[-100,80],[0,80],[0,80],[0,80],[500,0]];
+		 	 let shifts=[[100,0],[-100,80],[0,80],[0,80],[0,80],[0,80]];
 		 	 let dialogues=["Use Arrow keys to navigate",
 		 	 			    "Jump :  "+gameManager.jumpKey,
 		 	 			    "Dash :  "+gameManager.dashKey,
 		 	 			    "Strike:  "+gameManager.strikeKey,
-		 	 			    "Heal:  "+gameManager.healKey		 	 			    
+		 	 			    "Heal:  "+gameManager.healKey,
+                            "Cast:  "+gameManager.castKey		 	 			    
 		 	 			   ];
 		 	 for(let i in dialogues)
 		 	 	{	
@@ -5699,19 +7489,24 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 assignNewKeys()
 		 	{
 		 	if(pressedKeyCode==-1) this.pressedKeyCode=-2;
-	 		if(this.keyFocussed==-1) return false;	 		
+            if(pressedKeyCode==-1) return false;
+	 		if(this.keyFocussed==-1) return false;
+             
 	 		if(pressedKeyCode!=this.pressedKeyCode)
-	 			{	 				
+	 			{	 	
+                  		
 	 			  this.pressedKeyCode=pressedKeyCode;	 			  
 	 			  if((pressedKeyCode>64 && pressedKeyCode <91)||
-	 			  	(pressedKeyCode>97 && pressedKeyCode < 122)||
-	 			    (pressedKeyCode==32))
+	 			  	(pressedKeyCode>96 && pressedKeyCode < 123)||
+	 			    (pressedKeyCode==32)||specKeys.has(pressedKeyCode))
 	 			  	{
 	 			  	 let chosenKey="";
 	 			  	 if(pressedKeyCode>64 && pressedKeyCode <91) 
 	 			  	  chosenKey=String.fromCharCode(pressedKeyCode+32);
-	 			  	 else
+	 			  	 else if(!specKeys.has(pressedKeyCode))
 	 			  	  chosenKey=String.fromCharCode(pressedKeyCode); 
+                     else
+                      chosenKey=GetSpecialKeyNames(pressedKeyCode);
 	 			  	 switch (this.keyFocussed)
 	 			  	 	{
 	 			  	 	 case 1:	 			  	 	   
@@ -5723,7 +7518,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 			  	 	   	 	gameManager.storeKeyDataToLocalStorage();
 	 			  	 	   	 }
 	 			  	 	   	else 
-	 			  	 	   		alert("duplicate key");
+	 			  	 	   		this.showDisappearingMessage("duplicate key");
 	 			  	 	   break;
 	 			  	 	 case 2:
 	 			  	 	   if(gameManager.isNewKey(chosenKey))
@@ -5734,7 +7529,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 			  	 	   	 	gameManager.storeKeyDataToLocalStorage();
 	 			  	 	   	 }
 	 			  	 	   	else 
-	 			  	 	   		alert("duplicate key");
+	 			  	 	   		this.showDisappearingMessage("duplicate key");
 	 			  	 	   break;
 	 			  	 	 case 3:
 	 			  	 	   if(gameManager.isNewKey(chosenKey))
@@ -5745,7 +7540,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 			  	 	   	 	gameManager.storeKeyDataToLocalStorage();
 	 			  	 	   	 }
 	 			  	 	   	else 
-	 			  	 	   		alert("duplicate key");
+	 			  	 	   		this.showDisappearingMessage("duplicate key");
 	 			  	 	   break;
 	 			  	 	 case 4:
 	 			  	 	   if(gameManager.isNewKey(chosenKey))
@@ -5756,8 +7551,19 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 	 			  	 	   	 	gameManager.storeKeyDataToLocalStorage();
 	 			  	 	   	 }
 	 			  	 	   	else 
-	 			  	 	   		alert("duplicate key");
+	 			  	 	   		this.showDisappearingMessage("duplicate key");
 	 			  	 	   break;
+                        case 5:
+                           if(gameManager.isNewKey(chosenKey))
+                             {
+                                gameManager.allKeys[4]=chosenKey;
+                                gameManager.castKey=chosenKey;
+                                console.log(`new cast key:${chosenKey}`);
+                                gameManager.storeKeyDataToLocalStorage();
+                             }
+                            else 
+                                this.showDisappearingMessage("duplicate key");
+                           break;
 	 			  	 	}
 	 			  	}
 	 			  
@@ -5789,6 +7595,43 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	}
 		 	}
 		}
+	 //Parallax class starts
+//constructor of GeneralSprite(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups)
+	class Parallax extends GeneralSprite
+		{
+		 constructor(imagex,spriteGroups,widthToBeDisplayed,heightToBeDisplayed,fullWidth,fullHeight,xSpeed,ySpeed)
+		 	{
+		 	 super(0,0,975,640,0,0,spriteGroups);
+		 	 
+		 	 this.imagex=imagex;
+		 	 this.startPoint=new CreateVector(0,0);
+		 	 this.wTD=widthToBeDisplayed;
+		 	 this.hTD=heightToBeDisplayed;
+		 	 this.fullWidth=fullWidth;
+		 	 this.fullHeight=fullHeight;
+		 	 this.speed=new CreateVector(xSpeed,ySpeed);		 	 
+		 	}
+		 update()
+		 	{
+
+		 	 this.startPoint.add(this.speed);
+		 	 if(this.startPoint.x+this.wTD >= this.fullWidth)
+		 	 	this.startPoint.x=0;
+		 	 if(this.startPoint.y+this.hTD>=this.fullHeight) 
+		 	 	this.startPoint.y=0;
+		 	}
+		 display()
+		 	{		 	
+		 	  ctx.drawImage(this.imagex,
+		 	  			    this.startPoint.x,this.startPoint.y,
+		 	  			    this.wTD,this.hTD,
+		 	  			    this.position.x,this.position.y,
+		 	  			    canvas.width,canvas.height
+		 	  			   );
+		 	}
+
+		}
+	//Parallax class ends
 
 
 	class GameManager
@@ -5811,6 +7654,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.scenesReady=[];
 		 	 this.scenesLoaded=[];
 		 	 this.listOfDestroyedSprites=[];
+		 	 		 	 
 		 	 this.testing=false;
 		 	 this.playerDiedClock = 0;		 	 
 		 	 this.runningClock=0;		 	 
@@ -5819,7 +7663,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.gamePaused=false;
 		 	 this.inTransition=false;
 		 	 this.sceneForward=true;
-		 	 this.followMouse= false;
+		 	 this.followMouse=false;
 		 	 this.sceneStartTime= 0;
 		 	 this.positionAdjuster=new PositionAdjuster(null,[this.visible_sprites,this.active_sprites]);
 
@@ -5830,15 +7674,40 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 			 this.bottomY=2000;
 			 this.playerDied=false;
 
+			 this.onStartUpScreen=true;
+			 this.loader_ui_visiblesprites=[];
+			 this.loadedStartScreen=false;
+
 			 this.dashKey="c";
 			 this.jumpKey=" ";
 			 this.strikeKey="z";
 			 this.healKey="q";
-			 this.allKeys=[this.jumpKey,this.dashKey,this.strikeKey,this.healKey];
+             this.castKey="x";
+			 this.allKeys=[this.jumpKey,this.dashKey,this.strikeKey,this.healKey,this.castKey];
+		 	
+		 	 this.screenShakeTimer=0;
+		 	 this.maxScreenShakeTime=500;
+		 
 		 	}
+		 MindScreenShake(){
+		 	
+		 	if(this.screenShakeTimer==0) return;
+		 	if(gameManager.runningClock - this.screenShakeTimer > this.maxScreenShakeTime)
+		 		{		 		
+		 		this.screenShakeTimer=0;
+		 	    this.camera.shakeVals[0]=0;
+		 	    this.camera.shakeVals[1]=0;
+		 	    return;
+		 	    }
+		 	this.camera.shakeVals[0]=Math.random()*20;
+		 	this.camera.shakeVals[1]=Math.random()*20;
+		 }
 		 isNewKey(keyx){
-		 	for(let i in this.allKeys)		 		
+            // console.log('checking:'+keyx);
+		 	for(let i in this.allKeys)	{	
+                 // console.log('found '+this.allKeys[i]); 		
 		 		 if(this.allKeys[i]==keyx) return false;
+                }
 		 	return true;		 		
 		 }
 		 togglePauseScreen(){
@@ -5861,11 +7730,13 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	this.dashKey=keyData.dashKey;
 		 	this.strikeKey=keyData.strikeKey;
 		 	this.healKey=keyData.healKey;
-		 	this.allKeys=[this.jumpKey,this.dashKey,this.strikeKey,this.healKey];
+            if (keyData.castKey)
+            this.castKey=keyData.castKey;
+		 	this.allKeys=[this.jumpKey,this.dashKey,this.strikeKey,this.healKey,this.castKey];
 		 }
 		 storeKeyDataToLocalStorage(){
 		 	let keyData={"jumpKey":this.jumpKey,"dashKey":this.dashKey,
-		 	             "strikeKey":this.strikeKey,"healKey":this.healKey
+		 	             "strikeKey":this.strikeKey,"healKey":this.healKey,"castKey":this.castKey
 		                };
 		    localStorage.setItem("gameKeyData",JSON.stringify(keyData));
 		 }
@@ -5929,6 +7800,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	this.kill_plants=[];
 		 	this.killables=[];
 		 	this.enemy_sprites=[];
+
 		 	if(!this.player)
 		 		{
 		 		this.visible_sprites=[this.playerHealthBar,this.playerEnergyBar,this.positionAdjuster];
@@ -5960,13 +7832,64 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 		 update()
 		 	{
-		 	 //DisplayInGaps(this.collission_sprites.map(x=>x.sprite_type).reduce((s,x)=>s+x+',',''));		 	 
+		 	 //DisplayInGaps(this.collission_sprites.map(x=>x.sprite_type).reduce((s,x)=>s+x+',',''));	
 		 	 this.runClock();
-		 	 this.runGame();
-		 	 		 	 
+
+		 	 if(this.onStartUpScreen)
+		 	 	{
+		 	 	  this.showStartScreen();                  
+		 	 	  return;
+		 	 	} 	 
+		 	 
+		 	 this.runGame();		 	 		 	 
 		 	 this.checkScenes();	
 		 	 this.showExperience();	
 		 	 this.showLevelUpBox(); 
+		 	}
+		 performButtonPressFn(btnName)
+		 	{
+		 		if(btnName=="Continue")
+		 		this.onStartUpScreen=false;
+		 		else if(btnName=="Start")
+		 		{
+		 			localStorage.removeItem("GameSaveData");
+					 // window.location.href='Platformer.html';
+					 this.onStartUpScreen=false;
+		 		}
+
+		 	}
+		 showStartScreen()
+		 	{	
+		 	 if(!this.loadedStartScreen)
+		 	 	{
+		 	 		this.loadedStartScreen=true;
+		 	 		this.onStartUpScreen=true;
+		 	 		//constructor(x,y,wid,hei,tex,btnType,btnGroups,btnName,parentPanel) 
+		 	 		//constructor(imagex,spriteGroups,widthToBeDisplayed,heightToBeDisplayed,fullWidth,fullHeight,xSpeed,ySpeed)
+		 	 		new Parallax(FORESTBACKGROUND,[this.loader_ui_visiblesprites],
+		 	 					 1000,3500,
+		 	 					 5250,3500,2,0
+		 	 			        ); 
+		 	 		new GenericButton(0.4*canvas.width,0.4*canvas.height,
+		 	 			       200,80,
+		 	 			       "Start","Start",
+		 	 			       [this.loader_ui_visiblesprites],"Start",
+		 	 			       null
+		 	 			      );
+		 	 		if(localStorage.getItem("GameSaveData"))
+		 	 			new GenericButton(0.4*canvas.width,0.6*canvas.height,
+		 	 			       200,80,
+		 	 			       "Continue","Continue",
+		 	 			       [this.loader_ui_visiblesprites],"Continue",
+		 	 			       null
+		 	 			      );
+
+		 	 	}	 			
+		 	 for (let sp of this.loader_ui_visiblesprites)
+		 		{
+		 		  sp.update();
+		 		  sp.display();
+		 		}
 		 	}
 		 showLevelUpBox()
 		 	{
@@ -6028,6 +7951,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 
 		 runGame()
 		 	{
+		 	 this.MindScreenShake();
 		 	 this.checkHitWithKillPlants();
 		 	 if(!this.gamePaused)	this.checkPlayerExistence();		 	
 		 	 const [hori,vert]=this.camChecker();
@@ -6060,12 +7984,38 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 if(hb.sprite_type=="player_hitbox")
 		 	 	 	{
 		 	 	 	 for(let sprite of this.enemy_sprites)
-		 	 	 	 	{		 	 	 	 	 
+		 	 	 	 	{
+		 	 	 	 		/*
+		 	 	 	 		//deleteable for confirming that a shorter wider collison box fails to detect its collision with
+		 	 	 	 		  a longer thinner box. None of the points of one are within the other.
+		 	 	 	 	if(sprite.sprite_type=="TraitorLord") 
+		 	 	 	 		{
+		 	 	 	 			console.log('coordinates follow')
+		 	 	 	 			let px=sprite.hit_box.position.x;
+		 	 	 	 			let py=sprite.hit_box.position.y;
+		 	 	 	 			let w=sprite.hit_box.width;
+		 	 	 	 			let h=sprite.hit_box.height;
+		 	 	 	 			console.log(`${(px-w/2).toFixed(0)},${(py-h/2).toFixed(0)} ${(px+w/2).toFixed(0)},${(py-h/2).toFixed(0)} ${(px-w/2).toFixed(0)},${(py+h/2).toFixed(0)} ${(px+w/2).toFixed(0)},${(py+h/2).toFixed(0)}`);
+		 	 	 	 			 px=hb.position.x;
+		 	 	 	 			 py=hb.position.y;
+		 	 	 	 			 w=hb.width;
+		 	 	 	 			 h=hb.height;
+		 	 	 	 			console.log(`${(px-w/2).toFixed(0)},${(py-h/2).toFixed(0)} ${(px+w/2).toFixed(0)},${(py-h/2).toFixed(0)} ${(px-w/2).toFixed(0)},${(py+h/2).toFixed(0)} ${(px+w/2).toFixed(0)},${(py+h/2).toFixed(0)}`);
+		 	 	 	 		}
+		 	 	 	 		*/	 	 	 	 	 
 		 	 	 	 	 if(b_collision(sprite.hit_box,hb))
-		 	 	 	 	 	{		 	 	 	 	 		
+		 	 	 	 	 	{	
+                             gameManager.player.fillHitCredits();	 	 	 	 	 		
 		 	 	 	 	 	 hb.causeDamage(sprite);		 	 	 	 	 	 	
 		 	 	 	 	 	}
 		 	 	 	 	}
+                     for(let x of gameManager.loot)
+                        {
+                        if(b_collision(hb,x))
+                            {                    
+                             x.giveExp(gameManager.player);                    
+                            }
+                        }
 		 	 	 	}
 		 	 	 else if(hb.sprite_type=="enemy_hitbox")
 		 	 	 	{
@@ -6095,8 +8045,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
  	 	 	this.player=new Player(100*xscale,
 		   	   					   200*yscale,
-							   	   100*xscale,
-							   	   100*yscale,
+							   	   150*xscale,
+							   	   200*yscale,
 							   	   [this.visible_sprites,this.active_sprites,this.killables]
 		   	   					  );
  	 	 	console.log('player loaded from memory');
@@ -6188,7 +8138,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 	new CameraStopper(elem['x']*xscale,
 		 	 	 		   	   elem['y']*yscale,
 		 	 	 		   	   elem['sprite'],
-		 	 	 		   	   [this.visible_sprites,this.camera_stop_sprites,this.active_sprites]
+		 	 	 		   	   [this.visible_sprites,
+                                this.camera_stop_sprites,this.active_sprites]
 		 	 	 		   	   );
 		 	 	 else if(elem['sprite'].split('_')[0]=='entryexit')
 		 	 	 	new EntryExitPoint(elem['x']*xscale,
@@ -6208,9 +8159,24 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 		   	   elem['width']*xscale,
 		 	 	 		   	   elem['height']*yscale,
 		 	 	 		   	   [this.visible_sprites,this.enemy_sprites,this.active_sprites,this.killables],
+                               elem['dialogue']?elem['dialogue']:[],
 		 	 	 		   	   elem['spriteId']
 		 	 	 		   	   );
-		 	 	 else if(elem['sprite']=='lance' &&  this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)		 	 	 	
+		 	 	 else if(elem['sprite']=='traitorLord' && 
+		 	 	 	     this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)	 	 	 	
+		 	 	 	  new TraitorLord(elem['x']*xscale,
+		 	 	 		   	   elem['y']*yscale,
+		 	 	 		   	   elem['width']*xscale,
+		 	 	 		   	   elem['height']*yscale,
+		 	 	 		   	   [this.visible_sprites,
+		 	 	 		   	    this.enemy_sprites,
+		 	 	 		   	    this.active_sprites,
+		 	 	 		   	    this.killables],                               
+		 	 	 		   	   elem['spriteId']
+		 	 	 		   	   ); 
+		 	 	 else if(elem['sprite']=='lance')		 
+                    {	 	 
+                      if(this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)	
 		 	 	 	  new Lance(elem['x']*xscale,
 		 	 	 		   	   elem['y']*yscale,
 		 	 	 		   	   elem['width']*xscale,
@@ -6218,6 +8184,9 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 		   	   [this.visible_sprites,this.enemy_sprites,this.active_sprites],
 		 	 	 		   	   elem['spriteId']
 		 	 	 		   	   );
+                      else
+                        DestroyAllBarriersInScene();
+                    }
 		 	 	 else if(elem['sprite']=='falseknight' &&  this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)		 	 	 	
 		 	 	 	  new FalseKnight(elem['x']*xscale,
 		 	 	 		   	   elem['y']*yscale,
@@ -6302,14 +8271,20 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
  	   				   		  [gameManager.visible_sprites]
     	 	   				  	 	);
     	 	   	 else if(elem['sprite']=='wall')
+                 {
+                    let dTime=0;
+                    if("dTime" in elem)
+                        dTime=elem['dTime'];
     	 	   	 	new Wall(elem['x']*xscale,
  	   				          elem['y']*yscale,
  	   				          elem['width']*xscale,
  	   				          elem['height']*yscale,
  	   				          elem['isHorizontal'], 
  	   				          elem['copies'],	   				          
- 	   				   		  [gameManager.visible_sprites]
-    	 	   				  	 	);	 	 	 	
+ 	   				   		  [gameManager.visible_sprites,gameManager.active_sprites],
+                              dTime
+    	 	   				  	 	);	 	
+                  } 	 	
 		 	 	}
 		 	 this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');		 	 
 		 	 this.camera.tgt=this.camera_stop_sprites[this.sceneForward?0:1];
