@@ -1219,7 +1219,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 	class HitBox
 		{
-		 constructor(x,y,wid,hei,spriteGroups,parent,hitboxName="unknown hitbox")
+		 constructor(x,y,wid,hei,spriteGroups,parent,hitboxName="unknown hitbox",
+		 	fillColor="#b3ffff")
 		 	{
              this.parent=parent;
 		 	 this.position= new CreateVector(x,y);
@@ -1452,19 +1453,20 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
            	{
            		super(x,y,wid,hei,0,0,spriteGroups);
            		this.sprite_type="elevator";
-           		// this.hit_box=new HitBox(this.position.x,
-           		// 	                    this.position.y,
-             //    	                    this.width,
-             //    	                    this.height*0.5,
-             //                            [gameManager.visible_sprites,
-             //                             gameManager.collission_sprites],
-             //                            'elevatorhitbox');
+           		this.hit_box=new HitBox(this.position.x,
+           			                    this.position.y,
+                	                    this.width,
+                	                    this.height*0.5,
+                                        [gameManager.visible_sprites,
+                                         gameManager.collission_sprites],
+                                        'elevatorhitbox','#0000FF');
            		this.elevate_box=new HitBox(this.position.x,
            			                    this.position.y,
                 	                    this.width,
                 	                    this.height*0.2,
                                          [ 
-                                         gameManager.elevatorboxes
+                                         gameManager.elevatorboxes,
+                                         gameManager.visible_sprites                           
                                          ],
                                         'elevatorbox');
 
@@ -1498,6 +1500,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
            	{
            		this.elevate_box.position.x+=this.velocity.x;
            		this.elevate_box.position.y+=this.velocity.y;
+           		this.hit_box.position.x+=this.velocity.x;
+           		this.hit_box.position.y+=this.velocity.y;
            	}
 
 
@@ -8076,11 +8080,13 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	{
 		 	 	if(b_collision(hb,this.player.hit_box))
 		 	 		{
-		 	 			if(this.player.jumping) continue;
-		 	 			if(this.player.hit_box.position.y<=hb.position.y)
-		 	 				this.player.hit_box.position.y=hb.position.y-hb.width/2;
+		 	 			
+		 	 			if(this.player.hit_box.position.y<=hb.position.y){
+		 	 				this.player.hit_box.position.y=hb.position.y-hb.width/2-5*yscale;
+		 	 				this.player.velocity.y=0;
+		 	 			}
 		 	 			else
-		 	 				this.player.hit_box.position.y=hb.position.y+hb.width/2;
+		 	 				this.player.hit_box.position.y=hb.position.y+hb.width/2+5*yscale;
 		 	 		}
 		 	 	}
 
