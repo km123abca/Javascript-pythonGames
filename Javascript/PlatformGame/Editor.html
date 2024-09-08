@@ -407,6 +407,7 @@ let BLACKCLOUD= LoadImagex('sprites','cloud-1dark.png');
 let WHITECLOUD= LoadImagex('sprites','cloud-1.png');
 let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
+let ELEVATORIMAGE=LoadImagex('sprites/misc','Elevator.png');
 let THORNIMAGE = LoadImagex('sprites/misc','thorn.png');
 let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 let FLOWERIMAGE= LoadImagex('sprites/misc','Flower.png');
@@ -1828,6 +1829,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.position.add(this.velocity);
 		 	}
 		}
+		//gen
 	class GeneralSprite
 		{
 		constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups)
@@ -1849,6 +1851,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 if(!this.onScreen) return false;
 
 		 	 ctx.save();
+
 		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
 		 	 	 		   this.position.y-gameManager.camera.position.y);		 	 
 		 	 ctx.drawImage(this.imagex,-this.width/2,-this.height/2,this.width,this.height);		 	 
@@ -1858,8 +1861,90 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	{
 		 	 return true;
 		 	}
+		//addition on 05-09-2024 to add up on the functionality of general sprite
+//velocity application
+         applyVelocity(hit_box,velocity)
+            {                    
+             hit_box.position.x+=velocity.x;          
+             for(let k in gameManager.collission_sprites)
+                { 
+                 let x=gameManager.collission_sprites[k];
+                 if(!x.onScreen) continue;
+                 if(x==this || x==hit_box) continue;               
+                 if(b_collision(hit_box,x)) 
+                    {                     
+                     if(velocity.x > 0)                                            
+                        hit_box.position.x=x.position.x - x.width/2-hit_box.width/2-2;   
+                     else                     
+                        hit_box.position.x=x.position.x + x.width/2 + hit_box.width/2+2;        
+                    }
+                }
+             hit_box.position.y+=velocity.y;
+             for(let x of gameManager.collission_sprites)
+                {
+
+                 if(!x.onScreen) continue;
+                 if(x==this || x==hit_box) continue;
+
+                 if(b_collision(hit_box,x)) 
+                    {                                 
+                    if(velocity.y > 0)                        
+                        hit_box.position.y=x.position.y-x.height/2-hit_box.height/2-2;  
+                    else                        
+                        hit_box.position.y=x.position.y+x.height/2+hit_box.height/2+2;     
+                    }
+                }
+            }
+         update_and_display_hitbox(hit_box)
+            {           
+            this.position.setVec(hit_box.position.copy().add(this.hitboxOffset));
+            }
+         applyVelocityRestrictions(velocity,maxVelocity)
+            {
+             let xdir=velocity.x/Math.abs(velocity.x);
+             let ydir=velocity.y/Math.abs(velocity.y);
+             if(Math.abs(velocity.y) > maxVelocity.y)
+                velocity.y=ydir*maxVelocity.y;
+             if(Math.abs(velocity.x) > maxVelocity.x)
+                velocity.x=xdir*maxVelocity.x;
+            }
+		//addition ends
 		}
-        
+        //gen
+     class Elevator extends GeneralSprite
+   	    {
+           constructor(x,y,wid,hei,spriteGroups)
+           	{
+           		super(x,y,wid,hei,0,0,spriteGroups);
+           		this.sprite_type="elevator";
+           		this.hit_box=new HitBox(this.position.x,
+           			                    this.position.y,
+                	                    this.width,
+                	                    this.height*0.5,
+                                        [gameManager.visible_sprites,
+                                         gameManager.collission_sprites],
+                                        'elevatorhitbox');
+
+           		this.velocity=new CreateVector(0*xscale,0);
+           		this.maxVelocity=new CreateVector(5*xscale,5*yscale);
+           		this.imagex=ELEVATORIMAGE;
+           		this.hitboxOffset.y=this.height*0.25;
+           		this.birthTime=gameManager.runningClock;
+           	}
+           	update()
+           	{
+           	    this.move();
+           		// this.update_and_display_hitbox(this.hit_box);
+           	}
+           	move()
+           	{
+           		this.hit_box.position.x+=this.velocity.x;
+           		this.hit_box.position.y+=this.velocity.y;
+           	}
+
+
+
+   	    }
    class Bullet extends GeneralSprite
         {
            constructor(x,y,wid,hei,parent,spriteGroups)
@@ -7448,6 +7533,15 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
  	   				   		  [gameManager.visible_sprites,gameManager.active_sprites],
                               dTime
     	 	   				  	 	);	 	
+                  }
+                  else if(elem['sprite']=='Elevator')
+                  {
+                  	new Elevator(elem['x']*xscale,
+                  		 		 elem['y']*yscale,
+                  		 		 elem['width']*xscale,
+                  		 		 elem['height']*yscale,
+                  		 		 [gameManager.visible_sprites,gameManager.active_sprites]
+                  		        );
                   } 	 	
 		 	 	}
 		 	 this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');		 	 
