@@ -3267,6 +3267,7 @@ class Beetle extends GenericEnemy
                         this.velocity.set(0,0);
                         this.beetle_move_start_time=gameManager.runningClock;
                         this.beetle_move_stage='stopped';
+                        console.log('forward stopped');
                         }
                     else if(this.beetle_move_stage=='backward')
                         {
@@ -3274,6 +3275,7 @@ class Beetle extends GenericEnemy
                             this.beetle_move_stage='forward';
                             this.velocity.set(0,0);
                             this.beetle_move_start_time=gameManager.runningClock;
+                            console.log('back stopeed');
                         }
                     }
                 
