@@ -2969,6 +2969,7 @@ class GenericEnemy extends GenericMovable
                                         false,0,-50*yscale,
                                         this,'enemyHealth');
          this.frameToShoot=2;
+         this.attackOver=false;
         }
      display(){
         super.display();
@@ -3053,10 +3054,12 @@ class GenericEnemy extends GenericMovable
      }
      
      Strike(){
-        if(gameManager.runningClock - this.lastCloseAttackTime > this.maxStrikeTime){            
+        if(gameManager.runningClock - this.lastCloseAttackTime > this.maxStrikeTime){
+            console.log('strike ended');            
             this.state='agro';
             this.lastCloseAttackTime=gameManager.runningClock;
-            this.strikeBoxSpawned=false;            
+            this.strikeBoxSpawned=false;    
+            this.attackOver=false;        
             return true;
         }
         let bulletOffset=this.bulletOffset.copy().rotateByAngle(this.angle); 
@@ -3081,6 +3084,7 @@ class GenericEnemy extends GenericMovable
                              "enemy_damagebox",this
                             );
             this.strikeBoxSpawned=true;
+
             }
         this.changeAnimation('attack');
      }
@@ -3247,15 +3251,16 @@ class Beetle extends GenericEnemy
             
             Strike()
             {
-                super.Strike();
-                if(this.maxVelocity==this.maxVelocity_normal)
+                
+                if(this.maxVelocity==this.maxVelocity_normal && !this.attackOver)
                     { 
                     
                     this.maxVelocity=this.maxVelocity_quick;
                     this.beetle_move_start_time=gameManager.runningClock;
                     this.pull=new CreateVector(1,0);
-                    this.pull.mult(-2).rotateByAngle(this.angle);
-                    this.beetle_move_stage='backward';
+                    this.pull.mult(1).rotateByAngle(this.angle);
+                    this.beetle_move_stage='forward';
+                    console.log('init');
                     }
                 if(!this.stopMoving)
                     this.acceleration.add(this.pull);
@@ -3279,10 +3284,18 @@ class Beetle extends GenericEnemy
                         }
                     }
                 
-                if(gameManager.runningClock - this.lastCloseAttackTime > this.maxStrikeTime*0.9){ 
+                if(gameManager.runningClock - this.lastCloseAttackTime > this.maxStrikeTime*0.9
+                    && !this.attackOver){ 
                     this.maxVelocity=this.maxVelocity_normal;
+
                     this.stopMoving=false;
+                    this.attackOver=true;
                     } 
+                super.Strike();
+            }
+            takeDamage(dmg,hitback){
+                super.takeDamage(dmg,hitback);
+                if(this.state=='idle') this.state='agro';
             }
 
 
