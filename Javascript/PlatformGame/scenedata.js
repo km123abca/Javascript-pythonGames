@@ -60,7 +60,7 @@ let scenes=[
                 // {"sprite":"entryexit_entry","x":-900,"y":464}, //backdoor
                 {"sprite":"entryexit_entry","x":612,"y":995},
                 {"sprite":"entryexit_exit","x":2100,"y":1767},
-                {"sprite":"Elevator","x":1312,"y":832,"width":200,"height":160},
+                {"sprite":"Elevator","x":1312,"y":732,"width":200,"height":160},
                 {"sprite":"scenechanger_scleft","x":-1450,"y":464},
                 {"sprite":"scenechanger_scright","x":2300,"y":1767},
                 {"sprite":"BossFightTriggGO","x":125,"y":1208,"mywidth":40,"myheight":600,

@@ -1449,14 +1449,14 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
    class Elevator extends GeneralSprite
    	    {
-           constructor(x,y,wid,hei,spriteGroups)
+           constructor(x,y,wid,hei,turnTime,spriteGroups)
            	{
            		super(x,y,wid,hei,0,0,spriteGroups);
            		this.sprite_type="elevator";
            		this.hit_box=new HitBox(this.position.x,
            			                    this.position.y,
                 	                    this.width,
-                	                    this.height*0.5,
+                	                    this.height*0.2,
                                         [gameManager.visible_sprites,
                                          gameManager.collission_sprites],
                                         'elevatorhitbox','#0000FF');
@@ -1487,6 +1487,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
            	update_and_display_elevatorbox()
            	{           		
            	this.position.setVec(this.elevate_box.position.copy().add(this.hitboxOffset));
+           	this.hit_box.position.setVec(this.elevate_box.position.copy().add(this.hitboxOffset));
            	}
            	turn()
            	{
@@ -1500,8 +1501,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
            	{
            		this.elevate_box.position.x+=this.velocity.x;
            		this.elevate_box.position.y+=this.velocity.y;
-           		this.hit_box.position.x+=this.velocity.x;
-           		this.hit_box.position.y+=this.velocity.y;
+           		// this.hit_box.position.x+=this.velocity.x;
+           		// this.hit_box.position.y+=this.velocity.y;
+           		if(b_collision(this.elevate_box,gameManager.player.hit_box))
+           			gameManager.player.hit_box.position.y+=this.velocity.y;
            	}
 
 
@@ -8075,7 +8078,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	if(!gameManager.gamePaused)	 	 	
 		 	 		sprite.update();	
 		 	 	}
-
+		 	 /*	
 		 	 for(let hb of this.elevatorboxes)
 		 	 	{
 		 	 	if(b_collision(hb,this.player.hit_box))
@@ -8089,6 +8092,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 				this.player.hit_box.position.y=hb.position.y+hb.width/2+5*yscale;
 		 	 		}
 		 	 	}
+		 	 */
 
 		 	 for(let hb of this.hitbox_sprites)
 		 	 	{
@@ -8403,7 +8407,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                   	new Elevator(elem['x']*xscale,
                   		 		 elem['y']*yscale,
                   		 		 elem['width']*xscale,
-                  		 		 elem['height']*yscale,
+                  		 		 elem['height']*yscale,3000,
                   		 		 [gameManager.visible_sprites,gameManager.active_sprites]
                   		        );
                   } 	
