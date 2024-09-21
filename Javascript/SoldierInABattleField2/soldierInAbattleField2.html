@@ -3262,10 +3262,11 @@ class Beetle extends GenericEnemy
                     this.beetle_move_stage='forward';
                     console.log('init');
                     }
-                if(!this.stopMoving)
+                if(!this.stopMoving && !this.attackOver)
                     this.acceleration.add(this.pull);
                 if(gameManager.runningClock- this.beetle_move_start_time > this.beetle_move_gap)
                     {
+
                     if(this.beetle_move_stage=='forward')
                         {
                         this.stopMoving=true;

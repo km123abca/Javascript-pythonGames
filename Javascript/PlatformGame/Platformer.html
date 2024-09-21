@@ -1487,7 +1487,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
            	update_and_display_elevatorbox()
            	{           		
            	this.position.setVec(this.elevate_box.position.copy().add(this.hitboxOffset));
-           	this.hit_box.position.setVec(this.elevate_box.position.copy().add(this.hitboxOffset));
+
+           	// this.hit_box.position.setVec(this.elevate_box.position.copy().add(this.hitboxOffset));
            	}
            	turn()
            	{
@@ -1503,8 +1504,13 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
            		this.elevate_box.position.y+=this.velocity.y;
            		// this.hit_box.position.x+=this.velocity.x;
            		// this.hit_box.position.y+=this.velocity.y;
+           		/*
            		if(b_collision(this.elevate_box,gameManager.player.hit_box))
-           			gameManager.player.hit_box.position.y+=this.velocity.y;
+           			{
+           			 gameManager.player.velocity.y=0;
+           			 gameManager.player.hit_box.position.y+=this.velocity.y;
+           			}*/
+
            	}
 
 
@@ -2343,7 +2349,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                                                         // gameManager.active_sprites
                                                         ],'traitorlordhitbox');
 			 	this.image_offset=new CreateVector(-30*xscale,-15*yscale);
-			 	this.health=10;
+			 	this.health=100;
 		 		this.maxHealth=100;
 		 		this.uiBarTimer=0;
 		 		this.uiBarMaxTime=3000;
@@ -2816,7 +2822,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                                   ],
                                  'enemy_hitbox',this,//hitboxName,parent
                                  90*xscale,10*yscale,//xoffset,yoffset
-                                 10,this.sx*30*xscale,//damage,damagehitback
+                                 80,this.sx*30*xscale,//damage,damagehitback
                                  10//life
                                  ); 
             }
@@ -6490,6 +6496,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	
 		 	// return false;
 		 	if(this.invincibleState && !gameManager.playerDied) return false;
+		 	gameManager.FreezeScreen();
 		 	if(!gameManager.playerDied)
 		 	document.querySelector('#LossBuzz').play();	
 		 	this.invincibleState=true;
@@ -7789,8 +7796,21 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	
 		 	 this.screenShakeTimer=0;
 		 	 this.maxScreenShakeTime=500;
+		 	 
+		 	 this.maxFreezeTime=4000;
+		 	 this.lastScreenFreeze=0;
 		 
 		 	}
+		 MindScreenFreeze(){
+		 	if(this.lastScreenFreeze==0) return false;
+		 	if(this.runningClock-this.lastScreenFreeze>this.maxFreezeTime)
+		 		this.lastScreenFreeze=0;
+
+		 }
+		 FreezeScreen(){
+		 	return false;//not working
+		 	this.lastScreenFreeze=this.runningClock;
+		 }
 		 MindScreenShake(){
 		 	
 		 	if(this.screenShakeTimer==0) return;
@@ -7875,7 +7895,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 if(this.runningClock - this.playerDiedClock > 1500)
 		 	 	{
 		 	 	console.log('time up reloading now');
-		 	 	window.location.href="./Platformer.html";
+		 	 	// window.location.href="./Platformer.html";
+		 	 	this.changeScene();
 		 	    }
 		 	}
 		 checkHitWithKillPlants()
@@ -8021,6 +8042,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	{
 		 	 	this.sceneForward=true;
 		 	 	this.scenesLoaded[this.scenesLoaded.length-1]=false;
+		 	 	this.localStorageChecked=false;
 		 	 	}
 		 	}
 
@@ -8054,6 +8076,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 runGame()
 		 	{
 		 	 this.MindScreenShake();
+		 	 this.MindScreenFreeze();
 		 	 this.checkHitWithKillPlants();
 		 	 if(!this.gamePaused)	this.checkPlayerExistence();		 	
 		 	 const [hori,vert]=this.camChecker();
@@ -8075,8 +8098,11 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	}
 		 	 for(let sprite of this.active_sprites)
 		 	 	{
-		 	 	if(!gameManager.gamePaused)	 	 	
+		 	 	if(!gameManager.gamePaused && this.lastScreenFreeze==0)	 
+		 	 		{	 	
 		 	 		sprite.update();	
+		 	 		}
+		 	 	
 		 	 	}
 		 	 /*	
 		 	 for(let hb of this.elevatorboxes)
