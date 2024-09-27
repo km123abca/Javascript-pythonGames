@@ -2970,6 +2970,8 @@ class GenericEnemy extends GenericMovable
                                         this,'enemyHealth');
          this.frameToShoot=2;
          this.attackOver=false;
+         this.strikeTime=500;
+         this.strikeHitBoxSize=new CreateVector(40*xscale,40*yscale);
         }
      display(){
         super.display();
@@ -3064,7 +3066,8 @@ class GenericEnemy extends GenericMovable
         }
         let bulletOffset=this.bulletOffset.copy().rotateByAngle(this.angle); 
         if(!this.strikeBoxSpawned && this.animation=="attack" && 
-            parseInt(this.animationFrame)==this.frameToStrike)
+            // parseInt(this.animationFrame)==this.frameToStrike)
+            gameManager.runningClock- this.lastCloseAttackTime > this.strikeTime)
             {
                 /*
                  constructor(x,y,wid,hei,offsetx,offsety,damage,hitback,
@@ -3072,7 +3075,7 @@ class GenericEnemy extends GenericMovable
                 */
             new DamageHitBox(this.position.x,
                              this.position.y,
-                             40*xscale,40*yscale,
+                             this.strikeHitBoxSize.x*xscale,this.strikeHitBoxSize.y*yscale,
                              bulletOffset.x,bulletOffset.y,                             
                              5,
                              this.velocity.copy().normalized(),
@@ -3216,11 +3219,11 @@ class Beetle extends GenericEnemy
              this.rotationOffset=90;
              this.frameToStrike=1;
              this.frameToShoot=1;
-             this.nearAttackDistance=500*xscale;
+             this.nearAttackDistance=200*xscale;
              this.maxVelocity_normal=this.maxVelocity;
              this.maxVelocity_quick=this.maxVelocity*4;
              this.maxStrikeTime=2000;
-
+             this.strikeTime=800;
              // this.farAttackDistance=300*xscale; 
 
              /*
@@ -3237,6 +3240,7 @@ class Beetle extends GenericEnemy
             this.beetle_move_gap=200;
             this.pull=null;
             this.stopMoving=false;
+            this.strikeHitBoxSize.set(200*xscale,200*yscale);
 
             }
             update(){
@@ -3258,37 +3262,35 @@ class Beetle extends GenericEnemy
                     this.maxVelocity=this.maxVelocity_quick;
                     this.beetle_move_start_time=gameManager.runningClock;
                     this.pull=new CreateVector(1,0);
-                    this.pull.mult(1).rotateByAngle(this.angle);
-                    this.beetle_move_stage='forward';
-                    console.log('init');
+                    this.pull.rotateByAngle(this.angle).mult(-1);
+                    this.beetle_move_stage='backward';
+                    
                     }
                 if(!this.stopMoving && !this.attackOver)
                     this.acceleration.add(this.pull);
                 if(gameManager.runningClock- this.beetle_move_start_time > this.beetle_move_gap)
                     {
-
                     if(this.beetle_move_stage=='forward')
                         {
                         this.stopMoving=true;
                         this.velocity.set(0,0);
                         this.beetle_move_start_time=gameManager.runningClock;
-                        this.beetle_move_stage='stopped';
-                        console.log('forward stopped');
+                        this.beetle_move_stage='stopped';                        
                         }
                     else if(this.beetle_move_stage=='backward')
                         {
                             this.pull.mult(-1);
                             this.beetle_move_stage='forward';
                             this.velocity.set(0,0);
-                            this.beetle_move_start_time=gameManager.runningClock;
-                            console.log('back stopeed');
+                            this.beetle_move_start_time=gameManager.runningClock;  
+                            this.beetle_move_gap*=2;                 
                         }
                     }
                 
                 if(gameManager.runningClock - this.lastCloseAttackTime > this.maxStrikeTime*0.9
                     && !this.attackOver){ 
                     this.maxVelocity=this.maxVelocity_normal;
-
+                    this.beetle_move_gap/=2;
                     this.stopMoving=false;
                     this.attackOver=true;
                     } 
