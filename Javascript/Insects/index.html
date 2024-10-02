@@ -351,7 +351,7 @@
 					};
 	let insects=[],dustCloudsList=[],flowers=[];
 	let fspawner=new FlowerSpawner();
-	for(let i=0;i<5;i++)
+	for(let i=0;i<25;i++)
 		{
 		insects.push(new Insect(50*xscale+random(20,100),200*yscale+random(20,100),'red',true,'r1'));
 		insects.push(new Insect(1000*xscale+random(20,100),500*yscale+random(20,100),'green',true,'g2'));
@@ -461,7 +461,7 @@
             for(let i=1;i<8;i++)
             	{
             		let imgx=new Image();
-            		imgx.src=`./Sprites/flowers/flowere${i}.png`; 
+            		imgx.src=`./Sprites/flowers/flower${i}.png`; 
             		this.partialFlowers.push(imgx);
             	}
 

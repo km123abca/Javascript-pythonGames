@@ -35,6 +35,14 @@ let scenes=[
 				{"sprite":"flower","x":268,"y":554,"width":50,"height":50,"xoffset":0,"yoffset":0,"exp":10,"spriteId":"f3"},	
 				{"sprite":"flower","x":1081,"y":430,"width":50,"height":50,"xoffset":0,"yoffset":0,"exp":10,"spriteId":"f4"},				
 			],
+            [{"sprite":"entryexit_entry","x":"-600.00","y":"464.00"},
+             {"sprite":"wall","x":"-587.00","y":"612.00","width":"250.00","height":"150.00",
+              "isHorizontal":true,"copies":8},
+             {"sprite":"camstopper_left","x":"-600.00","y":"394.00"},
+             {"sprite":"camstopper_right","x":"708","y":"464"},
+             {"sprite":"entryexit_exit","x":"986.30","y":"464.00"},
+             {"sprite":"scenechanger_scright","x":"1189.66","y":"464.00"}
+             ],
 			/*
 			[
 			   {"sprite":"entryexit_entry","x":-600,"y":464}, //backdoor
@@ -60,7 +68,7 @@ let scenes=[
                 // {"sprite":"entryexit_entry","x":-900,"y":464}, //backdoor
                 {"sprite":"entryexit_entry","x":612,"y":995},
                 {"sprite":"entryexit_exit","x":2100,"y":1767},
-                // {"sprite":"Elevator","x":1312,"y":800,"width":200,"height":160},
+                {"sprite":"Elevator","x":1312,"y":800,"width":200,"height":160},
                 {"sprite":"scenechanger_scleft","x":-1450,"y":464},
                 {"sprite":"scenechanger_scright","x":2300,"y":1767},
                 {"sprite":"BossFightTriggGO","x":125,"y":1208,"mywidth":40,"myheight":600,

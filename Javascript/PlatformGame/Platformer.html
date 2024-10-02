@@ -1453,20 +1453,22 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
            	{
            		super(x,y,wid,hei,0,0,spriteGroups);
            		this.sprite_type="elevator";
+                /*
            		this.hit_box=new HitBox(this.position.x,
            			                    this.position.y,
                 	                    this.width,
                 	                    this.height*0.2,
                                         [gameManager.visible_sprites,
                                          gameManager.collission_sprites],
-                                        'elevatorhitbox','#0000FF');
+                                        'elevatorhitbox','#0000FF');*/
            		this.elevate_box=new HitBox(this.position.x,
            			                    this.position.y,
                 	                    this.width,
-                	                    this.height*0.2,
+                	                    this.height,
                                          [ 
                                          gameManager.elevatorboxes,
-                                         gameManager.visible_sprites                           
+                                         // gameManager.visible_sprites,
+                                         gameManager.collission_sprites                           
                                          ],
                                         'elevatorbox');
 
@@ -1474,7 +1476,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
            		this.velocity=new CreateVector(0*xscale,3*yscale);
            		this.maxVelocity=new CreateVector(5*xscale,5*yscale);
            		this.imagex=ELEVATORIMAGE;
-           		this.hitboxOffset.y=-this.height*0.1;
+           		// this.hitboxOffset.y=-this.height*0.1;
            		this.lastTurnTime=gameManager.runningClock;
            		this.turnTime=2000;
            	}
@@ -1487,6 +1489,14 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
            	update_and_display_elevatorbox()
            	{           		
            	this.position.setVec(this.elevate_box.position.copy().add(this.hitboxOffset));
+            if(b_collision(this.elevate_box,gameManager.player.hit_box)){
+                let gap=this.elevate_box.position.y-gameManager.player.hit_box.position.y;
+                if(this.velocity.y<0)
+                    gameManager.player.hit_box.position.y=this.elevate_box.position.y-this.elevate_box.height/2-gameManager.player.hit_box.height/2- 3;
+                else 
+                    gameManager.player.hit_box.position.y=this.elevate_box.position.y+this.elevate_box.height/2+gameManager.player.hit_box.height/2+3;
+                
+            }
 
            	// this.hit_box.position.setVec(this.elevate_box.position.copy().add(this.hitboxOffset));
            	}
@@ -1496,25 +1506,15 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
            		{
            			this.lastTurnTime=gameManager.runningClock;
            			this.velocity.y*=-1;
+
            		}
            	}
            	move()
            	{
            		this.elevate_box.position.x+=this.velocity.x;
-           		this.elevate_box.position.y+=this.velocity.y;
-           		// this.hit_box.position.x+=this.velocity.x;
-           		// this.hit_box.position.y+=this.velocity.y;
-           		/*
-           		if(b_collision(this.elevate_box,gameManager.player.hit_box))
-           			{
-           			 gameManager.player.velocity.y=0;
-           			 gameManager.player.hit_box.position.y+=this.velocity.y;
-           			}*/
+           		this.elevate_box.position.y+=this.velocity.y;         		
 
            	}
-
-
-
    	    }
         
    class Bullet extends GeneralSprite
@@ -8463,6 +8463,25 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
         ctx.fill();       
         ctx.globalCompositeOperation = 'source-over';
     }
+    const unmaskcenter=()=>{
+     let r=300;
+     // ctx.fillStyle=backGroundColor;
+     // ctx.globalAlpha = 0.5;
+     // ctx.fillRect(0,0,canvas.width, canvas.height);
+     // ctx.globalAlpha = 1;
+
+     let lineWidth=400;
+     ctx.beginPath();
+     for(let i=0;i<1;i++)
+        {
+         ctx.arc(canvas.width / 2,  canvas.height / 2, r, 0, 2 * Math.PI);
+         ctx.strokeStyle = 'black';
+         ctx.lineWidth = lineWidth;
+         ctx.stroke();
+        }
+     ctx.lineWidth = 1;
+   
+    }
 	let gameManager=new GameManager();
 	//Game Classes End
 
@@ -8474,9 +8493,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 													{                 					
 													ctx.clearRect(0,0,canvas.width,canvas.height);	
 													ctx.fillStyle = backGroundColor;
-													ctx.fillRect(0,0,canvas.width, canvas.height);
-                                                    drawCircleAtCenter();
+													ctx.fillRect(0,0,canvas.width, canvas.height);                                                    
 													gameManager.update();	
+                                                    
+                                                    // unmaskcenter();
 													// showMouse();		
 				                                 	};
 					  	     		setInterval(loop, deltaTime);					  		

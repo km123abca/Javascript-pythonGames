@@ -1065,7 +1065,12 @@ document.onmousedown = function(event) {
              if(this.playerDiedClock ==0) return false;
              w2screen("Game Over",300*xscale,400*yscale,'#FF0000',80);
              if(this.runningClock - this.playerDiedClock > 1500)
-                window.location.href="./soldierInAbattleField2.html";
+                {
+                // window.location.href="./soldierInAbattleField2.html";
+                this.playerDied=false;
+                this.playerDiedClock=0;
+                this.changeScene('none');
+                }
             }
           detectMouseClicks()
             {
@@ -1549,9 +1554,10 @@ document.onmousedown = function(event) {
                 }
              else
                 {
-
                 this.sceneForward=true;
                 this.scenesLoaded[this.scenesLoaded.length-1]=false;
+                this.localStorageChecked=false;
+
                 }
             }
 
@@ -2330,6 +2336,7 @@ class Soldier
          this.flickerOut=true;
 
          this.frictionConstant=0.05;
+         this.projectileDamage=10;
         }
      giveExp(exp){
         this.experience+=exp;
@@ -2555,7 +2562,8 @@ class Soldier
                        5*xscale,5*yscale,
                        this,
                        this.mousePositionVecShoot,
-                       [gameManager.visible_sprites,gameManager.active_sprites]
+                       [gameManager.visible_sprites,gameManager.active_sprites],
+                       this.projectileDamage
                        ); 
         }    
     runAnimation()
@@ -2972,6 +2980,13 @@ class GenericEnemy extends GenericMovable
          this.attackOver=false;
          this.strikeTime=500;
          this.strikeHitBoxSize=new CreateVector(40*xscale,40*yscale);
+         this.strikeBoxDamage=5;
+
+         this.rushHitRecorded=false;
+         this.initValuesSet=false;
+         this.maxWaitBeforeRush=1500;
+         this.maxRushAttackTime=3000;
+         this.smokes=3;
         }
      display(){
         super.display();
@@ -3031,6 +3046,9 @@ class GenericEnemy extends GenericMovable
             case 'farstrike':
              this.FarStrike();
              break;
+            case 'rushattack':
+             this.RushAttack();
+             break;
             default:
               console.log('undefined state');
               break;
@@ -3069,15 +3087,12 @@ class GenericEnemy extends GenericMovable
             // parseInt(this.animationFrame)==this.frameToStrike)
             gameManager.runningClock- this.lastCloseAttackTime > this.strikeTime)
             {
-                /*
-                 constructor(x,y,wid,hei,offsetx,offsety,damage,hitback,
-                      spriteGroups,hitboxName="unknown hitbox",parent=false)
-                */
+               
             new DamageHitBox(this.position.x,
                              this.position.y,
                              this.strikeHitBoxSize.x*xscale,this.strikeHitBoxSize.y*yscale,
                              bulletOffset.x,bulletOffset.y,                             
-                             5,
+                             this.strikeBoxDamage,
                              this.velocity.copy().normalized(),
                             [
                             gameManager.visible_sprites,
@@ -3092,6 +3107,53 @@ class GenericEnemy extends GenericMovable
         this.changeAnimation('attack');
      }
 
+
+     RushAttack()
+        {
+       
+         if(gameManager.runningClock - this.lastFarAttackTime > this.maxRushAttackTime)
+            {                     
+            this.state='agro';
+            this.lastFarAttackTime=gameManager.runningClock;
+            this.rushHitRecorded=false;
+            this.initValuesSet=false;
+            this.smokes=3;
+            this.velocity.set(0,0);
+            this.maxVelocity=this.maxVelocity_normal;
+            return true;
+            }
+        if( !this.initValuesSet && 
+            gameManager.runningClock-this.lastFarAttackTime > this.maxWaitBeforeRush)
+            {
+               this.initValuesSet=true;
+               this.maxVelocity=this.maxVelocity_quick;               
+               this.pull=new CreateVector(1,0);
+               this.pull.rotateByAngle(this.angle);
+            }
+        if(gameManager.runningClock- this.lastFarAttackTime <this.maxWaitBeforeRush)
+            {
+            this.FaceEnemy();
+            if(this.smokes>0)
+                {
+                this.smokes-=1;
+                SpawnClouds(this.position,40,"dark");
+                }
+            }
+        else{
+            this.acceleration.add(this.pull);
+            }
+
+        }
+     performSpecTaskOnCollision(colbox){
+        if(colbox.parent==gameManager.player && this.state=="rushattack" &&
+            gameManager.runningClock- this.lastFarAttackTime >this.maxWaitBeforeRush
+            ){
+            this.lastFarAttackTime=0;
+            gameManager.player.takeDamage(10,this.pull.normalized().mult(3));
+            this.velocity.set(0,0);
+            console.log('damaged');
+        }
+     }
 
      GenericShoot()
         {  
@@ -3160,8 +3222,7 @@ class GenericEnemy extends GenericMovable
          }
      }
 
-     FaceEnemy(){
-       
+     FaceEnemy(){       
         let enemyDir=gameManager.player.position.copy().sub(this.position);
         this.angle=AngleLerp(this.angle,enemyDir.heading(),9);
      }
@@ -3241,7 +3302,9 @@ class Beetle extends GenericEnemy
             this.pull=null;
             this.stopMoving=false;
             this.strikeHitBoxSize.set(200*xscale,200*yscale);
-
+            this.strikeBoxDamage=50;
+            // this.longAttacks=['rushattack','rushattack','farstrike'];
+            this.longAttacks=['rushattack'];
             }
             update(){
                 super.update();
@@ -3763,7 +3826,7 @@ function SpawnClouds(pos,n=60,cloudtype="white")
   let projectile_image=LoadImagex(sprite_folder,'redcube.png');
   class Projectile
     {
-      constructor(x,y,wid,hei,parent,tgtPoint,spriteGroups)
+      constructor(x,y,wid,hei,parent,tgtPoint,spriteGroups,damageCaused=5)
         {
           
           this.position= new CreateVector(x,y);
@@ -3788,7 +3851,7 @@ function SpawnClouds(pos,n=60,cloudtype="white")
           this.birthTime= gameManager.runningClock;
           this.sprite_type='projectile';
           for(let x of this.spriteGroups) x.push(this);
-          this.damageCaused=5;
+          this.damageCaused=damageCaused;
         }
       display()
         {            
