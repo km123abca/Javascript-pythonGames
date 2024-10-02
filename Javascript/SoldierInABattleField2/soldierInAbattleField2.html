@@ -2825,7 +2825,7 @@ class GenericMovable extends GeneralSprite
                  if(b_collision(this.hit_box,x)) 
                     {  
                     
-                    this.performSpecTaskOnCollision(x);                            
+                                             
                      if(this.velocity.x > 0)
                         {                    
                         this.hit_box.position.x=x.position.x - x.width/2-this.hit_box.width/2-2;    
@@ -2834,6 +2834,7 @@ class GenericMovable extends GeneralSprite
                         {
                         this.hit_box.position.x=x.position.x + x.width/2 + this.hit_box.width/2+2;  
                         }
+                     this.performSpecTaskOnCollision(x);   
                     }
                 } 
 
@@ -2846,7 +2847,7 @@ class GenericMovable extends GeneralSprite
                  if(b_collision(this.hit_box,x)) 
                     {
                     
-                        this.performSpecTaskOnCollision(x);  
+                        
                          
                     // console.log('collision with '+x.sprite_type);
                     if(this.velocity.y > 0)
@@ -2857,6 +2858,7 @@ class GenericMovable extends GeneralSprite
                         {
                         this.hit_box.position.y=x.position.y+x.height/2+this.hit_box.height/2+2;                        
                         }
+                    this.performSpecTaskOnCollision(x);  
                     }
                 }
 
@@ -2987,6 +2989,8 @@ class GenericEnemy extends GenericMovable
          this.maxWaitBeforeRush=1500;
          this.maxRushAttackTime=3000;
          this.smokes=3;
+         this.recoveryTimer=0;
+         this.maxRecoveryTimeAfterRush=2000;
         }
      display(){
         super.display();
@@ -3049,6 +3053,9 @@ class GenericEnemy extends GenericMovable
             case 'rushattack':
              this.RushAttack();
              break;
+            case 'recover':
+             this.RecoverAfterAttack();
+             break;
             default:
               console.log('undefined state');
               break;
@@ -3107,13 +3114,20 @@ class GenericEnemy extends GenericMovable
         this.changeAnimation('attack');
      }
 
-
+     
+     RecoverAfterAttack(){
+        this.recoveryTimer+=deltaTime;
+        if(this.recoveryTimer > this.maxRecoveryTimeAfterRush){
+            this.recoveryTimer=0;
+            this.state="agro";
+        }
+     }
      RushAttack()
         {
        
          if(gameManager.runningClock - this.lastFarAttackTime > this.maxRushAttackTime)
             {                     
-            this.state='agro';
+            this.state='recover';
             this.lastFarAttackTime=gameManager.runningClock;
             this.rushHitRecorded=false;
             this.initValuesSet=false;
@@ -3305,10 +3319,11 @@ class Beetle extends GenericEnemy
             this.strikeBoxDamage=50;
             // this.longAttacks=['rushattack','rushattack','farstrike'];
             this.longAttacks=['rushattack'];
+            gameManager.visible_sprites.push(this.hit_box);
             }
             update(){
                 super.update();
-                this.hit_box.updateAngle(this.angle);
+                // this.hit_box.updateAngle(this.angle);
                 /*
              //bullet position was created just to get an indication of the point
              //were bullet is spawned

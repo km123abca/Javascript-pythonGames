@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moving Image on Canvas</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: black;
+        }
+        #myCanvas{
+            border:3px solid green;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="myCanvas" onmousemove="trackMouse(event)"></canvas>
+
+    <script>
+        const canvas = document.getElementById('myCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas dimensions
+        canvas.width = window.innerWidth - 35;
+        canvas.height = window.innerHeight - 100;
+        let xscale=canvas.width/931;
+        let yscale=canvas.height/561;
+        var resize = function () 
+            {
+            canvas.width = window.innerWidth-35;
+            canvas.height = window.innerHeight-100;
+            };
+        let mouseX=0,mouseY=0;
+        function trackMouse(e)
+            {
+            mouseX=e.clientX;
+            mouseY=e.clientY;
+            }
+        let scrollUp=0,scrollDown=0;
+        document.onwheel = function(e) {
+                    // e.deltaY provides the amount and direction of the scroll
+                    if (e.deltaY < 0) 
+                    {
+                        console.log('Scrolled up');
+                        scrollUp-=1;
+                        if(scrollUp<-100) scrollUp=0;
+                    } 
+                    if (e.deltaY > 0) 
+                    {
+                        console.log('Scrolled down');
+                        scrollDown+=1;
+                        if(scrollDown > 100) scrollDown=0;
+                    }
+                };
+        let mousePressed=false,mouseMiddle=false,mouseRightPressed=false;
+        document.onmousedown=function(e)
+                    {
+                    if(e.button==0)
+                        {
+                        mousePressed=true;
+                        gameManager.PlaceCurrentSpriteAtMousePoint();                        
+                        }
+                    else if(e.button==1)
+                        {
+                        mouseMiddle=true;                        
+                        }
+                    else if(e.button==2)
+                        {
+                        mouseRightPressed=true;                                                      
+                        }
+                    };  
+        document.onmouseup=function(e)
+                    {
+                    if(e.button==0)
+                        mousePressed=false;
+                    else if(e.button==1)
+                        mouseMiddle=false;
+                    else if(e.button==2)
+                        mouseRightPressed=false;    
+                    };
+        function showMouse()    
+            {
+                let mx=mouseX+gameManager.renderscroll.x;
+                let my=mouseY+gameManager.renderscroll.y;
+                mx=mx.toFixed(2);
+                my=my.toFixed(2);
+                w2screen(`${mx},${my}`,canvas.width/2,200);
+            }
+        const w2screen=(strr = "", px = 20, py = 30,fillStyle="#FFFFFF",siz=40) =>
+            {
+              ctx.font = `${siz}px Haettenschweiler`;
+              ctx.fillStyle = fillStyle;
+              ctx.fillText(strr, px, py);
+            }
+
+        //handling key presses start
+        let keysPressed=new Set();
+        CapturePressedKey=(keyCode,pressed=true)=>{
+        if(!((keyCode>64 && keyCode<91)||(keyCode > 96 && keyCode < 123)||(keyCode==32))) 
+            return false;
+        //special treatment for arrow keys here 37 to 40
+        let charx=String.fromCharCode(keyCode);
+        let charx2=String.fromCharCode(keyCode+32);     
+        if(pressed && !keysPressed.has(charx))          
+            keysPressed.add(charx);
+        else if(!pressed)
+            {
+             keysPressed.delete(charx);
+             keysPressed.delete(charx2);
+            }
+        }
+
+    GetKeyPressedx=(x)=>{
+        return keysPressed.has(x)||keysPressed.has(x.toUpperCase());
+        };
+    document.onkeydown=function(e){
+        CapturePressedKey(e.keyCode);
+
+    }
+    document.onkeypress=function (e){
+        CapturePressedKey(e.keyCode);
+    }
+    document.onkeyup=function (e){
+        CapturePressedKey(e.keyCode,false);
+    }
+        //handling key presses end
+
+        // Load image function
+        function LoadImagex(folderPath, imageName) {
+            let createdImage = new Image();
+            createdImage.src = folderPath + '/' + imageName;
+            return createdImage;
+        }
+
+        let SPRITE_FOLDER='../../Python/TopDownBossFight1/sprites';
+        // Load the image
+        const images = {"TreeShrub":{"img":LoadImagex(SPRITE_FOLDER, 'TreeShrub.png'),
+                                     "wid":40,
+                                     "hei":40                                     
+                                     },
+                        "VerticalPipe":{"img":LoadImagex(SPRITE_FOLDER, 'Pipes/pipe.png'),
+                                     "wid":40,
+                                     "hei":120                                     
+                                     }
+                       };
+        const imageKeys=Object.keys(images);
+        const FPS = 60;
+        const deltaTime = 1000 / FPS;
+       /*
+        img.onload = function() {
+            setInterval(update, interval);
+        };*/
+        
+        //classes
+        let DRAWERROR=false;
+        class GameManager
+        {
+            constructor(){
+                this.imageIndex=1;
+                this.presentImage={...images[imageKeys[this.imageIndex]]};
+                this.renderscroll={x:0,y:0};
+                this.lastScrollUp=0;
+                this.lastScrollDown=0;
+                this.map=[];
+            }
+            update(){
+                this.displayPresentImageAtMousePoint();
+                this.alterTilesOnScroll();
+                this.DrawMap();
+            }
+            PlaceCurrentSpriteAtMousePoint(){
+                this.map.push({...this.presentImage,x:mouseX,y:mouseY});
+            }
+            DrawMap(){
+                if(DRAWERROR) return false; 
+                for(let sp of this.map)
+                {
+                try{
+                ctx.drawImage(sp.img, 
+                              sp.x-sp.wid/2, 
+                              sp.y-sp.hei/2,
+                              sp.wid, sp.hei);
+                    }
+                catch(err)
+                    {
+                    console.log('error at line 153');
+                    console.log(err.message);
+                    DRAWERROR=true;
+                    }
+                }
+            }
+
+            changeImageIndex(){               
+                this.presentImage={...images[imageKeys[this.imageIndex]]};
+            }
+            displayPresentImageAtMousePoint(){
+                if(DRAWERROR) return false;                
+                try{
+                ctx.drawImage(this.presentImage.img, 
+                              mouseX-this.presentImage.wid/2, 
+                              mouseY-this.presentImage.hei/2,
+                              this.presentImage.wid, this.presentImage.hei);
+                }catch(err){
+                    console.log(err.message);
+                    DRAWERROR=true;
+                }
+               
+
+            }
+            alterTilesOnScroll()
+                {
+                if(scrollUp!=this.lastScrollUp) 
+                    {
+                        this.scrollThroughTiles(-1);
+                        this.lastScrollUp=scrollUp;
+                        this.changeImageIndex();
+                    }
+                if(scrollDown!=this.lastScrollDown)
+                    {
+                        this.scrollThroughTiles(1);
+                        this.lastScrollDown=scrollDown;
+                        this.changeImageIndex();
+                    }
+                }
+            scrollThroughTiles(d)
+                {
+                    this.imageIndex+=d;
+                    if(this.imageIndex>= imageKeys.length) 
+                        this.imageIndex=0;
+                    else if(this.imageIndex<0)
+                        this.imageIndex=imageKeys.length-1;
+                }
+
+        }
+        //classes end
+        let gameManager=new GameManager();
+        let backGroundColor="#000000";
+        window.addEventListener('load', 
+                        function () 
+                                {
+                                resize();                                   
+                                var loop = function () 
+                                                {                                                                               
+                                                ctx.clearRect(0,0,canvas.width,canvas.height);  
+                                                ctx.fillStyle = backGroundColor;
+                                                ctx.fillRect(0,0,canvas.width, canvas.height);
+                                                gameManager.update();   
+                                                showMouse();     
+                                                };
+                                setInterval(loop, deltaTime);                           
+                                }
+                        );
+    </script>
+</body>
+</html>
