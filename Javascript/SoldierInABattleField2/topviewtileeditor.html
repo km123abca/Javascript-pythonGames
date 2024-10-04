@@ -98,12 +98,22 @@
 
         //handling key presses start
         let keysPressed=new Set();
+        let arrowKeyMap={37:"left_arrow",38:"up_arrow",39:"right_arrow",40:"down_arrow"};
         CapturePressedKey=(keyCode,pressed=true)=>{
-        if(!((keyCode>64 && keyCode<91)||(keyCode > 96 && keyCode < 123)||(keyCode==32))) 
+        
+        if(!((keyCode>64 && keyCode<91)||(keyCode > 96 && keyCode < 123)||(keyCode==32)||
+              (arrowKeyMap[keyCode])
+            )) 
             return false;
         //special treatment for arrow keys here 37 to 40
-        let charx=String.fromCharCode(keyCode);
-        let charx2=String.fromCharCode(keyCode+32);     
+        let charx,charx2;
+        if(arrowKeyMap[keyCode]){
+            charx=arrowKeyMap[keyCode];
+            charx2=charx;
+        }else{
+        charx=String.fromCharCode(keyCode);
+        charx2=String.fromCharCode(keyCode+32);   
+        }  
         if(pressed && !keysPressed.has(charx))          
             keysPressed.add(charx);
         else if(!pressed)
@@ -144,6 +154,10 @@
                         "VerticalPipe":{"img":LoadImagex(SPRITE_FOLDER, 'Pipes/pipe.png'),
                                      "wid":40,
                                      "hei":120                                     
+                                     },
+                        "Coin":{"img":LoadImagex(SPRITE_FOLDER, 'Coin.png'),
+                                     "wid":30,
+                                     "hei":30                                     
                                      }
                        };
         const imageKeys=Object.keys(images);
@@ -170,6 +184,23 @@
                 this.displayPresentImageAtMousePoint();
                 this.alterTilesOnScroll();
                 this.DrawMap();
+                this.mindKeyPresses();
+                this.showDims();
+            }
+            showDims(){
+                w2screen(`wid:${this.presentImage.wid}, hei:${this.presentImage.hei}`,50,50);
+            }
+            mindKeyPresses(){
+                if(GetKeyPressedx("right_arrow"))
+                    this.presentImage.wid=Math.min(this.presentImage.wid+1,400);
+                else if(GetKeyPressedx("left_arrow"))
+                    this.presentImage.wid=Math.max(this.presentImage.wid-1,5);
+                if(GetKeyPressedx("up_arrow"))
+                    this.presentImage.hei=Math.min(this.presentImage.hei+1,400);
+                else if(GetKeyPressedx("down_arrow"))
+                    this.presentImage.hei=Math.max(this.presentImage.hei-1,5);
+
+
             }
             PlaceCurrentSpriteAtMousePoint(){
                 this.map.push({...this.presentImage,x:mouseX,y:mouseY});
@@ -193,7 +224,7 @@
                 }
             }
 
-            changeImageIndex(){               
+            changePresentImage(){               
                 this.presentImage={...images[imageKeys[this.imageIndex]]};
             }
             displayPresentImageAtMousePoint(){
@@ -216,13 +247,13 @@
                     {
                         this.scrollThroughTiles(-1);
                         this.lastScrollUp=scrollUp;
-                        this.changeImageIndex();
+                        this.changePresentImage();
                     }
                 if(scrollDown!=this.lastScrollDown)
                     {
                         this.scrollThroughTiles(1);
                         this.lastScrollDown=scrollDown;
-                        this.changeImageIndex();
+                        this.changePresentImage();
                     }
                 }
             scrollThroughTiles(d)
