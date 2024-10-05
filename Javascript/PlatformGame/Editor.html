@@ -1921,7 +1921,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
            			                    this.position.y,
                 	                    this.width,
                 	                    this.height*0.5,
-                                        [gameManager.visible_sprites,
+                                        [
+                                         // gameManager.visible_sprites,
                                          gameManager.collission_sprites],
                                         'elevatorhitbox');
 
@@ -6976,6 +6977,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 constructor()
 		 	{
 		 	 this.visible_sprites=[];
+		 	 this.unknowngos=new Set(['MovingPlatform']);
              this.wall_grippers=[];		 	 
 		 	 this.active_sprites=[];
 		 	 this.kill_plants=[];
@@ -7541,6 +7543,15 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                   		 		 elem['width']*xscale,
                   		 		 elem['height']*yscale,
                   		 		 [gameManager.visible_sprites,gameManager.active_sprites]
+                  		        );
+                  }
+                  else if(gameManager.unknowngos.has(elem['sprite']))
+                  {
+                  	 new Elevator(elem['x']*xscale,
+                  		 		 elem['y']*yscale,
+                  		 		 elem['width']*xscale,
+                  		 		 elem['height']*yscale,
+                  		 		 [gameManager.visible_sprites]
                   		        );
                   } 	 	
 		 	 	}

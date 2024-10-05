@@ -1453,20 +1453,13 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
            	{
            		super(x,y,wid,hei,0,0,spriteGroups);
            		this.sprite_type="elevator";
-                /*
-           		this.hit_box=new HitBox(this.position.x,
-           			                    this.position.y,
-                	                    this.width,
-                	                    this.height*0.2,
-                                        [gameManager.visible_sprites,
-                                         gameManager.collission_sprites],
-                                        'elevatorhitbox','#0000FF');*/
+      
            		this.elevate_box=new HitBox(this.position.x,
            			                    this.position.y,
                 	                    this.width,
                 	                    this.height,
                                          [ 
-                                         gameManager.elevatorboxes,
+                                         // gameManager.elevatorboxes,
                                          // gameManager.visible_sprites,
                                          gameManager.collission_sprites                           
                                          ],
@@ -1489,16 +1482,15 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
            	update_and_display_elevatorbox()
            	{           		
            	this.position.setVec(this.elevate_box.position.copy().add(this.hitboxOffset));
-            if(b_collision(this.elevate_box,gameManager.player.hit_box)){
+            if(b_collision(this.elevate_box,gameManager.player.hit_box))
+                {
                 let gap=this.elevate_box.position.y-gameManager.player.hit_box.position.y;
                 if(this.velocity.y<0)
                     gameManager.player.hit_box.position.y=this.elevate_box.position.y-this.elevate_box.height/2-gameManager.player.hit_box.height/2- 3;
                 else 
                     gameManager.player.hit_box.position.y=this.elevate_box.position.y+this.elevate_box.height/2+gameManager.player.hit_box.height/2+3;
                 
-            }
-
-           	// this.hit_box.position.setVec(this.elevate_box.position.copy().add(this.hitboxOffset));
+                }           	
            	}
            	turn()
            	{
@@ -1506,7 +1498,6 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
            		{
            			this.lastTurnTime=gameManager.runningClock;
            			this.velocity.y*=-1;
-
            		}
            	}
            	move()
@@ -1516,6 +1507,74 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
            	}
    	    }
+
+   class MovingPlatform extends GeneralSprite
+        {
+           constructor(x,y,wid,hei,turnTime,spriteGroups)
+            {
+                super(x,y,wid,hei,0,0,spriteGroups);
+                this.sprite_type="MovingPlatform";
+      
+                this.moving_box=new HitBox(this.position.x,
+                                        this.position.y,
+                                        this.width,
+                                        this.height,
+                                         [ 
+                                         // gameManager.elevatorboxes,
+                                         // gameManager.visible_sprites,
+                                         gameManager.collission_sprites                           
+                                         ],
+                                        'movingboxhitbox');
+
+
+                this.velocity=new CreateVector(3*xscale,0*yscale);
+                this.maxVelocity=new CreateVector(5*xscale,5*yscale);
+                this.imagex=ELEVATORIMAGE;
+                // this.hitboxOffset.y=-this.height*0.1;
+                this.lastTurnTime=gameManager.runningClock;
+                this.turnTime=2000;
+                this.inContact=false;
+            }
+            update()
+            {
+                this.move();
+                this.update_and_display_elevatorbox();
+                this.turn();
+            }
+            update_and_display_elevatorbox()
+            {                   
+            this.position.setVec(this.moving_box.position.copy().add(this.hitboxOffset));
+            if(!gameManager.player || gameManager.player.isActive) 
+            {
+                this.inContact=false;
+                return; 
+            }
+            if(b_collision(this.moving_box,gameManager.player.hit_box))                
+                this.inContact=true;
+            else 
+                this.inContact=false;              
+                              
+            }
+            turn()
+            {
+                if(gameManager.runningClock-this.lastTurnTime > this.turnTime)
+                {
+                    this.lastTurnTime=gameManager.runningClock;
+                    this.velocity.y*=-1;
+                }
+            }
+            move()
+            {
+                this.moving_box.position.x+=this.velocity.x;
+                this.moving_box.position.y+=this.velocity.y;   
+                // if(!gameManager.player || gameManager.player.isActive) return; 
+                if(this.inContact)
+                    gameManager.player.hit_box.position.x+=this.velocity.x;          
+
+            }
+        }
+
+
         
    class Bullet extends GeneralSprite
         {
@@ -7752,7 +7811,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.active_sprites=[];
 		 	 this.kill_plants=[];
 		 	 this.killables=[];
-		 	 this.elevatorboxes=[];
+		 	 // this.elevatorboxes=[]; delete me
 		 	 this.loot=[];		 	 		 	 
 		 	 this.collission_sprites=[];
 		 	 this.markedSpots=[];
@@ -8439,6 +8498,17 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                   		 		 elem['height']*yscale,3000,
                   		 		 [gameManager.visible_sprites,gameManager.active_sprites]
                   		        );
+                  } 
+                 else if(elem['sprite']=='MovingPlatform')
+                  {
+                    new MovingPlatform(elem['x']*xscale,
+                                 elem['y']*yscale,
+                                 elem['width']*xscale,
+                                 elem['height']*yscale,elem['turnTime'],
+                                 [gameManager.visible_sprites,
+                                 //gameManager.active_sprites
+                                 ]
+                                );
                   } 	
 		 	 	}
 		 	 this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');		 	 

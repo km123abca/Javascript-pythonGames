@@ -35,14 +35,8 @@ let scenes=[
 				{"sprite":"flower","x":268,"y":554,"width":50,"height":50,"xoffset":0,"yoffset":0,"exp":10,"spriteId":"f3"},	
 				{"sprite":"flower","x":1081,"y":430,"width":50,"height":50,"xoffset":0,"yoffset":0,"exp":10,"spriteId":"f4"},				
 			],
-            [{"sprite":"entryexit_entry","x":"-600.00","y":"464.00"},
-             {"sprite":"wall","x":"-587.00","y":"612.00","width":"250.00","height":"150.00",
-              "isHorizontal":true,"copies":8},
-             {"sprite":"camstopper_left","x":"-600.00","y":"394.00"},
-             {"sprite":"camstopper_right","x":"708","y":"464"},
-             {"sprite":"entryexit_exit","x":"986.30","y":"464.00"},
-             {"sprite":"scenechanger_scright","x":"1189.66","y":"464.00"}
-             ],
+           [{"sprite":"entryexit_entry","x":"-600.00","y":"464.00"},{"sprite":"wall","x":"-587.00","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":8},{"sprite":"camstopper_left","x":"-33.00","y":"394.00"},{"sprite":"camstopper_right","x":"3258.00","y":"464.00"},{"sprite":"entryexit_exit","x":"3886.30","y":"464.00"},{"sprite":"scenechanger_scleft","x":"-700.00","y":"464.00"},{"sprite":"scenechanger_scright","x":"3964.66","y":"464.00"},{"sprite":"wall","x":"2120.66","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"wall","x":"3095.02","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"MovingPlatform","x":"1460.04","y":"510.00","width":"238.00","height":"110.00","turnTime":2000}],
+            
 			/*
 			[
 			   {"sprite":"entryexit_entry","x":-600,"y":464}, //backdoor
