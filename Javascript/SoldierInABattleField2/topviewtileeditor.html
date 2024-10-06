@@ -15,6 +15,7 @@
             border:3px solid green;
         }
     </style>
+    <script src="./map.js"></script>
 </head>
 <body>
     <canvas id="myCanvas" onmousemove="trackMouse(event)"></canvas>
@@ -56,6 +57,7 @@
                     }
                 };
         let mousePressed=false,mouseMiddle=false,mouseRightPressed=false;
+
         document.onmousedown=function(e)
                     {
                     if(e.button==0)
@@ -69,7 +71,8 @@
                         }
                     else if(e.button==2)
                         {
-                        mouseRightPressed=true;                                                      
+                        mouseRightPressed=true; 
+                        gameManager.DeleteSpriteOnWhichMouseLies();                                 
                         }
                     };  
         document.onmouseup=function(e)
@@ -81,6 +84,9 @@
                     else if(e.button==2)
                         mouseRightPressed=false;    
                     };
+        document.oncontextmenu = function(e) {
+                            e.preventDefault();
+                            };
         function showMouse()    
             {
                 let mx=mouseX+gameManager.renderscroll.x;
@@ -146,20 +152,40 @@
         }
 
         let SPRITE_FOLDER='../../Python/TopDownBossFight1/sprites';
+        let imageMap={
+                        "TreeShrub":LoadImagex(SPRITE_FOLDER, 'TreeShrub.png'),
+                        "VerticalPipe":LoadImagex(SPRITE_FOLDER, 'Pipes/pipe.png'),
+                        "HorizontalPipe":LoadImagex(SPRITE_FOLDER, 'Pipes/pipeHori.png'),
+                        "Coin":LoadImagex(SPRITE_FOLDER, 'Coin.png')
+                     };
         // Load the image
-        const images = {"TreeShrub":{"img":LoadImagex(SPRITE_FOLDER, 'TreeShrub.png'),
+        let images = {"TreeShrub":{
+              // "img":LoadImagex(SPRITE_FOLDER, 'TreeShrub.png'),
                                      "wid":40,
-                                     "hei":40                                     
+                                     "hei":40,
+                                     "sprite_type":"TreeShrub"                                     
                                      },
-                        "VerticalPipe":{"img":LoadImagex(SPRITE_FOLDER, 'Pipes/pipe.png'),
+                        "VerticalPipe":{
+                            // "img":LoadImagex(SPRITE_FOLDER, 'Pipes/pipe.png'),
                                      "wid":40,
-                                     "hei":120                                     
+                                     "hei":120,
+                                     "sprite_type":"VerticalPipe"                                     
                                      },
-                        "Coin":{"img":LoadImagex(SPRITE_FOLDER, 'Coin.png'),
+                        "HorizontalPipe":{
+                            // "img":LoadImagex(SPRITE_FOLDER, 'Pipes/pipeHori.png'),
+                                     "wid":120,
+                                     "hei":40,
+                                     "sprite_type":"HorizontalPipe"                                   
+                                     },
+                        "Coin":{
+                            // "img":LoadImagex(SPRITE_FOLDER, 'Coin.png'),
                                      "wid":30,
-                                     "hei":30                                     
+                                     "hei":30,
+                                     "sprite_type":"Coin"                                     
                                      }
                        };
+        for(let keyx in images)
+            images[keyx].img=imageMap[keyx];
         const imageKeys=Object.keys(images);
         const FPS = 60;
         const deltaTime = 1000 / FPS;
@@ -178,7 +204,10 @@
                 this.renderscroll={x:0,y:0};
                 this.lastScrollUp=0;
                 this.lastScrollDown=0;
-                this.map=[];
+                this.map=mapx;
+                for(let i in this.map)
+                this.map[i].img=imageMap[this.map[i].sprite_type];
+
             }
             update(){
                 this.displayPresentImageAtMousePoint();
@@ -186,7 +215,19 @@
                 this.DrawMap();
                 this.mindKeyPresses();
                 this.showDims();
+                this.PanScreen();
             }
+            PanScreen(){
+                if(GetKeyPressedx("a"))
+                    this.renderscroll.x-=4;
+                else if(GetKeyPressedx("d"))
+                    this.renderscroll.x+=4;
+                if(GetKeyPressedx("w"))
+                    this.renderscroll.y-=4;
+                else if(GetKeyPressedx("s"))
+                    this.renderscroll.y+=4;
+            }
+            
             showDims(){
                 w2screen(`wid:${this.presentImage.wid}, hei:${this.presentImage.hei}`,50,50);
             }
@@ -203,7 +244,39 @@
 
             }
             PlaceCurrentSpriteAtMousePoint(){
-                this.map.push({...this.presentImage,x:mouseX,y:mouseY});
+                this.map.push({...this.presentImage,
+                            x:mouseX+this.renderscroll.x,
+                            y:mouseY+this.renderscroll.y});
+                this.adjustLastImage();
+            }
+            DeleteSpriteOnWhichMouseLies(){
+                for(let i=0;i<this.map.length;i++){
+                    let xgap=Math.abs(this.map[i].x-this.renderscroll.x-mouseX);
+                    let ygap=Math.abs(this.map[i].y-this.renderscroll.y-mouseY);
+                    if(xgap<5 && ygap<5){
+                        this.map.splice(i,1);
+                        return true;
+                    }
+                }
+            }
+            adjustLastImage(){
+                let valligned=false;
+                let halligned=false;
+                let lastImg=this.map[this.map.length-1];
+                for(let i=0;i<this.map.length-1 && !(halligned && valligned);i++)
+                {
+                    if(this.map[i].sprite_type!=lastImg.sprite_type) continue;
+                    let xgap=Math.abs(this.map[i].x-lastImg.x);
+                    let ygap=Math.abs(this.map[i].y-lastImg.y);
+                    if(!valligned && xgap<5*xscale){
+                        lastImg.x=this.map[i].x;
+                        valligned=true;
+                    }
+                    if(!halligned && ygap<5*yscale){
+                        lastImg.y=this.map[i].y;
+                        halligned=true;
+                    }
+                }
             }
             DrawMap(){
                 if(DRAWERROR) return false; 
@@ -211,8 +284,8 @@
                 {
                 try{
                 ctx.drawImage(sp.img, 
-                              sp.x-sp.wid/2, 
-                              sp.y-sp.hei/2,
+                              sp.x-sp.wid/2-this.renderscroll.x, 
+                              sp.y-sp.hei/2-this.renderscroll.y,
                               sp.wid, sp.hei);
                     }
                 catch(err)
