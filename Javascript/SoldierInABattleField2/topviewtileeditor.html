@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Moving Image on Canvas</title>
+    <title>Tile Editor</title>
     <style>
         body, html {
             margin: 0;
@@ -158,30 +158,36 @@
                         "HorizontalPipe":LoadImagex(SPRITE_FOLDER, 'Pipes/pipeHori.png'),
                         "Coin":LoadImagex(SPRITE_FOLDER, 'Coin.png')
                      };
+        let indicatorDesc=['scleft','scright','camstopper_left','camstopper_right','entry','exit'];
+        
         // Load the image
         let images = {"TreeShrub":{
               // "img":LoadImagex(SPRITE_FOLDER, 'TreeShrub.png'),
                                      "wid":40,
                                      "hei":40,
-                                     "sprite_type":"TreeShrub"                                     
+                                     "sprite_type":"TreeShrub",
+                                     "indicatorDesc":"na"                                     
                                      },
                         "VerticalPipe":{
                             // "img":LoadImagex(SPRITE_FOLDER, 'Pipes/pipe.png'),
                                      "wid":40,
                                      "hei":120,
-                                     "sprite_type":"VerticalPipe"                                     
+                                     "sprite_type":"VerticalPipe",  
+
                                      },
                         "HorizontalPipe":{
                             // "img":LoadImagex(SPRITE_FOLDER, 'Pipes/pipeHori.png'),
                                      "wid":120,
                                      "hei":40,
-                                     "sprite_type":"HorizontalPipe"                                   
+                                     "sprite_type":"HorizontalPipe", 
+                                     "indicatorDesc":"na"
                                      },
                         "Coin":{
                             // "img":LoadImagex(SPRITE_FOLDER, 'Coin.png'),
                                      "wid":30,
                                      "hei":30,
-                                     "sprite_type":"Coin"                                     
+                                     "sprite_type":"Coin",
+                                     "indicatorDesc":"entry"                                   
                                      }
                        };
         for(let keyx in images)
@@ -200,6 +206,7 @@
         {
             constructor(){
                 this.imageIndex=1;
+                this.indic_index=0;
                 this.presentImage={...images[imageKeys[this.imageIndex]]};
                 this.renderscroll={x:0,y:0};
                 this.lastScrollUp=0;
@@ -287,6 +294,11 @@
                               sp.x-sp.wid/2-this.renderscroll.x, 
                               sp.y-sp.hei/2-this.renderscroll.y,
                               sp.wid, sp.hei);
+                if(sp.sprite_type=="Coin" && sp.indicatorDesc)
+                    w2screen(sp.indicatorDesc,
+                             sp.x-sp.wid/2-this.renderscroll.x,
+                             sp.y-sp.hei/2-this.renderscroll.y-40
+                            );
                     }
                 catch(err)
                     {
@@ -307,6 +319,11 @@
                               mouseX-this.presentImage.wid/2, 
                               mouseY-this.presentImage.hei/2,
                               this.presentImage.wid, this.presentImage.hei);
+                if(this.presentImage.sprite_type=="Coin" && this.presentImage.indicatorDesc)
+                    w2screen(this.presentImage.indicatorDesc,
+                             mouseX,
+                             mouseY-40
+                            );
                 }catch(err){
                     console.log(err.message);
                     DRAWERROR=true;
@@ -316,6 +333,22 @@
             }
             alterTilesOnScroll()
                 {
+                if(this.presentImage.sprite_type=="Coin" && GetKeyPressedx('f'))
+                {
+                   if(scrollUp!=this.lastScrollUp) 
+                    {
+                        this.scrollThroughPointTypes(-1);
+                        this.lastScrollUp=scrollUp;
+                        this.presentImage.indicatorDesc=indicatorDesc[this.indic_index];
+                    }
+                if(scrollDown!=this.lastScrollDown)
+                    {
+                        this.scrollThroughPointTypes(1);
+                        this.lastScrollDown=scrollDown;
+                        this.presentImage.indicatorDesc=indicatorDesc[this.indic_index];
+                    } 
+                    return true;
+                }
                 if(scrollUp!=this.lastScrollUp) 
                     {
                         this.scrollThroughTiles(-1);
@@ -336,6 +369,14 @@
                         this.imageIndex=0;
                     else if(this.imageIndex<0)
                         this.imageIndex=imageKeys.length-1;
+                }
+            scrollThroughPointTypes(d)
+                {
+                    this.indic_index+=d;
+                    if(this.indic_index>= indicatorDesc.length) 
+                        this.indic_index=0;
+                    else if(this.indic_index<0)
+                        this.indic_index=indicatorDesc.length-1;
                 }
 
         }
