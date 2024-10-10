@@ -16,6 +16,7 @@
         }
     </style>
     <script src="./map.js"></script>
+    <script src="./tileeditor_helper.js"></script>
 </head>
 <body>
     <canvas id="myCanvas" onmousemove="trackMouse(event)"></canvas>
@@ -158,7 +159,9 @@
                         "HorizontalPipe":LoadImagex(SPRITE_FOLDER, 'Pipes/pipeHori.png'),
                         "Coin":LoadImagex(SPRITE_FOLDER, 'Coin.png')
                      };
-        let indicatorDesc=['scleft','scright','camstopper_left','camstopper_right','entry','exit'];
+        let indicatorDesc=['scleft','scright','camstopper_left','camstopper_right','entry','exit',
+                           'flower'
+                          ];
         
         // Load the image
         let images = {"TreeShrub":{
