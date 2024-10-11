@@ -217,6 +217,7 @@
                 this.map=mapx;
                 for(let i in this.map)
                 this.map[i].img=imageMap[this.map[i].sprite_type];
+                this.deletePoint=[0,0];
 
             }
             update(){
@@ -226,6 +227,8 @@
                 this.mindKeyPresses();
                 this.showDims();
                 this.PanScreen();
+                this.MindOutput();
+                this.drawDeleteCircle();
             }
             PanScreen(){
                 if(GetKeyPressedx("a"))
@@ -237,6 +240,21 @@
                 else if(GetKeyPressedx("s"))
                     this.renderscroll.y+=4;
             }
+            MindOutput()
+                {
+                if(GetKeyPressedx("q"))
+                    {
+                    if(!this.outputDisplayed)
+                        {
+                        buildSceneData();
+                        this.outputDisplayed=true;
+                        }
+                    }
+                else if(this.outputDisplayed)
+                    {
+                    this.outputDisplayed=false;
+                    }
+                }
             
             showDims(){
                 w2screen(`wid:${this.presentImage.wid}, hei:${this.presentImage.hei}`,50,50);
@@ -258,6 +276,9 @@
                             x:mouseX+this.renderscroll.x,
                             y:mouseY+this.renderscroll.y});
                 this.adjustLastImage();
+            }
+            WatchOutForRightPress(){
+                ;
             }
             DeleteSpriteOnWhichMouseLies(){
                 for(let i=0;i<this.map.length;i++){
@@ -330,9 +351,18 @@
                 }catch(err){
                     console.log(err.message);
                     DRAWERROR=true;
-                }
-               
+                }              
 
+            }
+            
+            drawDeleteCircle(){
+
+                if(this.deletePoint[0]==0) return false;
+                ctx.fillStyle='#FF0000';
+                ctx.beginPath();
+                ctx.arc(this.deletePoint[0],this.deletePoint[1],50,0,2*Math.PI);
+                ctx.stroke();
+                ctx.fill();
             }
             alterTilesOnScroll()
                 {

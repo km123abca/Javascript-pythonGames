@@ -1,7 +1,7 @@
 const buildSceneData=()=>{
     let output_map=[];
     let cw=canvas.width,ch=canvas.height;
-    for(let map_elem of this.map)
+    for(let map_elem of gameManager.map)
         {
         if(map_elem.sprite_type=="VerticalPipe" )
             {
@@ -33,7 +33,7 @@ const buildSceneData=()=>{
             {
                output_map.push({"sprite":"entryexit_entry",
                                 "x":map_elem.x,
-                                "y":map_elem.y,,"canvas_width":cw,
+                                "y":map_elem.y,"canvas_width":cw,
                                 "canvas_height":ch
                                 }); 
             }
@@ -41,7 +41,7 @@ const buildSceneData=()=>{
             {
                output_map.push({"sprite":"entryexit_exit",
                                 "x":map_elem.x,
-                                "y":map_elem.y,,"canvas_width":cw,
+                                "y":map_elem.y,"canvas_width":cw,
                                 "canvas_height":ch
                                 }); 
             }
@@ -49,7 +49,7 @@ const buildSceneData=()=>{
             {
                output_map.push({"sprite":"camstopper_left",
                                 "x":map_elem.x,
-                                "y":map_elem.y,,"canvas_width":cw,
+                                "y":map_elem.y,"canvas_width":cw,
                                 "canvas_height":ch
                                 }); 
             }
@@ -57,7 +57,7 @@ const buildSceneData=()=>{
             {
                output_map.push({"sprite":"camstopper_right",
                                 "x":map_elem.x,
-                                "y":map_elem.y,,"canvas_width":cw,
+                                "y":map_elem.y,"canvas_width":cw,
                                 "canvas_height":ch
                                 }); 
             }
@@ -65,7 +65,7 @@ const buildSceneData=()=>{
             {
                output_map.push({"sprite":"scenechanger_scright",
                                 "x":map_elem.x,
-                                "y":map_elem.y,,"canvas_width":cw,
+                                "y":map_elem.y,"canvas_width":cw,
                                 "canvas_height":ch
                                 }); 
             }
@@ -73,7 +73,7 @@ const buildSceneData=()=>{
             {
                output_map.push({"sprite":"scenechanger_scleft",
                                 "x":map_elem.x,
-                                "y":map_elem.y,,"canvas_width":cw,
+                                "y":map_elem.y,"canvas_width":cw,
                                 "canvas_height":ch
                                 }); 
             }
@@ -91,6 +91,6 @@ const buildSceneData=()=>{
 
         }
         const popupWindow = window.open("", "popup", "width=300,height=200");
-        popupWindow.document.write(`<p>${JSON.stringify(outputJson)}</p>`);
+        popupWindow.document.write(`<p>${JSON.stringify(output_map)}</p>`);
         popupWindow.document.title = "Your Design";
 }
