@@ -1512,7 +1512,8 @@ document.onmousedown = function(event) {
                             );
                 }
             this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');
-            this.camera.tgt=this.camera_stop_sprites[this.sceneForward?0:1];
+            // this.camera.tgt=this.camera_stop_sprites[this.sceneForward?0:1];
+            this.camera.tgt=this.camera_stop_sprites[this.sceneForward?this.gcsi("camstopper_left"):this.gcsi("camstopper_right")];
             this.scenesLoaded[n]=true;           
             this.inTransition=false;
             this.sceneStartTime= this.runningClock;
@@ -1521,6 +1522,7 @@ document.onmousedown = function(event) {
             pauseMusic();
             startMusic();
             }
+
         placePlayerOnEntryExit(ent_ex)
             {
             this.player.stopEverything();
@@ -1560,6 +1562,13 @@ document.onmousedown = function(event) {
 
                 }
             }
+        gcsi(sprite_type){
+            for(let elem_i in this.camera_stop_sprites){                
+                if(this.camera_stop_sprites[elem_i].sprite_type==sprite_type) 
+                    return elem_i;
+            }
+            return 0;
+        }
 
         }
 //2. Gamemanager ends

@@ -229,6 +229,7 @@
                 this.PanScreen();
                 this.MindOutput();
                 this.drawDeleteCircle();
+
             }
             PanScreen(){
                 if(GetKeyPressedx("a"))
@@ -278,7 +279,18 @@
                 this.adjustLastImage();
             }
             WatchOutForRightPress(){
-                ;
+                if(!mouseRightPressed) return false;
+                for(let i=0;i<this.map.length;i++){
+                    let xgap=Math.abs(this.map[i].x-this.renderscroll.x-mouseX);
+                    let ygap=Math.abs(this.map[i].y-this.renderscroll.y-mouseY);
+                    if(xgap<5 && ygap<5){
+                        this.deletePoint[0]=this.map[i].x-this.renderscroll.x;
+                        this.deletePoint[1]=this.map[i].y-this.renderscroll.y;
+                        return true;
+                    }
+                }
+                this.deletePoint[0]=0;
+                this.deletePoint[1]=0;
             }
             DeleteSpriteOnWhichMouseLies(){
                 for(let i=0;i<this.map.length;i++){
@@ -356,7 +368,7 @@
             }
             
             drawDeleteCircle(){
-
+                this.WatchOutForRightPress();
                 if(this.deletePoint[0]==0) return false;
                 ctx.fillStyle='#FF0000';
                 ctx.beginPath();

@@ -67,9 +67,9 @@ let scenes=[
                   {"sprite":"scenechanger_scleft","x":-300,"y":300},  
                   {"sprite":"scenechanger_scright","x":1600,"y":322}, 
                   {"sprite":"entryexit_entry","x":-160,"y":300}, 
-                  {"sprite":"entryexit_exit","x":1512,"y":349}, 
+                  {"sprite":"entryexit_exit","x":1412,"y":349}, 
                   {"sprite":"camstopper_left","x":100,"y":300},
-                  {"sprite":"camstopper_right","x":1337,"y":308},                            
+                  {"sprite":"camstopper_right","x":1112,"y":308},                            
                   // {"sprite":"player","x":400,"y":300,"width":100,"height":100},  
                   {"sprite":"wall","x":663,"y":156,"width":1764,"height":52,
                    "hitboxoffsetx":0,"hitboxoffsety":0,"isHori":true},
@@ -85,6 +85,7 @@ let scenes=[
                   {"sprite":"flower","x":1200,"y":345,"width":50,"height":50}, 
                                      
             ],
+            [{"sprite":"wall","x":229,"y":44,"width":400,"height":40,"hitboxoffsetx":0,"hitboxoffsety":0,"isHori":true,"canvas_width":1315,"canvas_height":537},{"sprite":"wall","x":624,"y":44,"width":400,"height":40,"hitboxoffsetx":0,"hitboxoffsety":0,"isHori":true,"canvas_width":1315,"canvas_height":537},{"sprite":"wall","x":933,"y":44,"width":224,"height":40,"hitboxoffsetx":0,"hitboxoffsety":0,"isHori":true,"canvas_width":1315,"canvas_height":537},{"sprite":"wall","x":237,"y":506,"width":400,"height":40,"hitboxoffsetx":0,"hitboxoffsety":0,"isHori":true,"canvas_width":1315,"canvas_height":537},{"sprite":"wall","x":633,"y":506,"width":400,"height":40,"hitboxoffsetx":0,"hitboxoffsety":0,"isHori":true,"canvas_width":1315,"canvas_height":537},{"sprite":"wall","x":943,"y":506,"width":226,"height":40,"hitboxoffsetx":0,"hitboxoffsety":0,"isHori":true,"canvas_width":1315,"canvas_height":537},{"sprite":"wall","x":49,"y":193,"width":40,"height":257,"hitboxoffsetx":0,"hitboxoffsety":0,"isHori":false,"canvas_width":1315,"canvas_height":537},{"sprite":"wall","x":1025,"y":193,"width":43,"height":263,"hitboxoffsetx":0,"hitboxoffsety":0,"isHori":false,"canvas_width":1315,"canvas_height":537},{"sprite":"scenechanger_scleft","x":-23,"y":408,"canvas_width":1315,"canvas_height":537},{"sprite":"scenechanger_scright","x":1079,"y":414,"canvas_width":1315,"canvas_height":537},{"sprite":"camstopper_left","x":355,"y":258,"canvas_width":1315,"canvas_height":537},{"sprite":"camstopper_right","x":630,"y":424,"canvas_width":1315,"canvas_height":537},{"sprite":"entryexit_entry","x":151,"y":408,"canvas_width":1315,"canvas_height":537},{"sprite":"entryexit_exit","x":806,"y":414,"canvas_width":1315,"canvas_height":537}],
             [
               {"sprite":"scenechanger_scleft","x":-288,"y":300},    
               {"sprite":"entryexit_entry","x":0,"y":300},
