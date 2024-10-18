@@ -35,9 +35,28 @@ let scenes=[
 				{"sprite":"flower","x":268,"y":554,"width":50,"height":50,"xoffset":0,"yoffset":0,"exp":10,"spriteId":"f3"},	
 				{"sprite":"flower","x":1081,"y":430,"width":50,"height":50,"xoffset":0,"yoffset":0,"exp":10,"spriteId":"f4"},				
 			],
-           [{"sprite":"entryexit_entry","x":"-600.00","y":"464.00"},{"sprite":"wall","x":"-587.00","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":8},{"sprite":"camstopper_left","x":"-33.00","y":"394.00"},{"sprite":"camstopper_right","x":"3583.00","y":"464.00"},{"sprite":"entryexit_exit","x":"3886.30","y":"464.00"},{"sprite":"scenechanger_scleft","x":"-700.00","y":"464.00"},{"sprite":"scenechanger_scright","x":"4277.16","y":"464.00"},{"sprite":"wall","x":"2508.16","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"wall","x":"3407.52","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"MovingPlatform","x":"1460.04","y":"510.00","width":"238.00","height":"110.00","turnTime":2500}],
-           // [{"sprite":"entryexit_entry","x":"-600.00","y":"464.00"},{"sprite":"wall","x":"-587.00","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":8},{"sprite":"camstopper_left","x":"-33.00","y":"394.00"},{"sprite":"camstopper_right","x":"3258.00","y":"464.00"},{"sprite":"entryexit_exit","x":"3886.30","y":"464.00"},{"sprite":"scenechanger_scleft","x":"-700.00","y":"464.00"},{"sprite":"scenechanger_scright","x":"3964.66","y":"464.00"},{"sprite":"wall","x":"2120.66","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"wall","x":"3095.02","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"MovingPlatform","x":"1460.04","y":"510.00","width":"238.00","height":"110.00","turnTime":2000}],
-            
+          
+           [{"sprite":"entryexit_entry","x":"-600.00","y":"464.00"},
+           {"sprite":"wall","x":"-587.00","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":8},
+           {"sprite":"camstopper_left","x":"-33.00","y":"394.00"},{"sprite":"camstopper_right","x":"3583.00","y":"464.00"},
+           {"sprite":"entryexit_exit","x":"3886.30","y":"464.00"},{"sprite":"scenechanger_scleft","x":"-700.00","y":"464.00"},
+           {"sprite":"scenechanger_scright","x":"4277.16","y":"464.00"},
+           {"sprite":"wall","x":"2508.16","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
+           {"sprite":"wall","x":"3407.52","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
+           {"sprite":"MovingPlatform","x":"1460.04","y":"510.00","width":"238.00","height":"110.00","turnTime":2500}],
+
+           //  [{"sprite":"entryexit_entry","x":"-600.00","y":"464.00"},
+           //   {"sprite":"scenechanger_scleft","x":"1374.71","y":"107.71"},
+           //  {"sprite":"wall","x":"-587.00","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":8},
+           //  {"sprite":"camstopper_left","x":"-600.00","y":"394.00"},
+           //  {"sprite":"wall","x":"1473.95","y":"294.18","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
+           //  {"sprite":"wall","x":"2527.32","y":"32.51","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
+           //  {"sprite":"wall","x":"3493.36","y":"32.51","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
+           //  {"sprite":"wall","x":"4465.29","y":"294.18","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
+           //  {"sprite":"camstopper_right","x":"4757.85","y":"162.57"},{"sprite":"entryexit_entry","x":"5064.24","y":"162.57"},
+           //  {"sprite":"scenechanger_scright","x":"5306.91","y":"162.57"},  
+           //  {"sprite":"entryexit_exit","x":"4757","y":"464.00"},          
+           // ],          
 			/*
 			[
 			   {"sprite":"entryexit_entry","x":-600,"y":464}, //backdoor
@@ -48,8 +67,7 @@ let scenes=[
 			*/
 			[{"sprite":"entryexit_entry","x":"-1160.00","y":"464.00"},{"sprite":"wall","x":"-587.00","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":8},{"sprite":"scenechanger_scleft","x":"-1250","y":"394"},{"sprite":"camstopper_left","x":"-600.00","y":"394.00"},{"sprite":"wall","x":"-1573.87","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"wall","x":"1304.12","y":"936.47","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"wall","x":"2306.84","y":"936.47","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"wall","x":"2581.04","y":"1346.64","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"wall","x":"1591.11","y":"1346.64","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"wall","x":"311.79","y":"936.47","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"platform","x":"178.12","y":"1176.86","width":"50.00","height":"1000.00"},{"sprite":"wall","x":"602.20","y":"1346.64","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"wall","x":"352.20","y":"1676.57","width":"300.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"wall","x":"1483.49","y":"1676.57","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"wall","x":"2441.79","y":"1676.57","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"platform","x":"3482.39","y":"588.43","width":"50.00","height":"1000.00"},{"sprite":"platform","x":"3482.39","y":"1222.46","width":"50.00","height":"315.94"},{"sprite":"wall","x":"3391.65","y":"1676.57","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"camstopper_right","x":"3561.66","y":"1490.12"},{"sprite":"scenechanger_scright","x":"4136.48","y":"1490.12"}],
             [                               
-                {"sprite":"platform","x":-1110,"y":600,"width":775,"height":50},
-                  
+                {"sprite":"platform","x":-1110,"y":600,"width":775,"height":50},                  
                     
                 {"sprite":"wall","x":-812,"y":837,"width":250,"height":150,"isHorizontal":false,"copies":10},
                 {"sprite":"wall","x":1513,"y":-239,"width":250,"height":150,"isHorizontal":false,"copies":12},

@@ -406,6 +406,8 @@
 		 }
 		 
 		}
+
+
 	
 let BLACKCLOUD= LoadImagex('sprites','cloud-1dark.png');
 let WHITECLOUD= LoadImagex('sprites','cloud-1.png');
@@ -424,7 +426,12 @@ let FORESTBACKGROUND=LoadImagex('sprites','ForestBackground.jpg');
 let SAWWHEEL1= LoadImagex('sprites/workshop','sawwheel1.png');
 let SAWWHEEL2= LoadImagex('sprites/workshop','sawwheel2.png');
 let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
-    
+
+let WINGED_FOOL_IDLE=LoadImages('sprites/WingedFool/Idle',Array(6).fill(0).map((x,i)=>`${i}.png`));
+let WINGED_FOOL_FLYING=LoadImages('sprites/WingedFool/flying',Array(6).fill(0).map((x,i)=>`${i}.png`));
+let WINGED_FOOL_DEATH=LoadImages('sprites/WingedFool/Death',Array(6).fill(0).map((x,i)=>`${i}.png`));
+
+
 </script>
 </head>
 <body style='background-color:black;'>
@@ -1482,6 +1489,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
            	update_and_display_elevatorbox()
            	{           		
            	this.position.setVec(this.elevate_box.position.copy().add(this.hitboxOffset));
+           	if(!gameManager.player || !gameManager.player.isActive) return false;
             if(b_collision(this.elevate_box,gameManager.player.hit_box))
                 {
                 let gap=this.elevate_box.position.y-gameManager.player.hit_box.position.y;
