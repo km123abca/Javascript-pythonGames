@@ -8,6 +8,7 @@ const huskDialogue=[
                     ["...."]
                    ];
 let scenes=[
+            //Scene1
 			[
 				{"sprite":"platform","x":150,"y":-210,"width":50,"height":1280},
 				{"sprite":"WallGripper","x":175,"y":-227,"width":50,"height":1304},
@@ -35,28 +36,36 @@ let scenes=[
 				{"sprite":"flower","x":268,"y":554,"width":50,"height":50,"xoffset":0,"yoffset":0,"exp":10,"spriteId":"f3"},	
 				{"sprite":"flower","x":1081,"y":430,"width":50,"height":50,"xoffset":0,"yoffset":0,"exp":10,"spriteId":"f4"},				
 			],
-          
+            //Scene2 which has horizontal mp
            [{"sprite":"entryexit_entry","x":"-600.00","y":"464.00"},
            {"sprite":"wall","x":"-587.00","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":8},
-           {"sprite":"camstopper_left","x":"-33.00","y":"394.00"},{"sprite":"camstopper_right","x":"3583.00","y":"464.00"},
-           {"sprite":"entryexit_exit","x":"3886.30","y":"464.00"},{"sprite":"scenechanger_scleft","x":"-700.00","y":"464.00"},
+           {"sprite":"camstopper_left","x":"-33.00","y":"394.00"},
+           {"sprite":"camstopper_right","x":"3583.00","y":"464.00"},
+           {"sprite":"entryexit_exit","x":"3886.30","y":"464.00"},
+           {"sprite":"scenechanger_scleft","x":"-700.00","y":"464.00"},
            {"sprite":"scenechanger_scright","x":"4277.16","y":"464.00"},
            {"sprite":"wall","x":"2508.16","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
            {"sprite":"wall","x":"3407.52","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
            {"sprite":"MovingPlatform","x":"1460.04","y":"510.00","width":"238.00","height":"110.00","turnTime":2500}],
-
-           //  [{"sprite":"entryexit_entry","x":"-600.00","y":"464.00"},
-           //   {"sprite":"scenechanger_scleft","x":"1374.71","y":"107.71"},
-           //  {"sprite":"wall","x":"-587.00","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":8},
-           //  {"sprite":"camstopper_left","x":"-600.00","y":"394.00"},
-           //  {"sprite":"wall","x":"1473.95","y":"294.18","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
-           //  {"sprite":"wall","x":"2527.32","y":"32.51","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
-           //  {"sprite":"wall","x":"3493.36","y":"32.51","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
-           //  {"sprite":"wall","x":"4465.29","y":"294.18","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
-           //  {"sprite":"camstopper_right","x":"4757.85","y":"162.57"},{"sprite":"entryexit_entry","x":"5064.24","y":"162.57"},
-           //  {"sprite":"scenechanger_scright","x":"5306.91","y":"162.57"},  
-           //  {"sprite":"entryexit_exit","x":"4757","y":"464.00"},          
-           // ],          
+           //Scene3 boss fight scene winged fool           
+            [
+             // {"sprite":"entryexit_entry","x":"-538","y":"467"},
+             {"sprite":"entryexit_entry","x":"1612","y":"92.00"},
+             {"sprite":"camstopper_left","x":"60","y":"467"},
+             // {"sprite":"camstopper_left","x":"2114","y":"73"},
+             {"sprite":"scenechanger_scleft","x":"-688","y":"467"},
+            {"sprite":"wall","x":"-587.00","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":8},            
+            {"sprite":"wall","x":"1473.95","y":"294.18","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
+            {"sprite":"wall","x":"2527.32","y":"32.51","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
+            {"sprite":"wall","x":"3493.36","y":"32.51","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
+            {"sprite":"wall","x":"4465.29","y":"294.18","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
+            {"sprite":"camstopper_right","x":"4757.85","y":"162.57"},{"sprite":"entryexit_exit","x":"5064.24","y":"162.57"},
+            {"sprite":"scenechanger_scright","x":"5306.91","y":"162.57"},      
+            {"sprite":"BossFightTriggGO","x":3176,"y":-70,"mywidth":40,"myheight":600,
+                 "br1posx":-660,"br1posy":-400,"br2posx":1237,"br2posy":-400,
+                 "spriteId":"BossFightTriggGO"
+            },              
+           ],          
 			/*
 			[
 			   {"sprite":"entryexit_entry","x":-600,"y":464}, //backdoor
@@ -65,7 +74,27 @@ let scenes=[
 			],
 			//basic block
 			*/
-			[{"sprite":"entryexit_entry","x":"-1160.00","y":"464.00"},{"sprite":"wall","x":"-587.00","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":8},{"sprite":"scenechanger_scleft","x":"-1250","y":"394"},{"sprite":"camstopper_left","x":"-600.00","y":"394.00"},{"sprite":"wall","x":"-1573.87","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"wall","x":"1304.12","y":"936.47","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"wall","x":"2306.84","y":"936.47","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"wall","x":"2581.04","y":"1346.64","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"wall","x":"1591.11","y":"1346.64","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"wall","x":"311.79","y":"936.47","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"platform","x":"178.12","y":"1176.86","width":"50.00","height":"1000.00"},{"sprite":"wall","x":"602.20","y":"1346.64","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"wall","x":"352.20","y":"1676.57","width":"300.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"wall","x":"1483.49","y":"1676.57","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"wall","x":"2441.79","y":"1676.57","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"platform","x":"3482.39","y":"588.43","width":"50.00","height":"1000.00"},{"sprite":"platform","x":"3482.39","y":"1222.46","width":"50.00","height":"315.94"},{"sprite":"wall","x":"3391.65","y":"1676.57","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},{"sprite":"camstopper_right","x":"3561.66","y":"1490.12"},{"sprite":"scenechanger_scright","x":"4136.48","y":"1490.12"}],
+            //Scene4
+			[{"sprite":"entryexit_entry","x":"-1160.00","y":"464.00"},
+            {"sprite":"entryexit_exit","x":"3762.00","y":"1490.00"},
+            {"sprite":"wall","x":"-587.00","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":8},
+            {"sprite":"scenechanger_scleft","x":"-1250","y":"394"},{"sprite":"camstopper_left","x":"-600.00","y":"394.00"},
+            {"sprite":"wall","x":"-1573.87","y":"612.00","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
+            {"sprite":"wall","x":"1304.12","y":"936.47","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
+            {"sprite":"wall","x":"2306.84","y":"936.47","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
+            {"sprite":"wall","x":"2581.04","y":"1346.64","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
+            {"sprite":"wall","x":"1591.11","y":"1346.64","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
+            {"sprite":"wall","x":"311.79","y":"936.47","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
+            {"sprite":"platform","x":"178.12","y":"1176.86","width":"50.00","height":"1000.00"},
+            {"sprite":"wall","x":"602.20","y":"1346.64","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
+            {"sprite":"wall","x":"352.20","y":"1676.57","width":"300.00","height":"150.00","isHorizontal":true,"copies":4},
+            {"sprite":"wall","x":"1483.49","y":"1676.57","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
+            {"sprite":"wall","x":"2441.79","y":"1676.57","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
+            {"sprite":"platform","x":"3482.39","y":"588.43","width":"50.00","height":"1000.00"},
+            {"sprite":"platform","x":"3482.39","y":"1222.46","width":"50.00","height":"315.94"},
+            {"sprite":"wall","x":"3391.65","y":"1676.57","width":"250.00","height":"150.00","isHorizontal":true,"copies":4},
+            {"sprite":"camstopper_right","x":"3561.66","y":"1490.12"},{"sprite":"scenechanger_scright","x":"4136.48","y":"1490.12"}],
+            //Scene5 -the one with traitor lord
             [                               
                 {"sprite":"platform","x":-1110,"y":600,"width":775,"height":50},                  
                     
@@ -91,6 +120,7 @@ let scenes=[
                 {"sprite":"traitorLord","x":-74,"y":941,"width":170,"height":220,
                    "spriteId":"boss_traitorlord1","cutscene":true}              
             ],
+            //Scene6
             [                               
                 {"sprite":"platform","x":-1110,"y":600,"width":775,"height":50},
                 {"sprite":"wall","x":-887,"y":2156,"width":250,"height":150,"isHorizontal":false,"copies":5},  
@@ -117,6 +147,7 @@ let scenes=[
 				{"sprite":"huskMiner","x":550,"y":2260,"width":170,"height":220,
 				   "spriteId":"boss_huskminer1","cutscene":true}              
             ],
+            //Scene7
 			[			  
 			  {"sprite":"platform","x":1263,"y":950,"width":50,"height":1000},
 			  {"sprite":"WallGripper","x":1288,"y":947,"width":50,"height":1000},
@@ -134,6 +165,7 @@ let scenes=[
 			  {"sprite":"saw","x":137,"y":175,"width":112,"height":112,"xoffset":0,"yoffset":0,"moveTime":600,"moveTimeInit":600,"speed":10,"isHoriWheel":false},
 			  {"sprite":"scenechanger_scright","x":2598,"y":1190},
 			],
+            //Scene8
 			[			  	  
 			  {"sprite":"wall","x":-888,"y":612,"width":250,"height":150,"isHorizontal":true,"copies":5},
 			  {"sprite":"wall","x":388,"y":868,"width":250,"height":150,"isHorizontal":true,"copies":4},
@@ -154,6 +186,7 @@ let scenes=[
 			  {"sprite":"scenechanger_scright","x":3300,"y":740},
 
 			],
+            //Scene9
 			[
 			    // {"sprite":"player","x":200,"y":200,"width":150,"height":100},
 			    // {"sprite":"lance","x":1060,"y":200,"width":250,"height":200,spriteId:"lance1"},
@@ -170,6 +203,7 @@ let scenes=[
 				{"sprite":"scenechanger_scright","x":1637,"y":468},
 				{"sprite":"MarkedSpot_enemystopleft","x":280,"y":523}
 			],
+            //Scene10
 			[	
 			    {"sprite":"shrub","x":-425,"y":994,"width":1111,"height":250,"xoffset":0,"yoffset":0},
 			    {"sprite":"shrub","x":1475,"y":994,"width":1312,"height":171,"xoffset":0,"yoffset":0},
@@ -191,7 +225,7 @@ let scenes=[
 				// {"sprite":"falseknight","x":1289,"y":-367,"width":368,"height":223,"spriteId":"boss_fknight1","spawnedBoss":true}
 				// {"sprite":"huskMiner","x":889,"y":-367,"width":170,"height":220,"spriteId":"boss_huskminer1","cutscene":false}
 			],
-			
+			//Scene11
 			[
 			    {"sprite":"shrub","x":-113,"y":932,"width":1362,"height":250,"xoffset":0,"yoffset":0},
 			    {"sprite":"shrub","x":450,"y":1256,"width":1171,"height":171,"xoffset":0,"yoffset":0},
@@ -211,6 +245,7 @@ let scenes=[
 				// {"sprite":"huskMiner","x":2900,"y":500,"width":170,"height":220,"spriteId":"boss_huskminer1","cutscene":true}
 				{"sprite":"scenechanger_scright","x":5650,"y":1208}
 			],
+            //Scene12
 			[		    
 			    			    
 			    {"sprite":"platform","x":-1110,"y":600,"width":775,"height":50},//yes			   
@@ -246,6 +281,7 @@ let scenes=[
 				{"sprite":"scenechanger_scright","x":2400,"y":421},
 				
 			],
+            //Scene13
 			[	
 			    {"sprite":"tree","x":1562,"y":1300,"width":361,"height":490},		    
 			    {"sprite":"lance","x":460,"y":1300,"width":250,"height":200,spriteId:"miniboss_lance1"},
@@ -270,6 +306,7 @@ let scenes=[
 				{"sprite":"scenechanger_scright","x":2452,"y":2616},				
 				{"sprite":"WallGripper","x":1910,"y":2312,"width":40,"height":500},
 			],
+            //Scene14
 			[	    			    
 		    {"sprite":"platform","x":-110,"y":600,"width":2162,"height":50},
 		    {"sprite":"platform","x":-675,"y":-150,"width":50,"height":1000},
@@ -287,6 +324,7 @@ let scenes=[
 			{"sprite":"falseknight","x":-100,"y":0,"width":368,"height":223,
 				 "spriteId":"boss_fknight1","spawnedBoss":true},
 			],
+            //Scene15
 			[	    			    
 		    {"sprite":"platform","x":-1110,"y":600,"width":775,"height":50},		    		   						
 			{"sprite":"camstopper_left","x":-600,"y":394},

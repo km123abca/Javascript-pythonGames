@@ -558,6 +558,8 @@ let WINGED_FOOL_DEATH=LoadImages('sprites/WingedFool/Death',Array(6).fill(0).map
   	canvas.height = window.innerHeight-100;
   	let xscale=canvas.width/1273;
     let yscale=canvas.height/873;
+    console.log(`canvas width:${canvas.width}`);
+    console.log(`canvas height:${canvas.height}`);
     var resize = function () 
 		{
 		canvas.width = window.innerWidth-35;
@@ -2367,6 +2369,30 @@ let WINGED_FOOL_DEATH=LoadImages('sprites/WingedFool/Death',Array(6).fill(0).map
 		 	
 		}
 	//Spear ends
+	//winged sentry starts
+	class WingedSentry
+		{
+		constructor(x,y,wid,hei,spriteGroups,spriteId='boss_wingedSentry0')
+			{
+			this.position=new CreateVector(x,y);
+			this.spriteGroups=spriteGroups;
+			if(gameManager.player && gameManager.player.isActive)
+				this.tgt=gameManager.player;
+			this.isBoss=this.spriteId.split("_")[0]=="boss";
+			this.isActive=!this.isBoss;
+			this.onScreen=!this.isBoss;
+			this.sprite_type="winged_sentry";
+			}
+		 update()
+		 	{
+
+		 	}
+		 display()
+		 	{
+		 		
+		 	}
+		}
+	//winged sentry ends
     //Traitor starts
 	class TraitorLord
 		{

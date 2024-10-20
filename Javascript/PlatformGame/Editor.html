@@ -529,6 +529,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
   	canvas.height = window.innerHeight-100;
   	let xscale=canvas.width/1273;
     let yscale=canvas.height/873;
+    console.log(`canvas width:${canvas.width}`);
+    console.log(`canvas height:${canvas.height}`);
     var resize = function () 
 		{
 		canvas.width = window.innerWidth-35;
@@ -7305,6 +7307,13 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	return true;
 		 	 	}
 		 	let scene=localStoragex.sceneNo;
+		 	const queryString=window.location.search;
+		 	const urlparams=new URLSearchParams(queryString);
+		 	const paramValue=urlparams.get('scene');
+		 	if(paramValue!=null)
+		 		scene=paramValue;
+		 	
+		 	
 
  	 	 	this.player=new Player(100*xscale,
 		   	   					   200*yscale,
