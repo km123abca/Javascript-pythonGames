@@ -406,12 +406,15 @@
 		 }
 		 
 		}
+
+
 	
 let BLACKCLOUD= LoadImagex('sprites','cloud-1dark.png');
 let WHITECLOUD= LoadImagex('sprites','cloud-1.png');
 let THORNYBALL = LoadImagex('sprites','Thornyball.png');
 let PICKAXEIMG = LoadImagex('sprites/huskMiner','Pick.png');
 let THORNIMAGE = LoadImagex('sprites/misc','thorn.png');
+let ELEVATORIMAGE=LoadImagex('sprites/misc','Elevator.png');
 let FORESTIMAGE = LoadImagex('sprites/Shrub','TreeCopse.png');
 let FLOWERIMAGE= LoadImagex('sprites/misc','Flower.png');
 let GATEIMAGE= LoadImagex('sprites/misc','gate.png');
@@ -423,7 +426,12 @@ let FORESTBACKGROUND=LoadImagex('sprites','ForestBackground.jpg');
 let SAWWHEEL1= LoadImagex('sprites/workshop','sawwheel1.png');
 let SAWWHEEL2= LoadImagex('sprites/workshop','sawwheel2.png');
 let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
-    
+
+let WINGED_FOOL_IDLE=LoadImages('sprites/WingedFool/Idle',Array(6).fill(0).map((x,i)=>`${i}.png`));
+let WINGED_FOOL_FLYING=LoadImages('sprites/WingedFool/flying',Array(6).fill(0).map((x,i)=>`${i}.png`));
+let WINGED_FOOL_DEATH=LoadImages('sprites/WingedFool/Death',Array(6).fill(0).map((x,i)=>`${i}.png`));
+
+
 </script>
 </head>
 <body style='background-color:black;'>
@@ -550,6 +558,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
   	canvas.height = window.innerHeight-100;
   	let xscale=canvas.width/1273;
     let yscale=canvas.height/873;
+    console.log(`canvas width:${canvas.width}`);
+    console.log(`canvas height:${canvas.height}`);
     var resize = function () 
 		{
 		canvas.width = window.innerWidth-35;
@@ -1218,7 +1228,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 	class HitBox
 		{
-		 constructor(x,y,wid,hei,spriteGroups,parent,hitboxName="unknown hitbox")
+		 constructor(x,y,wid,hei,spriteGroups,parent,hitboxName="unknown hitbox",
+		 	fillColor="#b3ffff")
 		 	{
              this.parent=parent;
 		 	 this.position= new CreateVector(x,y);
@@ -1385,6 +1396,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 if(!this.onScreen) return false;
 
 		 	 ctx.save();
+
 		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
 		 	 	 		   this.position.y-gameManager.camera.position.y);		 	 
 		 	 ctx.drawImage(this.imagex,-this.width/2,-this.height/2,this.width,this.height);		 	 
@@ -1394,21 +1406,189 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	{
 		 	 return true;
 		 	}
+		//addition on 05-09-2024 to add up on the functionality of general sprite
+//velocity application
+         applyVelocity(hit_box,velocity)
+            {                    
+             hit_box.position.x+=velocity.x;          
+             for(let k in gameManager.collission_sprites)
+                { 
+                 let x=gameManager.collission_sprites[k];
+                 if(!x.onScreen) continue;
+                 if(x==this || x==hit_box) continue;               
+                 if(b_collision(hit_box,x)) 
+                    {                     
+                     if(velocity.x > 0)                                            
+                        hit_box.position.x=x.position.x - x.width/2-hit_box.width/2-2;   
+                     else                     
+                        hit_box.position.x=x.position.x + x.width/2 + hit_box.width/2+2;        
+                    }
+                }
+             hit_box.position.y+=velocity.y;
+             for(let x of gameManager.collission_sprites)
+                {
+
+                 if(!x.onScreen) continue;
+                 if(x==this || x==hit_box) continue;
+
+                 if(b_collision(hit_box,x)) 
+                    {                                 
+                    if(velocity.y > 0)                        
+                        hit_box.position.y=x.position.y-x.height/2-hit_box.height/2-2;  
+                    else                        
+                        hit_box.position.y=x.position.y+x.height/2+hit_box.height/2+2;     
+                    }
+                }
+            }
+         update_and_display_hitbox(hit_box)
+            {           
+            this.position.setVec(hit_box.position.copy().add(this.hitboxOffset));
+            }
+         applyVelocityRestrictions(velocity,maxVelocity)
+            {
+             let xdir=velocity.x/Math.abs(velocity.x);
+             let ydir=velocity.y/Math.abs(velocity.y);
+             if(Math.abs(velocity.y) > maxVelocity.y)
+                velocity.y=ydir*maxVelocity.y;
+             if(Math.abs(velocity.x) > maxVelocity.x)
+                velocity.x=xdir*maxVelocity.x;
+            }
+		//addition ends
 		}
 
    class Elevator extends GeneralSprite
    	    {
-           constructor(x,y,wid,hei,spriteGroups)
+           constructor(x,y,wid,hei,turnTime,spriteGroups)
            	{
-           		super(x,y,wid,hei,spriteGroups);
-           		this.hit_box=new HitBox(this.position.x,
-           			                    this.position.y-0.25*this.height,
+           		super(x,y,wid,hei,0,0,spriteGroups);
+           		this.sprite_type="elevator";
+      
+           		this.elevate_box=new HitBox(this.position.x,
+           			                    this.position.y,
                 	                    this.width,
-                	                    this.height*0.5,
-                                                     [],
-                                     'elevatorhitbox');
+                	                    this.height,
+                                         [ 
+                                         // gameManager.elevatorboxes,
+                                         // gameManager.visible_sprites,
+                                         gameManager.collission_sprites                           
+                                         ],this,
+                                        'elevatorbox');
+
+
+           		this.velocity=new CreateVector(0*xscale,3*yscale);
+           		this.maxVelocity=new CreateVector(5*xscale,5*yscale);
+           		this.imagex=ELEVATORIMAGE;
+           		// this.hitboxOffset.y=-this.height*0.1;
+           		this.lastTurnTime=gameManager.runningClock;
+           		this.turnTime=2000;
+           	}
+           	update()
+           	{
+           	    this.move();
+           		this.update_and_display_elevatorbox();
+           		this.turn();
+           	}
+           	update_and_display_elevatorbox()
+           	{           		
+           	this.position.setVec(this.elevate_box.position.copy().add(this.hitboxOffset));
+           	if(!gameManager.player || !gameManager.player.isActive) return false;
+            if(b_collision(this.elevate_box,gameManager.player.hit_box))
+                {
+                let gap=this.elevate_box.position.y-gameManager.player.hit_box.position.y;
+                if(this.velocity.y<0)
+                    gameManager.player.hit_box.position.y=this.elevate_box.position.y-this.elevate_box.height/2-gameManager.player.hit_box.height/2- 3;
+                else 
+                    gameManager.player.hit_box.position.y=this.elevate_box.position.y+this.elevate_box.height/2+gameManager.player.hit_box.height/2+3;
+                
+                }           	
+           	}
+           	turn()
+           	{
+           		if(gameManager.runningClock-this.lastTurnTime > this.turnTime)
+           		{
+           			this.lastTurnTime=gameManager.runningClock;
+           			this.velocity.y*=-1;
+           		}
+           	}
+           	move()
+           	{
+           		this.elevate_box.position.x+=this.velocity.x;
+           		this.elevate_box.position.y+=this.velocity.y;         		
+
            	}
    	    }
+
+   class MovingPlatform extends GeneralSprite
+        {
+           constructor(x,y,wid,hei,turnTime,spriteGroups)
+            {
+                super(x,y,wid,hei,0,0,spriteGroups);
+                this.sprite_type="MovingPlatform";
+      
+                this.moving_box=new HitBox(this.position.x,
+                                        this.position.y,
+                                        this.width,
+                                        this.height,
+                                         [ 
+                                         // gameManager.elevatorboxes,
+                                         // gameManager.visible_sprites,
+                                         gameManager.collission_sprites                           
+                                         ],this,
+                                        'movingboxhitbox');
+
+
+                this.velocity=new CreateVector(4*xscale,0*yscale);
+                this.maxVelocity=new CreateVector(5*xscale,5*yscale);
+                this.imagex=ELEVATORIMAGE;
+                // this.hitboxOffset.y=-this.height*0.1;
+                this.lastTurnTime=gameManager.runningClock;
+                this.turnTime=turnTime;
+                this.inContact=false;
+            }
+            update()
+            {
+                this.move();
+                this.update_and_display_elevatorbox();
+                this.turn();
+                this.inContact=false;
+            }
+            update_and_display_elevatorbox()
+            {                   
+            this.position.setVec(this.moving_box.position.copy().add(this.hitboxOffset));
+
+            if(!gameManager.player || gameManager.player.isActive) 
+            {
+                this.inContact=false;
+                return; 
+            }
+            /*
+            if(b_collision(this.moving_box,gameManager.player.hit_box))                
+                this.inContact=true;
+            else 
+                this.inContact=false;*/              
+                              
+            }
+            
+            turn()
+            {
+                if(gameManager.runningClock-this.lastTurnTime > this.turnTime)
+                {
+                    this.lastTurnTime=gameManager.runningClock;
+                    this.velocity.x*=-1;
+                }
+            }
+            move()
+            {
+                this.moving_box.position.x+=this.velocity.x;
+                this.moving_box.position.y+=this.velocity.y;   
+                // if(!gameManager.player || gameManager.player.isActive) return; 
+                if(this.inContact)
+                    gameManager.player.hit_box.position.x+=this.velocity.x;          
+
+            }
+        }
+
+
         
    class Bullet extends GeneralSprite
         {
@@ -1421,8 +1601,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                 	                    this.height*0.5,
                                      [ //gameManager.collission_sprites,
                                       // gameManager.visible_sprites
-                                     ],
-                                     'bullethitbox');
+                                     ],this,
+                                     'bullethitbox');//checkforproblems
                 this.imagex=THORNYBALL;
                 this.rotAngle=0; 
                 this.rotSpeed=0.25;
@@ -2189,6 +2369,30 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	
 		}
 	//Spear ends
+	//winged sentry starts
+	class WingedSentry
+		{
+		constructor(x,y,wid,hei,spriteGroups,spriteId='boss_wingedSentry0')
+			{
+			this.position=new CreateVector(x,y);
+			this.spriteGroups=spriteGroups;
+			if(gameManager.player && gameManager.player.isActive)
+				this.tgt=gameManager.player;
+			this.isBoss=this.spriteId.split("_")[0]=="boss";
+			this.isActive=!this.isBoss;
+			this.onScreen=!this.isBoss;
+			this.sprite_type="winged_sentry";
+			}
+		 update()
+		 	{
+		 	 if(!this.isActive) return;
+		 	}
+		 display()
+		 	{
+		 	 if(!this.onScreen) return;	
+		 	}
+		}
+	//winged sentry ends
     //Traitor starts
 	class TraitorLord
 		{
@@ -2240,9 +2444,9 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                                                         gameManager.collission_sprites,
                                                         // gameManager.visible_sprites
                                                         // gameManager.active_sprites
-                                                        ],'traitorlordhitbox');
+                                                        ],this,'traitorlordhitbox'); //checkforproblems
 			 	this.image_offset=new CreateVector(-30*xscale,-15*yscale);
-			 	this.health=10;
+			 	this.health=100;
 		 		this.maxHealth=100;
 		 		this.uiBarTimer=0;
 		 		this.uiBarMaxTime=3000;
@@ -2715,7 +2919,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                                   ],
                                  'enemy_hitbox',this,//hitboxName,parent
                                  90*xscale,10*yscale,//xoffset,yoffset
-                                 10,this.sx*30*xscale,//damage,damagehitback
+                                 80,this.sx*30*xscale,//damage,damagehitback
                                  10//life
                                  ); 
             }
@@ -5102,7 +5306,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
                     this.dialogueStarted=false;
                     this.di=0;
                     this.coolDownTimer=0;
-                    console.log('disabled');
+                    // console.log('disabled');
                 }
             update()
              {
@@ -5443,7 +5647,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 							 [gameManager.active_sprites,gameManager.hitbox_sprites],
 		 							 'enemy_hitbox',
 		 							 this,
-		 							 70,0,10,this.sx*1.5);	
+		 							 70,0,90,this.sx*1.5);//changed	
 		 		else if(this.state=='throw')
 		 			{		 			
 		 			new ThornyBall(this.position.x,
@@ -5619,6 +5823,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 
 		AgroBehav()
 			{
+            if(!gameManager.player || !gameManager.player.isActive) return;
 			if(!gameManager.player.inEnemyRadar)
 				gameManager.player.inEnemyRadar=true;
 			if(!this.startled)
@@ -6389,6 +6594,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	
 		 	// return false;
 		 	if(this.invincibleState && !gameManager.playerDied) return false;
+		 	gameManager.FreezeScreen();
 		 	if(!gameManager.playerDied)
 		 	document.querySelector('#LossBuzz').play();	
 		 	this.invincibleState=true;
@@ -6924,6 +7130,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	 		{
 		 	 	 		this.hit_box.position.y=x.position.y+x.height/2+this.hit_box.height/2+2;		 	 	 		
 		 	 	 		}
+                     if(x.parent && x.parent.sprite_type=="MovingPlatform")                        
+                        x.parent.inContact=true;                        
 		 	 	 	}
 		 	 	}
 		 	}
@@ -7643,6 +7851,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 this.active_sprites=[];
 		 	 this.kill_plants=[];
 		 	 this.killables=[];
+		 	 // this.elevatorboxes=[]; delete me
 		 	 this.loot=[];		 	 		 	 
 		 	 this.collission_sprites=[];
 		 	 this.markedSpots=[];
@@ -7687,8 +7896,21 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	
 		 	 this.screenShakeTimer=0;
 		 	 this.maxScreenShakeTime=500;
+		 	 
+		 	 this.maxFreezeTime=4000;
+		 	 this.lastScreenFreeze=0;
 		 
 		 	}
+		 MindScreenFreeze(){
+		 	if(this.lastScreenFreeze==0) return false;
+		 	if(this.runningClock-this.lastScreenFreeze>this.maxFreezeTime)
+		 		this.lastScreenFreeze=0;
+
+		 }
+		 FreezeScreen(){
+		 	return false;//not working
+		 	this.lastScreenFreeze=this.runningClock;
+		 }
 		 MindScreenShake(){
 		 	
 		 	if(this.screenShakeTimer==0) return;
@@ -7773,7 +7995,10 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 if(this.runningClock - this.playerDiedClock > 1500)
 		 	 	{
 		 	 	console.log('time up reloading now');
-		 	 	window.location.href="./Platformer.html";
+		 	 	// window.location.href="./Platformer.html";
+                this.playerDiedClock=0;
+                this.playerDied=false;
+		 	 	this.changeScene('none');
 		 	    }
 		 	}
 		 checkHitWithKillPlants()
@@ -7919,6 +8144,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	{
 		 	 	this.sceneForward=true;
 		 	 	this.scenesLoaded[this.scenesLoaded.length-1]=false;
+		 	 	this.localStorageChecked=false;
 		 	 	}
 		 	}
 
@@ -7952,6 +8178,7 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 runGame()
 		 	{
 		 	 this.MindScreenShake();
+		 	 this.MindScreenFreeze();
 		 	 this.checkHitWithKillPlants();
 		 	 if(!this.gamePaused)	this.checkPlayerExistence();		 	
 		 	 const [hori,vert]=this.camChecker();
@@ -7973,9 +8200,27 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 	}
 		 	 for(let sprite of this.active_sprites)
 		 	 	{
-		 	 	if(!gameManager.gamePaused)	 	 	
+		 	 	if(!gameManager.gamePaused && this.lastScreenFreeze==0)	 
+		 	 		{	 	
 		 	 		sprite.update();	
+		 	 		}
+		 	 	
 		 	 	}
+		 	 /*	
+		 	 for(let hb of this.elevatorboxes)
+		 	 	{
+		 	 	if(b_collision(hb,this.player.hit_box))
+		 	 		{
+		 	 			
+		 	 			if(this.player.hit_box.position.y<=hb.position.y){
+		 	 				this.player.hit_box.position.y=hb.position.y-hb.width/2-5*yscale;
+		 	 				this.player.velocity.y=0;
+		 	 			}
+		 	 			else
+		 	 				this.player.hit_box.position.y=hb.position.y+hb.width/2+5*yscale;
+		 	 		}
+		 	 	}
+		 	 */
 
 		 	 for(let hb of this.hitbox_sprites)
 		 	 	{
@@ -8039,6 +8284,8 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 if(!localStoragex) 
 		 	 	{
 		 	 	console.log('nothing in localstorage..returning');
+                this.sceneForward=[true];
+                this.scenesLoaded=[false];
 		 	 	return true;
 		 	 	}
 		 	let scene=localStoragex.sceneNo;
@@ -8284,7 +8531,27 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
  	   				   		  [gameManager.visible_sprites,gameManager.active_sprites],
                               dTime
     	 	   				  	 	);	 	
-                  } 	 	
+                  } 	
+                 else if(elem['sprite']=='Elevator')
+                  {
+                  	new Elevator(elem['x']*xscale,
+                  		 		 elem['y']*yscale,
+                  		 		 elem['width']*xscale,
+                  		 		 elem['height']*yscale,elem['turnTime'],
+                  		 		 [gameManager.visible_sprites,gameManager.active_sprites]
+                  		        );
+                  } 
+                 else if(elem['sprite']=='MovingPlatform')
+                  {
+                    new MovingPlatform(elem['x']*xscale,
+                                 elem['y']*yscale,
+                                 elem['width']*xscale,
+                                 elem['height']*yscale,elem['turnTime'],
+                                 [gameManager.visible_sprites,
+                                 gameManager.active_sprites
+                                 ]
+                                );
+                  } 	
 		 	 	}
 		 	 this.placePlayerOnEntryExit(this.sceneForward?'entry':'exit');		 	 
 		 	 this.camera.tgt=this.camera_stop_sprites[this.sceneForward?0:1];
@@ -8298,6 +8565,35 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 		 	 startMusic();
 		 	}
 		}
+    const drawCircleAtCenter=()=>{
+        var r = 100; 
+        var x = canvas.width / 2;
+        var y = canvas.height / 2;       
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();       
+        ctx.globalCompositeOperation = 'source-over';
+    }
+    const unmaskcenter=()=>{
+     let r=300;
+     // ctx.fillStyle=backGroundColor;
+     // ctx.globalAlpha = 0.5;
+     // ctx.fillRect(0,0,canvas.width, canvas.height);
+     // ctx.globalAlpha = 1;
+
+     let lineWidth=400;
+     ctx.beginPath();
+     for(let i=0;i<1;i++)
+        {
+         ctx.arc(canvas.width / 2,  canvas.height / 2, r, 0, 2 * Math.PI);
+         ctx.strokeStyle = 'black';
+         ctx.lineWidth = lineWidth;
+         ctx.stroke();
+        }
+     ctx.lineWidth = 1;
+   
+    }
 	let gameManager=new GameManager();
 	//Game Classes End
 
@@ -8306,11 +8602,13 @@ let SAWWHEEL3= LoadImagex('sprites/workshop','sawwheel3.png');
 									{
 								 	resize();									
 							 		var loop = function () 
-													{										                    					
+													{                 					
 													ctx.clearRect(0,0,canvas.width,canvas.height);	
 													ctx.fillStyle = backGroundColor;
-													ctx.fillRect(0,0,canvas.width, canvas.height);
+													ctx.fillRect(0,0,canvas.width, canvas.height);                                                    
 													gameManager.update();	
+                                                    
+                                                    // unmaskcenter();
 													// showMouse();		
 				                                 	};
 					  	     		setInterval(loop, deltaTime);					  		
