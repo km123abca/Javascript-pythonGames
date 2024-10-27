@@ -2376,11 +2376,15 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 		constructor(x,y,wid,hei,spriteGroups,spriteId='boss_wingedSentry0')
 			{
 			this.position=new CreateVector(x,y);
+			this.spriteGroups= spriteGroups;
+			for(let grp of spriteGroups)
+			 grp.push(this);
 			this.width=wid;
 			this.height=hei;
 			this.spriteGroups=spriteGroups;
 			if(gameManager.player && gameManager.player.isActive)
 				this.tgt=gameManager.player;
+			this.spriteId=spriteId;
 			this.isBoss=this.spriteId.split("_")[0]=="boss";
 			this.isActive=!this.isBoss;
 			this.onScreen=!this.isBoss;
@@ -2391,20 +2395,29 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 				"slashing":{"images":WINGED_FOOL_SLASH,"width_extend":1,"height_extend":1,"anim_speed":1},
 				"death":{"images":WINGED_FOOL_DEATH,"width_extend":1,"height_extend":1,"anim_speed":1}
 			};			
-			this.anim="idle";
+			this.animation="idle";
 			this.animation_frame=0;
 			this.state="idle";
 			this.animInQueue=null;
 			this.sx=1;
 			}
+		switchAnimation(animx)
+			{
+			 if(this.animation != animx)
+			 	{
+			 	this.animationFrame=0;
+			 	this.animation=animx;			 	
+			 	}
+			}
 		 runAnimation()
 		 	{
-		 	 this.animation_frame+=this.animations[this.anim]["anim_speed"];
-		 	 if(this.animation_frame>=this.animations[this.anim]["images"].length)
+		 	 this.animation_frame+=this.animations[this.animation]["anim_speed"];
+		 	 if(this.animation_frame>=this.animations[this.animation]["images"].length)
 		 	 	{
 		 	 	  this.animation_frame=0;
 		 	 	  if(this.animInQueue)		 	 	  
-		 	 	  	this.anim=this.animInQueue;		 	 	  
+		 	 	  	this.animation=this.animInQueue;	
+		 	 	  	this.animInQueue=null;	 	 	  
 		 	 	}
 		 	}
 		 update()
@@ -2418,10 +2431,10 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 		 	 this.runAnimation();
 		 	 ctx.save();
 		 	 ctx.scale(this.sx,1);
-		 	 ctx.drawImage(this.animations[this.anim][this.animation_frame],
+		 	 ctx.drawImage(this.animations[this.animation]["images"][this.animation_frame],
 		 	 			   -this.width/2,-this.height/2,
-		 	 			   this.width*this.animations[this.anim]["width_extend"],
-		 	 			   this.height*this.animations[]
+		 	 			   this.width*this.animations[this.animation]["width_extend"],
+		 	 			   this.height*this.animations[this.animation]["height_extend"]
 		 	 			  );
 		 	 ctx.restore();
 		 	}
@@ -8119,6 +8132,7 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 		 	}
 		 showStartScreen()
 		 	{	
+
 		 	 if(!this.loadedStartScreen)
 		 	 	{
 		 	 		this.loadedStartScreen=true;
@@ -8149,6 +8163,9 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 		 		  sp.update();
 		 		  sp.display();
 		 		}
+
+		 	 ctx.drawImage(WINGED_FOOL_IDLE[0],440,140,100,100);
+		 	 ctx.drawImage(WINGED_FOOL_SLASH[0],440,240,100,100);
 		 	}
 		 showLevelUpBox()
 		 	{
@@ -8455,6 +8472,21 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 		 	 	 		   	    this.killables],                               
 		 	 	 		   	   elem['spriteId']
 		 	 	 		   	   ); 
+		 	 	 else if(elem['sprite']=='wingedsentry' && 
+		 	 	 	     this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)	{ 	 	 
+		 	 	 	     // console.log(`winged sentry created at ${this.visible_sprites.length-1}`);	
+		 	 	 	 	 // console.log(JSON.stringify(this.visible_sprites));
+		 	 	 	  new WingedSentry(elem['x']*xscale,
+		 	 	 		   	   elem['y']*yscale,
+		 	 	 		   	   elem['width']*xscale,
+		 	 	 		   	   elem['height']*yscale,
+		 	 	 		   	   [this.visible_sprites,
+		 	 	 		   	    this.enemy_sprites,
+		 	 	 		   	    this.active_sprites,
+		 	 	 		   	    this.killables],                               
+		 	 	 		   	   elem['spriteId']
+		 	 	 		   	   ); 
+		 	 	 }
 		 	 	 else if(elem['sprite']=='lance')		 
                     {	 	 
                       if(this.listOfDestroyedSprites.indexOf(elem['spriteId'])==-1)	
