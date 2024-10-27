@@ -65,7 +65,7 @@ let scenes=[
                  "br1posx":-660,"br1posy":-400,"br2posx":1237,"br2posy":-400,
                  "spriteId":"BossFightTriggGO"
             },
-            {"sprite":"wingedsentry","x":3315,"y":-100,"width":170,"height":220,
+            {"sprite":"wingedsentry","x":3315,"y":-120,"width":170,"height":220,
              "spriteId":"boss_wingedsentry0"}
 
            ],          
