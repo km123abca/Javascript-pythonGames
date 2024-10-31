@@ -2392,7 +2392,7 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 			this.animations={
 				"idle":{"images":WINGED_FOOL_IDLE,"width_extend":1,"height_extend":1,"anim_speed":0.18},
 				"flying":{"images":WINGED_FOOL_FLYING,"width_extend":1,"height_extend":1,"anim_speed":1},
-				"slashing":{"images":WINGED_FOOL_SLASH,"width_extend":1,"height_extend":1,"anim_speed":1},
+				"slashing":{"images":WINGED_FOOL_SLASH,"width_extend":1,"height_extend":1,"anim_speed":0.18},
 				"death":{"images":WINGED_FOOL_DEATH,"width_extend":1,"height_extend":1,"anim_speed":1}
 			};			
 			this.animation="idle";
@@ -2415,9 +2415,10 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 			this.attackStarted=false;
 			this.shortRangeAttacks=["shortslash"];
 			this.longRangeAttacks=["longslash"];
-			this.slashRange=50*xscale;
+			this.slashRange=150*xscale;
 		 	this.lastShortAttackTime=0;
 		 	this.lastLongAttackTime=0;
+		 	this.slashed=false;
 			}
 		switchAnimation(animx)
 			{
@@ -2557,18 +2558,26 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 	 			this.sx=1;
 	 		let enemyDistance=Math.abs(this.tgt.position.x - this.position.x);
 	 		if(enemyDistance < this.slashRange)
-	 			{
+	 			{	 			
 	 			this.lastLongAttackTime=0;
-	 			if(gameManager.runningClock - this.lastShortAttackTime < 1000+Math.random()*500)	 				
+	 			if(gameManager.runningClock - this.lastShortAttackTime > 1000+Math.random()*500)	 				
 	 				this.state=this.shortRangeAttacks[Math.floor(this.shortRangeAttacks.length*Math.random())];	 				
 	 			}
 	 		else
 	 			{
 	 			this.lastShortAttackTime=0;
-	 			if(gameManager.runningClock - this.lastLongAttackTime < 1000+Math.random()*500)	 				
+	 			if(gameManager.runningClock - this.lastLongAttackTime > 1000+Math.random()*500)	 				
 	 				this.state=this.longRangeAttacks[Math.floor(this.longRangeAttacks.length*Math.random())];
 	 			}
 		 	}
+        switchAnimation(animx)
+            {
+             if(this.animation != animx)
+                {                 
+                this.animationFrame=0;
+                this.animation=animx;
+                }
+            }
 		PlayerDetected(n,dist=this.raycastLength)
 			{
 			  if(!this.tgt || !this.tgt.isActive) return false;
@@ -2587,26 +2596,40 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 					{
 					 this.attackStarted=true;
 					 this.attackStartTime=gameManager.runningClock;					 
-					}	
+					}
+				if(gameManager.runningClock-this.attackStartTime> 3000)
+					{
+					console.log('slash attack is over ');
+					this.attackStarted=false;
+					this.slashed=false;
+					this.state="agro";
+					this.lastLongAttackTime=gameManager.runningClock;
+					}
 
 				let sep=this.tgt.position.x - this.position.x;
 				if(Math.abs(sep)<this.slashRange)
-				{
+					{	
+					if(!this.slashed)
+						{	
+						this.slashed=true;
+						this.animInQueue="idle";
+						this.switchAnimation('slashing');
+						}
 					this.velocity.set(0,0);
-				}
+					}
 				else
-				{
+					{
 				  if(this.tgt.position.x - this.position.x >0)
-					{
-					this.sx=-1;
-					this.acceleration.x+=1;
-					}
+						{
+						this.sx=-1;
+						this.acceleration.x+=1;
+						}
 				  else
-					{
-					this.sx=1;
-					this.acceleration.x-=1;
-					}
-				}				
+						{
+						this.sx=1;
+						this.acceleration.x-=1;
+						}
+					}				
 
 			}
 		winged_shortslash()
@@ -6988,7 +7011,8 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 		 	 	 	this.jumpTimer=0;
 		 	 	 	}
 		 	 	 else if(this.jumping)
-		 	 	 	{                     
+		 	 	 	{ 
+		 	 	 	 if(!this.dashing)                    
 		 	 	 	 this.acceleration.y-=this.jumpingForce;                     
 		 	 	 	 this.jumpTimer+=deltaTime;		 	 	 	 
 		 	 	 	 if(this.jumpTimer > this.maxJumpTime)
@@ -8342,7 +8366,7 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 		 		}
 
 		 	 ctx.drawImage(WINGED_FOOL_IDLE[0],440,140,100,100);
-		 	 ctx.drawImage(WINGED_FOOL_SLASH[0],440,240,100,100);
+		 	 ctx.drawImage(WINGED_FOOL_SLASH[9],440,240,100,100);
 		 	}
 		 showLevelUpBox()
 		 	{
