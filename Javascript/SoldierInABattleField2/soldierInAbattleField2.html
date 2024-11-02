@@ -644,6 +644,7 @@ document.onmousedown = function(event) {
              this.mouseLockY=0; 
              this.tgt=null;   
              this.lerpFactor=4;  
+             this.shakeVals=[0,0];
             }
           runWithMouse()
             {
@@ -676,6 +677,12 @@ document.onmousedown = function(event) {
                 this.position.x=Lerp(this.position.x,this.tgt.position.x-canvas.width/2,this.lerpFactor);
              if(followV)
                 this.position.y=Lerp(this.position.y,this.tgt.position.y-canvas.height/2,this.lerpFactor);
+            this.shakeCamera();
+            }
+         shakeCamera()
+            {
+                this.position.x+=this.shakeVals[0];
+                this.position.y+=this.shakeVals[1];
             }
 
         }
@@ -1058,6 +1065,8 @@ document.onmousedown = function(event) {
           this.listOfDestroyedSprites=[];
 
           this.positionAdjuster=new PositionAdjuster(null,[this.visible_sprites,this.active_sprites]);
+          this.screenShakeTimer=0;
+          this.maxScreenShakeTime=300;
           }
         
           checkPlayerExistence()
@@ -1072,6 +1081,19 @@ document.onmousedown = function(event) {
                 this.changeScene('none');
                 }
             }
+
+          MindScreenShake(){            
+            if(this.screenShakeTimer==0) return;
+            if(gameManager.runningClock - this.screenShakeTimer > this.maxScreenShakeTime)
+                {               
+                this.screenShakeTimer=0;
+                this.camera.shakeVals[0]=0;
+                this.camera.shakeVals[1]=0;
+                return;
+                }
+            this.camera.shakeVals[0]=Math.random()*20-10;
+            this.camera.shakeVals[1]=Math.random()*20-10;
+         }
           detectMouseClicks()
             {
 
@@ -1129,8 +1151,7 @@ document.onmousedown = function(event) {
             this.detectMouseClicks();
             if(!this.gamePaused) this.checkScenes();
             this.showLevelUpBox();
-
-
+            this.MindScreenShake();
             }
            showLevelUpBox()
             {
@@ -2065,11 +2086,11 @@ class ArrowButton extends GenericButton
                                  [gameManager.collission_sprites],
                                  'gatehitbox',this);
             // this.hit_box.sprite_type='gatehitbox';
-            this.maxVelocity=1*xscale;
+            this.maxVelocity=3*yscale;
             this.velocity=new CreateVector(0,this.dirx*this.maxVelocity);
             this.acceleration=new CreateVector(0,0);
             this.birthTime=gameManager.runningClock;
-            this.maxMoveTime=3350;
+            this.maxMoveTime=1200;
             this.activated=false;
             }
         destroyGate(){
@@ -2746,6 +2767,7 @@ class Soldier
                   
             if(this.invincibleState && !gameManager.playerDied) return false;
             this.stopEverything();
+            gameManager.screenShakeTimer=gameManager.runningClock;
             // if(!gameManager.playerDied)
             // document.querySelector('#LossBuzz').play(); 
             this.invincibleState=true;      
@@ -3326,10 +3348,23 @@ class Beetle extends GenericEnemy
             this.stopMoving=false;
             this.strikeHitBoxSize.set(200*xscale,200*yscale);
             this.strikeBoxDamage=50;
-            // this.longAttacks=['rushattack','rushattack','farstrike'];
-            this.longAttacks=['rushattack'];
+            this.longAttacks=['rushattack','farstrike'];
+            // this.longAttacks=['rushattack'];
             gameManager.visible_sprites.push(this.hit_box);
+            this.onScreen=false;
             }
+            MakeDramaticAppearance()
+                {
+                super.MakeDramaticAppearance();
+                for(let g of gameManager.gate_sprites) g.activateGate();              
+                this.hit_box.onScreen=true;                
+                musicList[presentMusicIndex]=mCL[3];
+                pauseMusic();
+                startMusic();
+
+                // this.onScreen=true;
+                // SpawnClouds(this.position);
+                }
             update(){
                 super.update();
                 // this.hit_box.updateAngle(this.angle);

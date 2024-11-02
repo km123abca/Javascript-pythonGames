@@ -108,6 +108,8 @@ let scenes=[
               {"sprite":"beetle","x":630,"y":286,"width":210 ,"height":280,
                   "offsetx":40,"offsety":-15, "sprite_id":"beetle1"},
               {"sprite":"scenechanger_scright","x":1600,"y":648},
+              {"sprite":"gate","x":460,"y":50,"width":50,"height":300,"dirx":"down"},
+              {"sprite":"gate","x":1480,"y":424,"width":50,"height":300,"dirx":"down"},
             ],
             [  
                   {"sprite":"scenechanger_scleft","x":-300,"y":300},   
