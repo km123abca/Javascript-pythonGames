@@ -1286,7 +1286,7 @@ document.onmousedown = function(event) {
 
                  if( !x.parent.onScreen || !x.onScreen  ) continue;
                  if(x==movingObj || x==movingObj.hit_box) continue; 
-                            
+                 if(x.parent && x.parent==this.player && x.parent.invincibleState) continue;     
                  if(b_collision(movingObj.hit_box,x)) 
                     {  
                     
@@ -1313,7 +1313,8 @@ document.onmousedown = function(event) {
              for(let x of gameManager.collission_sprites)
                 {
                  if( !x.parent.onScreen || !x.onScreen  ) continue;
-                 if(x==movingObj || x==movingObj.hit_box) continue;                
+                 if(x==movingObj || x==movingObj.hit_box) continue;
+                 if(x.parent && x.parent==this.player && x.parent.invincibleState) continue;                 
                  if(b_collision(movingObj.hit_box,x)) 
                     {
                     
@@ -2367,6 +2368,8 @@ class Soldier
 
          this.frictionConstant=0.05;
          this.projectileDamage=10;
+         this.exp_drain_start_time=0;
+         this.poweringUp=false;
         }
      giveExp(exp){
         this.experience+=exp;
@@ -2376,6 +2379,31 @@ class Soldier
             let fricForce=this.velocity.copy().mult(-this.frictionConstant);
             this.acceleration.add(fricForce);
         }
+     BurnExperienceForHealth()
+         {
+            if(!GetKeyPressedx('q')) 
+            {
+                if(this.poweringUp) 
+                    this.poweringUp=false;
+                return;   
+            }
+            if(!this.poweringUp) this.poweringUp=true;
+            w2screen(`experience:${this.experience}`,
+                     this.position.x- gameManager.camera.position.x,
+                     this.position.y- gameManager.camera.position.y+40*yscale
+                    );
+            if(gameManager.runningClock - this.exp_drain_start_time > 500)
+            {
+                this.exp_drain_start_time=gameManager.runningClock;
+
+                if(this.experience>0 && this.health<this.maxHealth){
+                    
+                    this.experience-=1;
+                    this.health+=10;
+                    gameManager.playerHealthBar.updateValue(this.health); 
+                }
+            }
+         }
      setMaxHealth(newval)
         {
            if(this.experience<this.experienceToll)
@@ -2668,13 +2696,14 @@ class Soldier
          this.runFeetAnimation();
          this.move();
          this.manageInvincibility();
+         this.BurnExperienceForHealth()
          // this.testCollisionWithLoot();
         }
 
     flickerControl()
         {
            
-          if(!this.invincibleState) return true;
+          if(!(this.invincibleState || this.poweringUp)) return true;
           this.flickerCount+=deltaTime;
           if(this.flickerCount > this.maxFlickerTime)
             {
@@ -3003,6 +3032,7 @@ class GenericEnemy extends GenericMovable
          this.maxHealth=100;
          this.health=100;
          this.fireBallSpawned=false;
+
          this.enemyHealthBar= new UIBar(50,20,100,15,
                                         this.health,this.health,
                                         '#222222','#FF0000',
@@ -3088,7 +3118,7 @@ class GenericEnemy extends GenericMovable
              this.RecoverAfterAttack();
              break;
             default:
-              console.log('undefined state');
+              // console.log('undefined state');
               break;
         }
      }
@@ -3328,7 +3358,7 @@ class Beetle extends GenericEnemy
              this.nearAttackDistance=200*xscale;
              this.maxVelocity_normal=this.maxVelocity;
              this.maxVelocity_quick=this.maxVelocity*4;
-             this.maxStrikeTime=2000;
+             this.maxStrikeTime=8000;
              this.strikeTime=800;
              // this.farAttackDistance=300*xscale; 
 
@@ -3348,10 +3378,15 @@ class Beetle extends GenericEnemy
             this.stopMoving=false;
             this.strikeHitBoxSize.set(200*xscale,200*yscale);
             this.strikeBoxDamage=50;
-            this.longAttacks=['rushattack','farstrike'];
+            this.longAttacks=['rushattack','volley','volley'];
             // this.longAttacks=['rushattack'];
             gameManager.visible_sprites.push(this.hit_box);
             this.onScreen=false;
+
+            this.fireBallsShot=0;
+            this.maxFireBalls=4;
+            this.attackStartTime=0;
+            this.gap_between_shots=1000;
             }
             MakeDramaticAppearance()
                 {
@@ -3374,7 +3409,37 @@ class Beetle extends GenericEnemy
                 this.bulletPosition.position=this.position.copy().add(this.bulletOffset.copy().rotateByAngle(this.angle));
                 */            
             }
-            
+            stateMachine(){
+                super.stateMachine();
+                if(this.state=="volley")
+                    this.ShootVolley();
+            }
+
+            ShootVolley()
+            {        
+            if(gameManager.runningClock - this.lastFarAttackTime > this.maxStrikeTime)
+                {                     
+                this.state='recover';
+                this.lastFarAttackTime=gameManager.runningClock;
+                this.fireBallsShot=0; 
+                this.attackStartTime=0;               
+                return true;
+                }
+            if(this.attackStartTime==0)                
+                 this.attackStartTime=gameManager.runningClock;            
+            this.FaceEnemy();
+            if(gameManager.runningClock - this.lastFarAttackTime < 2* this.gap_between_shots)
+                return;
+            if(this.fireBallsShot<this.maxFireBalls && gameManager.runningClock - this.attackStartTime > this.gap_between_shots)
+                {
+                this.attackStartTime=gameManager.runningClock;
+                this.GenericShoot();
+                this.fireBallsShot+=1;
+                }
+  
+            this.changeAnimation('attack');
+            }
+
             Strike()
             {
                 
@@ -3502,6 +3567,7 @@ class Zombie extends GenericMovable
         this.stateMachine();
         this.announceState();        
      }
+
      
      takeDamage(dmg,hitback){
         // console.log("zombie reports damage:"+dmg);
