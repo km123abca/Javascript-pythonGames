@@ -2419,6 +2419,7 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 		 	this.lastShortAttackTime=0;
 		 	this.lastLongAttackTime=0;
 		 	this.slashed=false;
+		 	this.slashBoxSpawned=false;
 			}
 		switchAnimation(animx)
 			{
@@ -2447,6 +2448,7 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 		 	 if(!this.isActive) return;
 		 	 this.move();
 		 	 this.stateMachine();
+		 	 this.MindSlashing();
 		 	}
 		 display()
 		 	{
@@ -2538,6 +2540,30 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 		 	   		break;
 		 	   }
 		 	}
+		 MindSlashing()
+		 	{
+		 		
+		 		if(this.animation=='slashing' && parseInt(this.animation_frame)==3 && !this.slashBoxSpawned)
+		 		{
+
+		 		this.slashBoxSpawned=true;	
+		 		console.log(`spawning hit box at ${this.position.x},${this.position.y}`)
+ 				new DamageHitBox(this.position.x,this.position.y, //x,y
+                                  60*xscale,60*yscale, //width,height
+                                  [gameManager.active_sprites,
+                                   gameManager.hitbox_sprites,                                   
+                                   gameManager.visible_sprites
+                                  ],
+                                 'enemy_hitbox',this,//hitboxName,parent
+                                 0*xscale,0*yscale,//xoffset,yoffset
+                                 10,this.sx*10,//damage,damagehitback
+                                 1000//life
+                                 ); 
+		 		}
+		 		else if(this.animation=='slashing' && parseInt(this.animation_frame)==3)
+		 			this.slashBoxSpawned=false;
+
+		 	}
 		 winged_idle()
 		 	{
 		 	 if(!this.attackStarted)
@@ -2547,7 +2573,10 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 		 	 	SpawnClouds(this.position,10,"black");
 		 	 	}
 		 	 if(gameManager.runningClock - this.birthTime > 2000)
+		 	 	{
 		 	 	this.state="agro";	
+		 	 	this.attackStarted=false;
+		 	 	}
 		 	}
 		 	
 		 winged_agro()
@@ -2559,14 +2588,14 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 	 		let enemyDistance=Math.abs(this.tgt.position.x - this.position.x);
 	 		if(enemyDistance < this.slashRange)
 	 			{	 			
-	 			this.lastLongAttackTime=0;
-	 			if(gameManager.runningClock - this.lastShortAttackTime > 1000+Math.random()*500)	 				
+	 			// this.lastLongAttackTime=0;
+	 			if(gameManager.runningClock - this.lastLongAttackTime > 2000+Math.random()*500)	 				
 	 				this.state=this.shortRangeAttacks[Math.floor(this.shortRangeAttacks.length*Math.random())];	 				
 	 			}
 	 		else
 	 			{
-	 			this.lastShortAttackTime=0;
-	 			if(gameManager.runningClock - this.lastLongAttackTime > 1000+Math.random()*500)	 				
+	 			// this.lastShortAttackTime=0;
+	 			if(gameManager.runningClock - this.lastLongAttackTime > 2000+Math.random()*500)	 				
 	 				this.state=this.longRangeAttacks[Math.floor(this.longRangeAttacks.length*Math.random())];
 	 			}
 		 	}
@@ -2598,8 +2627,7 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 					 this.attackStartTime=gameManager.runningClock;					 
 					}
 				if(gameManager.runningClock-this.attackStartTime> 3000)
-					{
-					console.log('slash attack is over ');
+					{					
 					this.attackStarted=false;
 					this.slashed=false;
 					this.state="agro";
@@ -2617,7 +2645,7 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 						}
 					this.velocity.set(0,0);
 					}
-				else
+				else if(!this.slashed)
 					{
 				  if(this.tgt.position.x - this.position.x >0)
 						{
@@ -2634,8 +2662,20 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 			}
 		winged_shortslash()
 			{
-
-
+			if(!this.attackStarted)
+				{
+				this.attackStarted=true;
+				this.attackStartTime=gameManager.runningClock;	
+				this.animInQueue="idle";
+				this.switchAnimation('slashing');
+				this.velocity.set(0,0);
+				}
+			if(gameManager.runningClock - this.attackStartTime < 2000)
+				{
+					this.attackStarted=false;
+					this.state="agro";
+					this.lastLongAttackTime=gameManager.runningClock;
+				}
 			}
 
 		}
