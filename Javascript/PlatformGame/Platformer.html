@@ -2400,6 +2400,7 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 			this.state="idle";
 			this.animInQueue=null;
 			this.sx=1;
+			this.sy=1;
 			this.hit_box=new HitBox(x,y,this.width*0.4,this.height*0.8,[
                                                         gameManager.collission_sprites,
                                                         // gameManager.visible_sprites
@@ -2555,7 +2556,7 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
                                    gameManager.visible_sprites
                                   ],
                                  'enemy_hitbox',this,//hitboxName,parent
-                                 0*xscale,0*yscale,//xoffset,yoffset
+                                 50*xscale,0*yscale,//xoffset,yoffset
                                  10,this.sx*10,//damage,damagehitback
                                  1000//life
                                  ); 

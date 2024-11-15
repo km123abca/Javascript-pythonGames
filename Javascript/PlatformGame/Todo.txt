@@ -1,4 +1,5 @@
 [  ] Winged Sentry attacks
     [*] Solving problem with long slash
     [*] Problem with recurring short slash, solved by increasing time gap
-    [ ] Fixing hitbox on winged sentry strikes 2550, hit box not spawning in the right position
+    [*] Fixing hitbox on winged sentry strikes 2550, hit box not spawning in the right position
+    [ ] Solve issue with this.sx
