@@ -2794,12 +2794,13 @@ class Soldier
         takeDamage(dmg,hitback)
             {   
                   
-            if(this.invincibleState && !gameManager.playerDied) return false;
+            if(this.invincibleState && !gameManager.playerDied) return false;            
             this.stopEverything();
             gameManager.screenShakeTimer=gameManager.runningClock;
             // if(!gameManager.playerDied)
             // document.querySelector('#LossBuzz').play(); 
-            this.invincibleState=true;      
+            this.invincibleState=true; 
+            console.log(`about to add ${hitback.x},${hitback.y} to acceleration`)     
             this.acceleration.add(hitback);
             this.health-=dmg;
             this.health=(this.health<0?0:this.health);           
@@ -3161,9 +3162,9 @@ class GenericEnemy extends GenericMovable
                              this.strikeHitBoxSize.x*xscale,this.strikeHitBoxSize.y*yscale,
                              bulletOffset.x,bulletOffset.y,                             
                              this.strikeBoxDamage,
-                             this.velocity.copy().normalized(),
+                             (new CreateVector(1,0)).pointToAngle(this.angle),
                             [
-                            gameManager.visible_sprites,
+                            // gameManager.visible_sprites,
                             gameManager.active_sprites,
                             gameManager.hit_box_sprites
                            ],
@@ -3380,7 +3381,7 @@ class Beetle extends GenericEnemy
             this.strikeBoxDamage=50;
             this.longAttacks=['rushattack','volley','volley'];
             // this.longAttacks=['rushattack'];
-            gameManager.visible_sprites.push(this.hit_box);
+            // gameManager.visible_sprites.push(this.hit_box);
             this.onScreen=false;
 
             this.fireBallsShot=0;
@@ -3971,7 +3972,7 @@ function SpawnClouds(pos,n=60,cloudtype="white")
           this.accelerationInit=tgtPoint.sub(this.position).normalize();
 
           this.hit_box=new HitBox(x,y,this.width*0.5,this.height,
-                                 [gameManager.collission_sprites],
+                                 [],//[gameManager.collission_sprites]
                                  'projectilehitbox',this);
           this.birthTime= gameManager.runningClock;
           this.sprite_type='projectile';

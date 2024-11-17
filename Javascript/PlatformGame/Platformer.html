@@ -2399,7 +2399,7 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 			this.animation_frame=0;
 			this.state="idle";
 			this.animInQueue=null;
-			this.sx=1;
+			this.sx=1;//since this bug is facing left, positive sx means left and negative is right
 			this.sy=1;
 			this.hit_box=new HitBox(x,y,this.width*0.4,this.height*0.8,[
                                                         gameManager.collission_sprites,
@@ -2410,7 +2410,7 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 			this.raycastLength=600*xscale;
 			this.acceleration=new CreateVector(0,0);
 			this.velocity=new CreateVector(0,0);
-			this.maxHorizontalVelocity=3*xscale;
+			this.maxHorizontalVelocity=6*xscale;
 			this.maxVelocity=new CreateVector(this.maxHorizontalVelocity,12*yscale);
 			this.image_offset=new CreateVector(0,0);
 			this.attackStarted=false;
@@ -2448,6 +2448,7 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 		 	{
 		 	 if(!this.isActive) return;
 		 	 this.move();
+		 	 Draw_a_line(this.position,this.position.copy().add(new CreateVector(-this.sx*this.slashRange,0)),'#00FF00');
 		 	 this.stateMachine();
 		 	 this.MindSlashing();
 		 	}
@@ -2556,12 +2557,12 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
                                    gameManager.visible_sprites
                                   ],
                                  'enemy_hitbox',this,//hitboxName,parent
-                                 50*xscale,0*yscale,//xoffset,yoffset
-                                 10,this.sx*10,//damage,damagehitback
+                                 -50*xscale,0*yscale,//xoffset,yoffset  
+                                 10,-this.sx*10,//damage,damagehitback 
                                  1000//life
                                  ); 
 		 		}
-		 		else if(this.animation=='slashing' && parseInt(this.animation_frame)==3)
+		 		else if(this.slashBoxSpawned && this.animation!='slashing' )
 		 			this.slashBoxSpawned=false;
 
 		 	}
@@ -2665,13 +2666,14 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 			{
 			if(!this.attackStarted)
 				{
+				console.log('short slash incoming');
 				this.attackStarted=true;
 				this.attackStartTime=gameManager.runningClock;	
 				this.animInQueue="idle";
 				this.switchAnimation('slashing');
 				this.velocity.set(0,0);
 				}
-			if(gameManager.runningClock - this.attackStartTime < 2000)
+			if(gameManager.runningClock - this.attackStartTime > 2000)
 				{
 					this.attackStarted=false;
 					this.state="agro";
@@ -6544,7 +6546,7 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
             }
     	 update()
     	 	{    	 	 
-    	 	  if(!this.triggered && b_collision(this,gameManager.player))
+    	 	  if(!this.triggered && gameManager.player && b_collision(this,gameManager.player))
     	 	  {
                if(this.activateBosses())
                     {
