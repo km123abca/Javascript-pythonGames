@@ -2621,7 +2621,7 @@ class Soldier
                        this,
                        this.mousePositionVecShoot,
                        [gameManager.visible_sprites,gameManager.active_sprites],
-                       this.projectileDamage
+                       this.projectileDamage,10
                        ); 
         }    
     runAnimation()
@@ -3178,6 +3178,7 @@ class GenericEnemy extends GenericMovable
 
      
      RecoverAfterAttack(){
+        this.changeAnimation('idle');
         this.recoveryTimer+=deltaTime;
         if(this.recoveryTimer > this.maxRecoveryTimeAfterRush){
             this.recoveryTimer=0;
@@ -3196,6 +3197,7 @@ class GenericEnemy extends GenericMovable
             this.smokes=3;
             this.velocity.set(0,0);
             this.maxVelocity=this.maxVelocity_normal;
+
             return true;
             }
         if( !this.initValuesSet && 
@@ -3359,7 +3361,7 @@ class Beetle extends GenericEnemy
              this.nearAttackDistance=200*xscale;
              this.maxVelocity_normal=this.maxVelocity;
              this.maxVelocity_quick=this.maxVelocity*4;
-             this.maxStrikeTime=8000;
+             this.maxStrikeTime=2000;
              this.strikeTime=800;
              // this.farAttackDistance=300*xscale; 
 
@@ -3379,14 +3381,15 @@ class Beetle extends GenericEnemy
             this.stopMoving=false;
             this.strikeHitBoxSize.set(200*xscale,200*yscale);
             this.strikeBoxDamage=50;
-            this.longAttacks=['rushattack','volley','volley'];
-            // this.longAttacks=['rushattack'];
+            // this.longAttacks=['rushattack','volley','volley'];
+            this.longAttacks=['rushattack'];
             // gameManager.visible_sprites.push(this.hit_box);
             this.onScreen=false;
 
             this.fireBallsShot=0;
             this.maxFireBalls=4;
             this.attackStartTime=0;
+        
             this.gap_between_shots=1000;
             }
             MakeDramaticAppearance()
@@ -3410,6 +3413,12 @@ class Beetle extends GenericEnemy
                 this.bulletPosition.position=this.position.copy().add(this.bulletOffset.copy().rotateByAngle(this.angle));
                 */            
             }
+            RushAttack(){
+                super.RushAttack();
+                if(gameManager.runningClock - this.lastFarAttackTime < this.maxRushAttackTime){
+                    this.changeAnimation("move");
+                }
+            }
             stateMachine(){
                 super.stateMachine();
                 if(this.state=="volley")
@@ -3418,7 +3427,7 @@ class Beetle extends GenericEnemy
 
             ShootVolley()
             {        
-            if(gameManager.runningClock - this.lastFarAttackTime > this.maxStrikeTime)
+            if(gameManager.runningClock - this.lastFarAttackTime > this.maxStrikeTime*4)
                 {                     
                 this.state='recover';
                 this.lastFarAttackTime=gameManager.runningClock;
@@ -3952,7 +3961,7 @@ function SpawnClouds(pos,n=60,cloudtype="white")
   let projectile_image=LoadImagex(sprite_folder,'redcube.png');
   class Projectile
     {
-      constructor(x,y,wid,hei,parent,tgtPoint,spriteGroups,damageCaused=5)
+      constructor(x,y,wid,hei,parent,tgtPoint,spriteGroups,damageCaused=5,maxVelocity=5)
         {
           
           this.position= new CreateVector(x,y);
@@ -3966,10 +3975,10 @@ function SpawnClouds(pos,n=60,cloudtype="white")
           this.angle=0;
           this.rotAngle=0;
           this.velocity=new CreateVector(0,0);
-          this.maxVelocity=5*xscale;
+          this.maxVelocity=maxVelocity*xscale;
           this.acceleration=new CreateVector(0,0);
           // this.accelerationInit=this.acceleration.copy().pointToAngle(this.parent.angle).normalize();
-          this.accelerationInit=tgtPoint.sub(this.position).normalize();
+          this.accelerationInit=tgtPoint.sub(this.position).normalize().mult(5);
 
           this.hit_box=new HitBox(x,y,this.width*0.5,this.height,
                                  [],//[gameManager.collission_sprites]
@@ -4015,6 +4024,7 @@ function SpawnClouds(pos,n=60,cloudtype="white")
             {
                 destroySelf(this.hit_box);
                 destroySelf(this);
+                SpawnClouds(this.position);
                 console.log('projectile destroyed');
             }
         }
