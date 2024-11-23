@@ -2421,6 +2421,19 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 		 	this.lastLongAttackTime=0;
 		 	this.slashed=false;
 		 	this.slashBoxSpawned=false;
+
+            this.invincibleState=false;
+            this.invin_count=0;
+            this.max_invin_time=500;
+            this.flickerCount=0;
+            this.maxFlickerTime=100;
+            this.health=100;
+            this.maxHealth=100;
+            this.uiBarTimer=0;
+            this.uiBarMaxTime=3000;
+            this.healthBarOffset=new CreateVector(-30*xscale,-150*yscale);
+            this.wingedHealthBar= new UIBar(0,0,100,15,this.health,this.maxHealth,'#222222','#FF0000',
+                                            [gameManager.visible_sprites],false,'lancehealth');
 			}
 		switchAnimation(animx)
 			{
@@ -2451,6 +2464,8 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 		 	 Draw_a_line(this.position,this.position.copy().add(new CreateVector(-this.sx*this.slashRange,0)),'#00FF00');
 		 	 this.stateMachine();
 		 	 this.MindSlashing();
+             this.manageInvincibility();
+             this.updateHealthBarPos();
 		 	}
 		 display()
 		 	{
@@ -2460,6 +2475,7 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 		 	 ctx.translate(this.position.x-gameManager.camera.position.x, 
 		 	 	 		   this.position.y-gameManager.camera.position.y);
 		 	 ctx.scale(this.sx,1);
+             if(this.flickerControl())
 		 	 ctx.drawImage(this.animations[this.animation]["images"][parseInt(this.animation_frame)],
 		 	 			   -this.width/2,-this.height/2,
 		 	 			   this.width*this.animations[this.animation]["width_extend"],
@@ -2545,21 +2561,21 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 		 MindSlashing()
 		 	{
 		 		
-		 		if(this.animation=='slashing' && parseInt(this.animation_frame)==3 && !this.slashBoxSpawned)
+		 		if(this.animation=='slashing' && parseInt(this.animation_frame)==8 && !this.slashBoxSpawned)
 		 		{
 
 		 		this.slashBoxSpawned=true;	
 		 		console.log(`spawning hit box at ${this.position.x},${this.position.y}`)
  				new DamageHitBox(this.position.x,this.position.y, //x,y
-                                  60*xscale,60*yscale, //width,height
+                                  120*xscale,60*yscale, //width,height
                                   [gameManager.active_sprites,
                                    gameManager.hitbox_sprites,                                   
                                    gameManager.visible_sprites
                                   ],
                                  'enemy_hitbox',this,//hitboxName,parent
-                                 -50*xscale,0*yscale,//xoffset,yoffset  
+                                 -120*xscale,0*yscale,//xoffset,yoffset  
                                  10,-this.sx*10,//damage,damagehitback 
-                                 1000//life
+                                 200//life
                                  ); 
 		 		}
 		 		else if(this.slashBoxSpawned && this.animation!='slashing' )
@@ -2680,6 +2696,62 @@ let WINGED_FOOL_SLASH=LoadImages('sprites/WingedFool/fullslash',Array(12).fill(0
 					this.lastLongAttackTime=gameManager.runningClock;
 				}
 			}
+        updateHealthBarPos()
+            {
+                if(this.wingedHealthBar.onScreen)
+                    {   
+                    this.uiBarTimer+=deltaTime;
+                    if(this.uiBarTimer > this.uiBarMaxTime)
+                    {
+                     this.uiBarTimer=0;
+                     this.wingedHealthBar.onScreen=false;
+                    }
+                    }
+                this.wingedHealthBar.position.setVec(this.position.copy().add(this.healthBarOffset));
+            }
+        flickerControl()
+            {
+              if(!this.invincibleState) return true;
+              this.flickerCount+=deltaTime;
+              if(this.flickerCount > this.maxFlickerTime)
+                {
+                 this.flickerCount=0;
+                 return true;
+                }
+              return false;
+            }
+        manageInvincibility()
+                {
+                if(!this.invincibleState) return false;
+                this.invin_count+= deltaTime;
+                if(this.invin_count > this.max_invin_time)
+                    {
+                     this.invin_count=0;
+                     this.invincibleState=false;
+                    } 
+                }
+        takeDamage(dmg,dir=0)
+            {
+            //this.acceleration.add(new CreateVector(dir,0));
+            if(this.invincibleState) return false;  
+            this.invincibleState=true;
+            document.querySelector('#retroJump').play();    
+            this.health-=dmg;
+            this.wingedHealthBar.updateValue(this.health);
+            this.wingedHealthBar.onScreen=true;
+            if(this.health<0)
+                {
+                this.tgt.giveExp(this.expVal);
+                SpawnClouds(this.position);
+                destroySelf(this);
+                destroySelf(this.hit_box);
+                destroySelf(this.lanceHealthBar);
+                fogGateSound.play();
+                gameManager.listOfDestroyedSprites.push(this.spriteId);
+                this.isActive=false;
+                DestroyAllBarriersInScene();
+                }   
+            }
 
 		}
 	//winged sentry ends
