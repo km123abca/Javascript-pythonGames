@@ -6,4 +6,4 @@ Commit comments
 Todo: 02-11-2024
 [*] Tune solider's shooting
 [*] Find out soldier recovers health ,BurnExperienceForHealth was already present
-[ ] Other beetle attacks (laser beam mini follwers etc)
+[ ] minion bugs are not spawning

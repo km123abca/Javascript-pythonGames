@@ -2884,8 +2884,7 @@ class GenericMovable extends GeneralSprite
                  if(x==this || x==this.hit_box) continue; 
                                 
                  if(b_collision(this.hit_box,x)) 
-                    {  
-                    
+                    {                  
                                              
                      if(this.velocity.x > 0)
                         {                    
@@ -2924,7 +2923,7 @@ class GenericMovable extends GeneralSprite
                 }
 
             }
-         performSpecTaskOnCollision(){
+         performSpecTaskOnCollision(x){
             return false;
          }
          applyVelocityRestrictions()
@@ -3332,6 +3331,82 @@ image_names=Array(13).fill(0).map((x,i)=>`skeleton-attack_${i}.png`);
 let ZOMBIE_ATTACK_IMAGES=LoadImages(folder_name,image_names);
 //14 zombie starts
 
+//setting up images for bugs
+folder_name=sprite_folder+"\\Bugs";
+let bug_attack=['attack0.png','attack1.png','attack2.png'];
+let bug_idle=['idle0.png','idle1.png'];
+let bug_run=['run0.png','run1.png'];
+let BUG_ATTACK_IMAGES=LoadImages(folder_name,bug_attack);
+let BUG_IDLE_IMAGES=LoadImages(folder_name,bug_idle);
+let BUG_MOVE_IMAGES=LoadImages(folder_name,bug_run);
+//bug starts
+class Bug extends GenericMovable
+    {
+      constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups)
+        {
+         super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
+         this.sprite_type="minionbug";
+         this.hit_box.sprite_type='bughitbox_damagable';
+         this.animations.idle=BUG_IDLE_IMAGES;
+         this.animations.move=BUG_MOVE_IMAGES;
+         this.animations.attack=BUG_ATTACK_IMAGES;
+         this.animationFractions={'idle':0.8,'move':0.4,'attack':0.2};
+         this.animationSizeMults={'idle':[1,1],'move':[1,1],'attack':[1,1]};
+         this.animation='idle';           
+         this.state='move'; 
+         this.bulletOffset.x=90*xscale;
+         this.bulletOffset.y=10*yscale;
+         this.rotationOffset=90;             
+         this.maxVelocity=6*xscale;
+         this.maxVelocity_normal=this.maxVelocity;
+         this.maxVelocity_quick=this.maxVelocity*4;        
+         this.onScreen=false; 
+         this.hitsTaken=0; 
+         this.maxHitsAllowable=1;  
+         this.birthTime=gameManager.runningClock;
+         this.direction_change_time=3000;
+         this.direction_changes=0;
+         this.max_direction_changes=1;
+         this.acceleration=gameManager.player.position.copy().sub(this.position).normalized().mult(3);
+        }
+      update(){
+        super.update();
+        this.changeDirection();
+      }
+      changeDirection()
+        {
+        if(this.direction_changes>this.max_direction_changes) 
+            {
+            this.hitsTaken=this.maxHitsAllowable;
+            this.takeDamage(0,this.velocity.copy().mult(-1));
+            return false;
+            }
+        if(gameManager.runningClock - this.birthTime < this.direction_change_time)
+            return false;
+        this.direction_changes+=1;
+        this.acceleration=gameManager.player.position.copy().sub(this.position).normalized().mult(3);
+        }
+      takeDamage(dmg,hitback)
+        {        
+        this.hitsTaken+=1;
+        this.acceleration.add(hitback);
+        if(this.hitsTaken>this.maxHitsAllowable)
+            {
+            SpawnClouds(this.position);            
+            SpawnClouds(this.position);
+            destroySelf(this);
+            destroySelf(this.hit_box);            
+            document.querySelector('#LossBuzz').play();           
+            }
+        }
+
+        performSpecTaskOnCollision(x)
+            {
+            if(x==gameManager.player)
+                gameManager.player.takeDamage(5,this.velocity.normalized.mult(4));            
+            }
+    }
+//bug ends
 //setting up images for beetle
 folder_name=sprite_folder+"\\beetles";
 let beetle_images_idle=['idle1.png'];
@@ -3363,17 +3438,6 @@ class Beetle extends GenericEnemy
              this.maxVelocity_quick=this.maxVelocity*4;
              this.maxStrikeTime=2000;
              this.strikeTime=800;
-             // this.farAttackDistance=300*xscale; 
-
-             /*
-             //bullet position was created just to get an indication of the point
-             //were bullet is spawned
-             this.bulletPosition=new GeneralSprite(this.position.x+this.bulletOffset.x,
-                               this.position.y+this.bulletOffset.y,
-                               30,30,0,0,
-                            [gameManager.visible_sprites]
-                          );
-            */
             this.beetle_move_start_time=0;
             this.beetle_move_stage='back';
             this.beetle_move_gap=200;
@@ -3381,8 +3445,8 @@ class Beetle extends GenericEnemy
             this.stopMoving=false;
             this.strikeHitBoxSize.set(200*xscale,200*yscale);
             this.strikeBoxDamage=50;
-            // this.longAttacks=['rushattack','volley','volley'];
-            this.longAttacks=['rushattack'];
+            // this.longAttacks=['rushattack','volley','spawnbugs'];
+            this.longAttacks=['spawnbugs'];
             // gameManager.visible_sprites.push(this.hit_box);
             this.onScreen=false;
 
@@ -3391,6 +3455,7 @@ class Beetle extends GenericEnemy
             this.attackStartTime=0;
         
             this.gap_between_shots=1000;
+            this.numBugs=0;
             }
             MakeDramaticAppearance()
                 {
@@ -3405,14 +3470,37 @@ class Beetle extends GenericEnemy
                 // SpawnClouds(this.position);
                 }
             update(){
-                super.update();
-                // this.hit_box.updateAngle(this.angle);
-                /*
-             //bullet position was created just to get an indication of the point
-             //were bullet is spawned
-                this.bulletPosition.position=this.position.copy().add(this.bulletOffset.copy().rotateByAngle(this.angle));
-                */            
+                super.update();                         
             }
+
+            SpawnBugs()
+                {
+                if(gameManager.runningClock - this.lastFarAttackTime > this.maxStrikeTime*3)
+                    {
+                     this.attackStartTime=0;
+                     this.lastFarAttackTime=gameManager.runningClock;
+                     this.numBugs=0;
+                     this.state="agro";
+                    }
+                if(this.numBugs>=2) return false;
+                if(gameManager.runningClock-this.attackStartTime>1000)
+                    {
+                    console.log('bug spawned');
+                    this.attackStartTime=gameManager.runningClock;
+                    let bulletOffset=this.bulletOffset.copy().rotateByAngle(this.angle);
+                    new Bug(this.position.x+bulletOffset.x,
+                            this.position.y+bulletOffset.y,
+                            50*xscale,50*yscale,0,0,
+                            [gameManager.visible_sprites,gameManager.active_sprites,
+                             gameManager.enemy_sprites
+                            ]
+                           );
+                    this.numBugs+=1;
+                    }
+                }
+            /*           
+      constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups)          
+            */
             RushAttack(){
                 super.RushAttack();
                 if(gameManager.runningClock - this.lastFarAttackTime < this.maxRushAttackTime){
