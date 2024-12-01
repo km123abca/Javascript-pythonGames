@@ -1552,7 +1552,7 @@ document.onmousedown = function(event) {
                 {
                 if(elem.sprite_type==ent_ex)
                     {
-                     console.log(`player placed at ${elem.position.x},${elem.position.y} of ${elem.sprite_type}`);
+                     // console.log(`player placed at ${elem.position.x},${elem.position.y} of ${elem.sprite_type}`);
                      gameManager.player.hit_box.position.setVec(elem.position);
                     }
                 }
@@ -2799,8 +2799,7 @@ class Soldier
             gameManager.screenShakeTimer=gameManager.runningClock;
             // if(!gameManager.playerDied)
             // document.querySelector('#LossBuzz').play(); 
-            this.invincibleState=true; 
-            console.log(`about to add ${hitback.x},${hitback.y} to acceleration`)     
+            this.invincibleState=true;                
             this.acceleration.add(hitback);
             this.health-=dmg;
             this.health=(this.health<0?0:this.health);           
@@ -2967,7 +2966,7 @@ class GenericMovable extends GeneralSprite
             ctx.rotate(d2r(this.angle+this.rotationOffset));
             let wid=this.width*this.animationSizeMults[this.animation][0];
             let hei=this.height*this.animationSizeMults[this.animation][1];
-         
+
          try{
          ctx.drawImage(this.animations[this.animation][parseInt(this.animationFrame)],
                        -wid/2,
@@ -3293,7 +3292,8 @@ class GenericEnemy extends GenericMovable
             if(gameManager.runningClock - this.lastFarAttackTime > this.maxFarAttackTimeGap){
                 this.lastFarAttackTime= gameManager.runningClock; 
             //attack here  
-                this.state=this.longAttacks[Math.floor(Math.random()*this.longAttacks.length)];         
+                this.state=this.longAttacks[Math.floor(Math.random()*this.longAttacks.length)];
+                        
             }
 
          }
@@ -3345,6 +3345,8 @@ class Bug extends GenericMovable
       constructor(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups)
         {
          super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
+         // new Flower(x,y,wid,hei,[gameManager.visible_sprites]);
+         document.querySelector('#retroJump').play();  
          this.sprite_type="minionbug";
          this.hit_box.sprite_type='bughitbox_damagable';
          this.animations.idle=BUG_IDLE_IMAGES;
@@ -3352,39 +3354,44 @@ class Bug extends GenericMovable
          this.animations.attack=BUG_ATTACK_IMAGES;
          this.animationFractions={'idle':0.8,'move':0.4,'attack':0.2};
          this.animationSizeMults={'idle':[1,1],'move':[1,1],'attack':[1,1]};
-         this.animation='idle';           
-         this.state='move'; 
-         this.bulletOffset.x=90*xscale;
-         this.bulletOffset.y=10*yscale;
+         this.animation='move';           
+         // this.state='move';         
          this.rotationOffset=90;             
-         this.maxVelocity=6*xscale;
+         this.maxVelocity=1*xscale;
          this.maxVelocity_normal=this.maxVelocity;
          this.maxVelocity_quick=this.maxVelocity*4;        
-         this.onScreen=false; 
+         this.onScreen=true; 
          this.hitsTaken=0; 
          this.maxHitsAllowable=1;  
          this.birthTime=gameManager.runningClock;
-         this.direction_change_time=3000;
+         this.direction_change_time=1500;
          this.direction_changes=0;
          this.max_direction_changes=1;
-         this.acceleration=gameManager.player.position.copy().sub(this.position).normalized().mult(3);
+         this.force=gameManager.player.position.copy().sub(this.position).normalized().mult(3);
+         this.angle=this.force.heading();
+
         }
       update(){
+        
         super.update();
         this.changeDirection();
+        this.acceleration.add(this.force);
       }
       changeDirection()
         {
         if(this.direction_changes>this.max_direction_changes) 
             {
-            this.hitsTaken=this.maxHitsAllowable;
-            this.takeDamage(0,this.velocity.copy().mult(-1));
+            // this.hitsTaken=this.maxHitsAllowable;
+            // this.takeDamage(0,this.velocity.copy().mult(-1));
+            this.setUpDestruction();
             return false;
             }
         if(gameManager.runningClock - this.birthTime < this.direction_change_time)
             return false;
+        this.birthTime=gameManager.runningClock;
         this.direction_changes+=1;
-        this.acceleration=gameManager.player.position.copy().sub(this.position).normalized().mult(3);
+        this.force=gameManager.player.position.copy().sub(this.position).normalized().mult(3);
+        this.angle=this.force.heading();
         }
       takeDamage(dmg,hitback)
         {        
@@ -3399,11 +3406,18 @@ class Bug extends GenericMovable
             document.querySelector('#LossBuzz').play();           
             }
         }
+        setUpDestruction(){
+            this.hitsTaken=this.maxHitsAllowable;
+            this.takeDamage(0,this.velocity.copy().mult(-1));
+        }
 
         performSpecTaskOnCollision(x)
             {
-            if(x==gameManager.player)
-                gameManager.player.takeDamage(5,this.velocity.normalized.mult(4));            
+            if(x==gameManager.player.hit_box)
+                {
+                gameManager.player.takeDamage(5,this.velocity.copy().normalized().mult(4));  
+                this.setUpDestruction();     
+                }     
             }
     }
 //bug ends
@@ -3474,18 +3488,17 @@ class Beetle extends GenericEnemy
             }
 
             SpawnBugs()
-                {
+                {                 
                 if(gameManager.runningClock - this.lastFarAttackTime > this.maxStrikeTime*3)
                     {
                      this.attackStartTime=0;
                      this.lastFarAttackTime=gameManager.runningClock;
                      this.numBugs=0;
                      this.state="agro";
-                    }
+                    }                
                 if(this.numBugs>=2) return false;
                 if(gameManager.runningClock-this.attackStartTime>1000)
-                    {
-                    console.log('bug spawned');
+                    {                    
                     this.attackStartTime=gameManager.runningClock;
                     let bulletOffset=this.bulletOffset.copy().rotateByAngle(this.angle);
                     new Bug(this.position.x+bulletOffset.x,
@@ -3511,6 +3524,8 @@ class Beetle extends GenericEnemy
                 super.stateMachine();
                 if(this.state=="volley")
                     this.ShootVolley();
+                else if(this.state=="spawnbugs")
+                    this.SpawnBugs();
             }
 
             ShootVolley()
@@ -3597,6 +3612,7 @@ class Zombie extends GenericMovable
         {
          super(x,y,wid,hei,hitboxoffsetx,hitboxoffsety,spriteGroups);
          // gameManager.visible_sprites.push(this.hit_box);
+         // console.log('i am here')
          this.testing=false;
          this.sprite_id=sprite_id; //sprite_id uniquely identifies this sprite
 
